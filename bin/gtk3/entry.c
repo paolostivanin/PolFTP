@@ -4,14 +4,7 @@ static void
 print_hello (GtkWidget *widget,
      gpointer   data)
 {
-  g_print ("Button 1 clicked\n");
-}
-
-static void
-print_hello_2 (GtkWidget *widget,
-     gpointer   data)
-{
-  g_print ("Button 2 clicked\n");
+  g_print ("Connect button clicked\n");
 }
 
 int
@@ -23,6 +16,7 @@ main (int   argc,
   GtkWidget *button;
   GtkWidget *u_name;
   GtkWidget *h_name;
+  GtkWidget *pass;
 
   /* This is called in all GTK applications. Arguments are parsed
    * from the command line and are returned to the application.
@@ -42,26 +36,21 @@ main (int   argc,
   gtk_container_add (GTK_CONTAINER (window), grid);
 
   h_name = gtk_entry_new();
-
-  /* Place the first button in the grid cell (0, 0), and make it fill
-   * just 1 cell horizontally and vertically (ie no spanning)
-   */
-  gtk_grid_attach (GTK_GRID (grid), h_name, 0, 0, 1, 1);
+  gtk_grid_attach (GTK_GRID (grid), h_name, 0, 0, 1, 1); /* Place the first button in the grid cell (0, 0), and make it fill just 1 cell horizontally and vertically (ie no spanning)*/
 
   u_name = gtk_entry_new();
-
-  /* Place the second button in the grid cell (1, 0), and make it fill
-   * just 1 cell horizontally and vertically (ie no spanning)
-   */
   gtk_grid_attach (GTK_GRID (grid), u_name, 0, 1, 1, 1);
 
+  pass = gtk_entry_new();
+  gtk_grid_attach (GTK_GRID (grid), pass, 0, 2, 1, 1);
+  
+  button = gtk_button_new_with_label ("Connect");
+  g_signal_connect (button, "clicked", G_CALLBACK (print_hello), NULL);
+  gtk_grid_attach (GTK_GRID (grid), button, 0, 3, 2, 1);
+  
   button = gtk_button_new_with_label ("Quit");
   g_signal_connect (button, "clicked", G_CALLBACK (gtk_main_quit), NULL);
-
-  /* Place the Quit button in the grid cell (0, 1), and make it
-   * span 2 columns.
-   */
-  gtk_grid_attach (GTK_GRID (grid), button, 0, 2, 2, 1);
+  gtk_grid_attach (GTK_GRID (grid), button, 0, 4, 2, 1); /*Place the Quit button in the grid cell (0, 4), and make it span 2 columns.*/
 
   /* Now that we are done packing our widgets, we show them all
    * in one go, by calling gtk_widget_show_all() on the window.
