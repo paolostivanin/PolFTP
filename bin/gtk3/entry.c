@@ -28,6 +28,7 @@ gtk_window_set_title (GTK_WINDOW (window), "FTP Client");
 gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
 g_signal_connect (window, "destroy", G_CALLBACK (gtk_main_quit), NULL);
 gtk_container_set_border_width (GTK_CONTAINER (window), 20);
+gtk_window_set_resizable(GTK_WINDOW(window), FALSE); /* window is NOT resizable */
 
 /* Here we construct the container that is going pack our buttons */
 grid = gtk_grid_new ();
