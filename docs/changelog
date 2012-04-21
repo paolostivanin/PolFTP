@@ -1,2 +1,11 @@
-19/04/2012 - v1.0-alpha
-	* Created GIT repo
+xx/xx/2012 - v1.0-alpha
+	* NEW: ftp client completed
+	* NEW: ftp server completed
+	* NEW: gtk gui for ftp client (GTK+ v3.4) completed
+	
+xx/xx/2012 - v1.0-beta
+	* FIXED: all bugs ;)
+	* ADDED: documentation
+
+xx/xx/2012 - v1.0
+	* Stable release :)
