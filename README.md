@@ -7,7 +7,7 @@ Esso sarà presentato come progetto per il corso di Reti di Calcolatori (apparte
 * Filippo Roncari
 * Stefano Agostini
 
-I nostri ringraziamenti più sentiti vanno al professore Claudio A. Ardagna per la sua disponibilità e la sua pazienza :)
+I nostri più sentiti ringraziamenti vanno al professore Claudio A. Ardagna per la sua disponibilità e la sua pazienza :)
 
 Requisiti
 ---------
