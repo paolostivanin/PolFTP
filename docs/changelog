@@ -1,6 +1,9 @@
-xx/xx/2012 - v1.0-alpha
+xx/xx/2012 - v1.0-alpha1
 	* NEW: ftp client completed
 	* NEW: ftp server completed
+	* NEW: gtk gui for ftp client (GTK+ v3.4) completed
+
+xx/xx/2012 - v1.0-alpha2 (not totally sure about GUI)
 	* NEW: gtk gui for ftp client (GTK+ v3.4) completed
 	
 xx/xx/2012 - v1.0-beta

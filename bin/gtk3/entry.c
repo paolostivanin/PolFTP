@@ -1,3 +1,10 @@
+/* Descrizione: GUI Client FTP sviluppato come progetto per il corso di Reti di Calcolatori (laurea SSRI presso DTI Crema)
+ * Sviluppatori: Paolo Stivanin, Filippo Roncari, Stefano Agostini.
+ * Anno: 2012
+ * Licenza: GNU AGPL v3 <http://www.gnu.org/licenses/agpl-3.0.html>
+ * Sito web: <https://github.com/polslinux/FTPUtils> */
+
+
 #include <gtk/gtk.h>
 
 /* When "connect" button is clicked a message will appear */
@@ -44,7 +51,7 @@ label_pass = gtk_label_new("Password  ");
 
 /* Add hostname entry and label */
 h_name = gtk_entry_new();
-gtk_entry_set_placeholder_text (GTK_ENTRY (h_name), "Hostname");
+gtk_entry_set_placeholder_text (GTK_ENTRY (h_name), "Hostname"); /* imposto il testo trasparente che scompare quando clicco o scrivo */
 gtk_grid_attach (GTK_GRID (grid), label_host, 0, 0, 1, 1);
 gtk_grid_attach (GTK_GRID (grid), h_name, 1, 0, 1, 1);
 
