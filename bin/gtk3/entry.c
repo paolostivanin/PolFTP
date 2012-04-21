@@ -44,16 +44,19 @@ label_pass = gtk_label_new("Password  ");
 
 /* Add hostname entry and label */
 h_name = gtk_entry_new();
+gtk_entry_set_placeholder_text (GTK_ENTRY (h_name), "Hostname");
 gtk_grid_attach (GTK_GRID (grid), label_host, 0, 0, 1, 1);
 gtk_grid_attach (GTK_GRID (grid), h_name, 1, 0, 1, 1);
 
 /* Add username entry and label */
 u_name = gtk_entry_new();
+gtk_entry_set_placeholder_text (GTK_ENTRY (u_name), "Username");
 gtk_grid_attach (GTK_GRID (grid), label_user, 0, 1, 1, 1);
 gtk_grid_attach (GTK_GRID (grid), u_name, 1, 1, 2, 1);
 
 /* Add password entry and label (visibility set to 0 = not visible */
 pass = gtk_entry_new();
+gtk_entry_set_placeholder_text (GTK_ENTRY (pass), "Password");
 gtk_grid_attach (GTK_GRID (grid), label_pass, 0, 2, 1, 1);
 gtk_entry_set_visibility (GTK_ENTRY (pass), 0);
 gtk_grid_attach (GTK_GRID (grid), pass, 1, 2, 1, 1);
