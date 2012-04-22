@@ -25,4 +25,4 @@ Tutto il software è rilasciato sotto licenza GNU AGPL v3 (un estratto è presen
 Sito web
 --------
 
-Del progetto: <https://github.com/polslinux/FTPUtils>
+<https://github.com/polslinux/FTPUtils>
