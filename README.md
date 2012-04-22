@@ -7,20 +7,21 @@ Esso sarà presentato come progetto per il corso di Reti di Calcolatori (apparte
 * Filippo Roncari
 * Stefano Agostini
 
-I nostri più sentiti ringraziamenti vanno al professore Claudio A. Ardagna per la sua disponibilità e la sua pazienza :)
-
 Requisiti
 ---------
 
 * GCC    : per compilare i programmi
 * GTK+	 : per l'interfaccia grafica (**versione >=3.4.0**)
-* Unix	 : i software sono stati sviluppati su ambienti Unix (GNU/Linux e Mac OS X) quindi potrebbero presentare problemi in fase di compilazioni su ambienti Microsoft Windows.
+* UNIX	 : i software sono stati sviluppati su ambienti Unix (GNU/Linux e Mac OS X) quindi potrebbero presentare problemi in fase di compilazioni su ambienti Microsoft Windows.
 
 Licenza
 -------
 
-Tutto il software è rilasciato sotto licenza GNU AGPL v3 (un estratto è presente nella cartella principale del programma)
-<http://www.gnu.org/licenses/agpl-3.0.html>
+Il software è rilasciato sotto due tipi di licenza, una per il client e l'altra per il server.<br>
+Il client FTP è rilasciato sotto licenza GPL:<br>
+<http://www.gnu.org/licenses/gpl-3.0.html><br>
+mentre il server FTP è rilasciato sotto licenza AGPL:<br>
+<http://www.gnu.org/licenses/agpl-3.0.html><br>
 
 Sito web
 --------
