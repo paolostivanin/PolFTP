@@ -9,37 +9,60 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h> 
+#include <string.h>
+#include <termios.h>
 
 int main(){
 	char *host, *user, *pass;
 
-	host = malloc(64 * sizeof(char)); /* spazio per 64 caratteri */
-	if(host == NULL){
-		printf("\n--> ERRORE: memoria non allocata\n");
-		return EXIT_FAILURE;
-	}
+	host = malloc(64); /* spazio per max 64 caratteri */
+	if(!host) abort(); /* se malloc ritorna NULL allora termino l'esecuzione */
+	host[63] = '\0'; /* evitare un tipo di buffer overflow impostando l'ultimo byte come NUL byte */
 
-	user = malloc(64 * sizeof(char)); /* spazio per 64 caratteri */
-	if(user == NULL){
-		printf("\n--> ERRORE: memoria non allocata\n");
-		return EXIT_FAILURE;
-	}
+	user = malloc(64);
+	if(!user) abort();
+	user[63] = '\0';
 
-	pass = malloc(64 * sizeof(char)); /* spazio per 64 caratteri */
-	if(pass == NULL){
-		printf("\n--> ERRORE: memoria non allocata\n");
-		return EXIT_FAILURE;
-	}
+	pass = malloc(64);
+	if(!pass) abort();
+	pass[63] = '\0';
 
 	/* Immissione di hostname, username e password */
-	puts("--> Inserisci <hostname username>:");
-	scanf("%s %s", host,user);
-	pass = getpass("--> Inserisci password: ");
+	fprintf(stdout,"--> Inserisci <hostname username>: ");
+	fscanf(stdin, "%s %s", host, user);
+	fprintf(stdout, "\n--> Inserisci <password>: ");
 	
+	/* Grazie a termios.h posso disabilitare l'echoing del terminale (password nascosta) */
+	struct termios term, term_orig;
+    tcgetattr(STDIN_FILENO, &term);
+    term_orig = term;
+    term.c_lflag &= ~ECHO;
+    tcsetattr(STDIN_FILENO, TCSANOW, &term);
+    /* -- */
+    fscanf(stdin, "%s", pass);
+    
+    /* Reimposto il terminale allo stato originale (altrimenti echoing resta disabilitato */
+    tcsetattr(STDIN_FILENO, TCSANOW, &term_orig);
+	
+	if((strlen(host)+1) > 64){ /* controllo la lunghezza della stringa inserita (+1 per carattere terminazione \0) */
+		fprintf(stderr,"\n--> ERRORE: La stringa deve essere minore di 64 caratteri.\n");
+		return EXIT_FAILURE;
+	}
+	
+	if((strlen(user)+1) > 64){
+		fprintf(stderr,"\n--> ERRORE: La stringa deve essere minore di 64 caratteri.\n");
+		return EXIT_FAILURE;
+	}
+	
+	if((strlen(pass)+1) > 64){
+		fprintf(stderr,"\n--> ERRORE: La stringa deve essere minore di 64 caratteri.\n");
+		return EXIT_FAILURE;
+	}
 	/* Stampo a video le informazioni immesse */
-	printf("Host: %s\nUser: %s\nPass: %s\n", host,user,pass);
+	fprintf(stdout, "Host: %s\nUser: %s\nPass: %s\n", host,user,pass); /* trovare metodo più sicuro per password */
 
-	/* Libero la memoria occupata */
+	/* Azzero il buffer della password e libero la memoria occupata */
+	memset(pass,0,strlen(pass));
 	free(host);
 	free(user);
 	free(pass);
