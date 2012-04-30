@@ -1,6 +1,6 @@
 /* Descrizione: Client FTP sviluppato come progetto per il corso di Reti di Calcolatori (laurea SSRI presso DTI Crema)
  * Sviluppatori: Paolo Stivanin, Filippo Roncari, Stefano Agostini.
- * Anno: 2012
+ * Copyright: 2012
  * Licenza: GNU GPL v3 <http://www.gnu.org/licenses/gpl-3.0.html>
  * Sito web: <https://github.com/polslinux/FTPUtils>
  */
@@ -30,9 +30,9 @@ int main(){
 
 	/* Immissione di hostname, username e password */
 	fprintf(stdout,"--> Inserisci <hostname>: ");
-	fscanf(stdin, "%63s", host);
+	fscanf(stdin, "%s", host);
 	fprintf(stdout,"\n--> Inserisci <username>: ");
-	fscanf(stdin, "%63s", user);
+	fscanf(stdin, "%s", user);
 	fprintf(stdout, "\n--> Inserisci <password>: ");
 	
 	/* Grazie a termios.h posso disabilitare l'echoing del terminale (password nascosta) */
@@ -42,7 +42,7 @@ int main(){
     	term.c_lflag &= ~ECHO;
     	tcsetattr(STDIN_FILENO, TCSANOW, &term);
     	/* -- */
-    	fscanf(stdin, "%63s", pass);
+    	fscanf(stdin, "%s", pass);
     
     	/* Reimposto il terminale allo stato originale (altrimenti l'echoing resta disabilitato) */
     	tcsetattr(STDIN_FILENO, TCSANOW, &term_orig);
@@ -63,7 +63,7 @@ int main(){
 	}
 	
 	/* Stampo a video le informazioni immesse */
-	fprintf(stdout, "Host: %s\nUser: %s\nPass: %s\n", host,user,pass);
+	fprintf(stdout, "\nHost: %s\nUser: %s\nPass: %s\n", host,user,pass);
 
 	/* Azzero il buffer della password e libero la memoria occupata */
 	memset(pass,0,(strlen(pass)+1));

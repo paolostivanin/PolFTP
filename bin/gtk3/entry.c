@@ -1,6 +1,6 @@
 /* Descrizione: GUI del Client FTP sviluppato come progetto per il corso di Reti di Calcolatori
  * Sviluppatori: Filippo Roncari, Paolo Stivanin, Stefano Agostini 
- * Anno: 2012
+ * Copyright: 2012
  * Licenza: GNU GPL v3 <http://www.gnu.org/licenses/gpl-3.0.html>
  * Sito web: <https://github.com/polslinux/FTPUtils>
  */
