@@ -1,5 +1,5 @@
 /* Descrizione: Client FTP sviluppato come progetto per il corso di Reti di Calcolatori (laurea SSRI presso DTI Crema)
- * Sviluppatori: Paolo Stivanin, Filippo Roncari, Stefano Agostini.
+ * Sviluppatori: Filippo Roncari, Paolo Stivanin, Stefano Agostini.
  * Copyright: 2012
  * Licenza: GNU GPL v3 <http://www.gnu.org/licenses/gpl-3.0.html>
  * Sito web: <https://github.com/polslinux/FTPUtils>
@@ -16,9 +16,8 @@
 #include <netdb.h>
 #include <netinet/in.h>
 
-char validate_input(char *h, char *u, char *p);
-void disable_term(void);
-void enable_term(void);
+void validate_input(const char *h, const char *u, const char *p);
+void get_pass(char *p);
 
 int main(){
 	
@@ -36,16 +35,19 @@ int main(){
 	if(!pass) abort();
 	pass[63] = '\0';
 
-	/* Immissione di hostname, username e password */
+	/* Immissione di hostname, username e password; controllo inoltre i 'return code' dei vari fscanf e, se non sono 0, esco */
 	fprintf(stdout,"--> Inserisci <hostname>: ");
-	fscanf(stdin, "%s", host);
+	if(fscanf(stdin, "%s", host) == EOF){
+		fprintf(stdout, "\nErrore, impossibile leggere i dati\n");
+		exit(EXIT_FAILURE);
+	}
 	fprintf(stdout,"\n--> Inserisci <username>: ");
-	fscanf(stdin, "%s", user);
+	if(fscanf(stdin, "%s", user) == EOF){
+		fprintf(stdout, "\nErrore, impossibile leggere i dati\n");
+		exit(EXIT_FAILURE);
+	};
 	fprintf(stdout, "\n--> Inserisci <password>: ");
-	
-	disable_term();
-    	fscanf(stdin, "%s", pass);
-	enable_term();
+	get_pass(pass);
 	
 	validate_input(host,user,pass);
 	
@@ -61,36 +63,37 @@ int main(){
 	return EXIT_SUCCESS;
 }
 
-char validate_input(char *h, char *u, char *p){
+void validate_input(const char *h, const char *u, const char *p){
 	/* controllo la lunghezza delle stringhe inserite (+1 per carattere terminazione \0) */
 	if((strlen(h)+1) > 64){
 		fprintf(stderr,"\n--> ERRORE: L'hostname deve essere minore di 64 caratteri.\n");
-		return EXIT_FAILURE;
+		exit(EXIT_FAILURE);
 	}
 	
 	if((strlen(u)+1) > 64){
 		fprintf(stderr,"\n--> ERRORE: Lo username deve essere minore di 64 caratteri.\n");
-		return EXIT_FAILURE;
+		exit(EXIT_FAILURE);
 	}
 	
 	if((strlen(p)+1) > 64){
 		fprintf(stderr,"\n--> ERRORE: La password deve essere minore di 64 caratteri.\n");
-		return EXIT_FAILURE;
+		exit(EXIT_FAILURE);
 	}
 }
 
-void disable_term(){
+void get_pass(char *p){
 	/* Grazie a termios.h posso disabilitare l'echoing del terminale (password nascosta) */
 	struct termios term, term_orig;
    	tcgetattr(STDIN_FILENO, &term);
     	term_orig = term;
     	term.c_lflag &= ~ECHO;
     	tcsetattr(STDIN_FILENO, TCSANOW, &term);
-}
-
-void enable_term(){
-    	/* Reimposto il terminale allo stato originale (altrimenti l'echoing resta disabilitato) */
-    	struct termios term, term_orig;
+    	/* Leggo la password e controllo il 'return code' di fscanf */
+    	if(fscanf(stdin, "%s", p) == EOF){
+		fprintf(stdout, "\nErrore, impossibile leggere i dati\n");
+		tcsetattr(STDIN_FILENO, TCSANOW, &term_orig);
+		exit(EXIT_FAILURE);
+	};
+    	/* Reimposto il terminale allo stato originale */
     	tcsetattr(STDIN_FILENO, TCSANOW, &term_orig);
 }
-
