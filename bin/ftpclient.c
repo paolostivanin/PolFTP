@@ -16,40 +16,46 @@
 #include <netdb.h>
 #include <netinet/in.h>
 
-void validate_input(const char *h, const char *u, const char *p);
-void get_pass(char *p);
+void get_pass(char **pass);
 
 int main(){
 	
-	char *host, *user, *pass;
+	char *host, *user, *pass=NULL;
 
-	host = malloc(64); /* spazio per max 64 caratteri */
-	if(!host) abort(); /* se malloc ritorna NULL allora termino l'esecuzione */
-	host[63] = '\0';   /* evitare un tipo di buffer overflow impostando l'ultimo byte come NUL byte */
+	host = (char *) calloc(64, sizeof(char)); /* spazio per max 64 caratteri e inizializzo a 0 (maggior sicurezza) */
+	if(!host){
+		fprintf(stdout, "\nErrore di allocazione della memoria\n");
+		exit(EXIT_FAILURE);
+	}; 		   /* se malloc ritorna NULL allora termino l'esecuzione */
 
-	user = malloc(64);
-	if(!user) abort();
-	user[63] = '\0';
+	user = (char *) calloc(64, sizeof(char));
+	if(!user){
+		fprintf(stdout, "\nErrore di allocazione della memoria\n");
+		exit(EXIT_FAILURE);
+	};
 
-	pass = malloc(64);
-	if(!pass) abort();
-	pass[63] = '\0';
+	pass = (char *) calloc(64, sizeof(char));
+	if(!pass){
+		fprintf(stdout, "\nErrore di allocazione della memoria\n");
+		exit(EXIT_FAILURE);
+	};
 
-	/* Immissione di hostname, username e password; controllo inoltre i 'return code' dei vari fscanf e, se non sono 0, esco */
-	fprintf(stdout,"--> Inserisci <hostname>: ");
-	if(fscanf(stdin, "%s", host) == EOF){
+	/* Immissione di hostname, username e password.
+	 * Controllo inoltre i 'return code' dei vari fscanf e, se non sono 0, esco.
+	 * Per evitare buffer overflow imposto limite massimo a 64 caratteri
+	 */
+	fprintf(stdout,"--> Inserisci hostname: ");
+	if(fscanf(stdin, "%63s", host) == EOF){
 		fprintf(stdout, "\nErrore, impossibile leggere i dati\n");
 		exit(EXIT_FAILURE);
 	}
-	fprintf(stdout,"\n--> Inserisci <username>: ");
-	if(fscanf(stdin, "%s", user) == EOF){
+	fprintf(stdout,"\n--> Inserisci username: ");
+	if(fscanf(stdin, "%63s", user) == EOF){
 		fprintf(stdout, "\nErrore, impossibile leggere i dati\n");
 		exit(EXIT_FAILURE);
 	};
-	fprintf(stdout, "\n--> Inserisci <password>: ");
-	get_pass(pass);
-	
-	validate_input(host,user,pass);
+	fprintf(stdout, "\n--> Inserisci password: ");
+	get_pass(&pass);
 	
 	/* Stampo a video le informazioni immesse */
 	fprintf(stdout, "\n\nHost: %s\nUser: %s\nPass: %s\n\n", host,user,pass);
@@ -63,25 +69,7 @@ int main(){
 	return EXIT_SUCCESS;
 }
 
-void validate_input(const char *h, const char *u, const char *p){
-	/* controllo la lunghezza delle stringhe inserite (+1 per carattere terminazione \0) */
-	if((strlen(h)+1) > 64){
-		fprintf(stderr,"\n--> ERRORE: L'hostname deve essere minore di 64 caratteri.\n");
-		exit(EXIT_FAILURE);
-	}
-	
-	if((strlen(u)+1) > 64){
-		fprintf(stderr,"\n--> ERRORE: Lo username deve essere minore di 64 caratteri.\n");
-		exit(EXIT_FAILURE);
-	}
-	
-	if((strlen(p)+1) > 64){
-		fprintf(stderr,"\n--> ERRORE: La password deve essere minore di 64 caratteri.\n");
-		exit(EXIT_FAILURE);
-	}
-}
-
-void get_pass(char *p){
+void get_pass(char **pass){
 	/* Grazie a termios.h posso disabilitare l'echoing del terminale (password nascosta) */
 	struct termios term, term_orig;
    	tcgetattr(STDIN_FILENO, &term);
@@ -89,7 +77,7 @@ void get_pass(char *p){
     	term.c_lflag &= ~ECHO;
     	tcsetattr(STDIN_FILENO, TCSANOW, &term);
     	/* Leggo la password e controllo il 'return code' di fscanf */
-    	if(fscanf(stdin, "%s", p) == EOF){
+    	if(fscanf(stdin, "%63s", *pass) == EOF){
 		fprintf(stdout, "\nErrore, impossibile leggere i dati\n");
 		tcsetattr(STDIN_FILENO, TCSANOW, &term_orig);
 		exit(EXIT_FAILURE);
