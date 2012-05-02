@@ -60,8 +60,7 @@ int main(){
 	/* Stampo a video le informazioni immesse */
 	fprintf(stdout, "\n\nHost: %s\nUser: %s\nPass: %s\n\n", host,user,pass);
 
-	/* Azzero il buffer della password e libero la memoria occupata */
-	memset(pass,0,(strlen(pass)+1));
+	/* Libero la memoria occupata */
 	free(host);
 	free(user);
 	free(pass);
