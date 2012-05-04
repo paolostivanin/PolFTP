@@ -63,16 +63,8 @@ int main(){
 	/* Stampo a video le informazioni immesse */
 	fprintf(stdout, "\n\nHost: %s\nUser: %s\nPass: %s\n\n", host,user,pass);
 
-<<<<<<< HEAD
-	/* Libero la memoria occupata */
-	free(host);
-	free(user);
-	free(pass);
-
-=======
 	free_memory(host,user,pass);
 	
->>>>>>> experimental
 	return EXIT_SUCCESS;
 }
 
