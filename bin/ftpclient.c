@@ -8,87 +8,76 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
+#include <unistd.h>
 #include <termios.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <netinet/in.h>
 
-void get_pass(char **host, char **user, char **pass);
-void free_memory(char *h, char *u, char *p);
+void getinfo(unsigned int a, unsigned int b, char **pStr, const int d);
 
 int main(){
-	
-	char *host, *user, *pass;
-
-	host = (char *) calloc(64, sizeof(char)); /* spazio per max 64 caratteri e inizializzo a 0 (maggior sicurezza) */
-	if(!host){
-		fprintf(stdout, "\nErrore di allocazione della memoria\n");
-		exit(EXIT_FAILURE);
-	};
-
-	user = (char *) calloc(64, sizeof(char));
-	if(!user){
-		fprintf(stdout, "\nErrore di allocazione della memoria\n");
-		exit(EXIT_FAILURE);
-	};
-
-	pass = (char *) calloc(64, sizeof(char));
-	if(!pass){
-		fprintf(stdout, "\nErrore di allocazione della memoria\n");
-		exit(EXIT_FAILURE);
-	};
-
-	/* Immissione di hostname, username e password.
-	 * Controllo inoltre i 'return code' dei vari fscanf e, se non sono 0, esco.
-	 * Per evitare buffer overflow imposto limite massimo a 64 caratteri
-	 */
-	fprintf(stdout,"--> Inserisci hostname (max 64 caratteri): ");
-	if(fscanf(stdin, "%63s", host) == EOF){
-		fprintf(stdout, "\nErrore, impossibile leggere i dati\n");
-		free_memory(host,user,pass);
-		exit(EXIT_FAILURE);
-	}
-	fprintf(stdout,"\n--> Inserisci username (max 64 caratteri): ");
-	if(fscanf(stdin, "%63s", user) == EOF){
-		fprintf(stdout, "\nErrore, impossibile leggere i dati\n");
-		free_memory(host,user,pass);
-		exit(EXIT_FAILURE);
-	};
-	fprintf(stdout, "\n--> Inserisci password (max 64 caratteri): ");
-	get_pass(&host,&user,&pass);
-	
-	/* Stampo a video le informazioni immesse */
-	fprintf(stdout, "\n\nHost: %s\nUser: %s\nPass: %s\n\n", host,user,pass);
-
-	free_memory(host,user,pass);
-	
-	return EXIT_SUCCESS;
+    unsigned int len_max = 8;
+    unsigned int current_size = 0;
+    current_size = len_max;
+    char *host, *user, *pass;
+    char *pStr = malloc(len_max);
+    if(pStr == NULL){
+        perror("\nMemory allocation\n");
+        abort();
+    }
+    printf("Inserisci hostname: ");
+    getinfo(len_max, current_size, &pStr, 0);
+    if((host=malloc(strlen(pStr)+1 * sizeof(char))) == NULL) abort();
+    strncpy(host, pStr, strlen(pStr)+1);
+    printf("\nInserisci username: ");
+    getinfo(len_max, current_size, &pStr, 0);
+    if((user=malloc(strlen(pStr)+1 * sizeof(char))) == NULL) abort();
+    strncpy(user, pStr, strlen(pStr)+1);
+    printf("\nInserisci password: ");
+    getinfo(len_max, current_size, &pStr, 1);
+    if((pass=malloc(strlen(pStr)+1 * sizeof(char))) == NULL) abort();
+    strncpy(pass, pStr, strlen(pStr)+1);
+    printf("\n\nHostname: %s\nUsername: %s\nPassword: %s\n", host, user, pass);
+    free(pStr);
+    free(host);
+    free(user);
+    free(pass);
+    return EXIT_SUCCESS;
 }
 
-void get_pass(char **host, char **user, char **pass){
-	/* Grazie a termios.h posso disabilitare l'echoing del terminale (password nascosta) */
-	struct termios term, term_orig;
+void getinfo(unsigned int a, unsigned int b, char **pStr, const int d){
+    unsigned int i = 0;
+    int c = EOF;
+    if(d == 1){
+    	struct termios term, term_orig;
    	tcgetattr(STDIN_FILENO, &term);
     	term_orig = term;
     	term.c_lflag &= ~ECHO;
     	tcsetattr(STDIN_FILENO, TCSANOW, &term);
-    	/* Leggo la password e controllo il 'return code' di fscanf */
-    	if(fscanf(stdin, "%63s", *pass) == EOF){
-		fprintf(stdout, "\nErrore, impossibile leggere i dati\n");
-		tcsetattr(STDIN_FILENO, TCSANOW, &term_orig);
-		free_memory(*host, *user, *pass);
-		exit(EXIT_FAILURE);
-	};
-    	/* Reimposto il terminale allo stato originale */
+    	while((c = getchar()) != '\n'){
+        	(*pStr)[i++] = (char)c;
+        	if(i == b){
+           		b = i+a;
+            		if((*pStr = realloc(*pStr, b)) == NULL){
+                		perror("\nMemory allocation error\n");
+                		tcsetattr(STDIN_FILENO, TCSANOW, &term_orig);
+                		abort();
+            		}
+        	}
+    	}
+    	(*pStr)[i]='\0';
     	tcsetattr(STDIN_FILENO, TCSANOW, &term_orig);
-}
-
-void free_memory(char *h, char *u, char *p){
-	/* Libero la memoria occupata */
-	free(h);
-	free(u);
-	free(p);
+    }
+    else{
+    	while((c = getchar()) != '\n'){
+        	(*pStr)[i++] = (char)c;
+        	if(i == b){
+           		b = i+a;
+            		if((*pStr = realloc(*pStr, b)) == NULL){
+                		perror("\nMemory allocation error\n");
+                		abort();
+            		}
+        	}
+    	}
+    	(*pStr)[i]='\0';
+    }
 }
