@@ -1,13 +1,13 @@
-xx/06/2012 - v1.0-alpha1
-	* NEW: ftp client completed
+??/??/2012 - v1.0-alpha1
 	* NEW: ftp server completed
 
-xx/xx/2012 - v1.0-alpha2 (not totally sure that will be this release)
-	* NEW: gtk (v3.4) gui for ftp client completed
+??/??/2012 - v1.0-alpha2 (not totally sure about this release)
+	* NEW: ftp client
+	* NEW: gtk ui for ftp client
 	
-xx/xx/2012 - v1.0-beta
+??/??/2012 - v1.0-beta
 	* FIXED: all possible bugs
 	* ADDED: documentation
 
-xx/xx/2012 - v1.0
+??/??/2012 - v1.0
 	* Stable release
