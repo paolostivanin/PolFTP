@@ -9,7 +9,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <pthread.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -17,37 +16,44 @@
 #include <arpa/inet.h>
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
-#include <errno.h>
-#include <arpa/inet.h>
 #include <dirent.h>
-#include <net/if.h>  
+#include <net/if.h>
 
+#define MAXCOUNT 1024
 
-#define BUFFERSIZE 50
-#define PORT 21
-#define LINK_NUM 2
+int main(int argc, char* argv[])
+{
+    int sfd,nsfd,cn;
+    pid_t c;
+    char buf[MAXCOUNT];
+    socklen_t clen;
+    struct sockaddr_in caddr,saddr;
 
-#define USER 0
-#define PASS 1
-#define SYST 2
-#define TYPE 3
-#define PWD  4
-#define CWD  5
-#define PASV 6
-#define PORTN 7
-#define LIST 8
-#define RETR 9
-#define STOR 10
-#define QUIT 11
-#define DELE 12
-#define MKD 13
-#define UNKOWN 13
+    sfd = socket(AF_INET,SOCK_STREAM,0);
+    memset(&saddr,0,sizeof(saddr));
+    saddr.sin_family = AF_INET;
+    saddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    saddr.sin_port = htons(7500);
 
-#define CMDNOTFOUNT -1
-#define CMDNUM 14
-#define WLAN_NAME "wlan0"
+    bind(sfd,(struct sockaddr*) &saddr,0);
 
-const char* commands[] = {"USER","PASS","SYST","TYPE","PWD","CWD","PASV","PORT","LIST","RETR","STOR","QUIT","DELE","MKD"};
-
-int main(){
+    listen(sfd,10);
+    for (; ;) {
+        clen = sizeof(caddr);
+        nsfd = accept(sfd,(struct sockaddr*) &caddr, &clen);
+        if( (c = fork()) == 0) {
+            close(sfd);
+            memset(buf,0,sizeof(buf));
+            cn = recv(nsfd,buf,sizeof(buf),0);
+            if ( cn == 0) {
+                perror("Reading from the client socket failed\n PROGRAM CRASH :\n");
+                exit(1);
+            }
+            buf[cn] = '\0';
+            send(nsfd,buf,strlen(buf),0);
+            close(nsfd);
+            exit(0);
+        }
+    }
+    return 0;
 }
