@@ -1,5 +1,5 @@
 /* Descrizione: Client FTP sviluppato come progetto per il corso di Reti di Calcolatori (laurea SSRI presso DTI Crema)
- * Sviluppatori: Filippo Roncari, Paolo Stivanin, Stefano Agostini
+ * Sviluppatori: Filippo Roncari e Paolo Stivanin
  * Copyright: 2012
  * Licenza: GNU GPL v3 <http://www.gnu.org/licenses/gpl-3.0.html>
  * Sito web: <https://github.com/polslinux/FTPUtils>

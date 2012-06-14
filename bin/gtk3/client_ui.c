@@ -27,7 +27,6 @@ static void a_clicked (GtkWidget *a_dialog, gpointer data){
 	{
 		"Filippo Roncari",
 		"Paolo Stivanin",
-		"Stefano Agostini",
 		NULL,
 	};
 
@@ -49,8 +48,7 @@ static void a_clicked (GtkWidget *a_dialog, gpointer data){
 	gtk_about_dialog_set_website (GTK_ABOUT_DIALOG (a_dialog), "https://github.com/polslinux/FTPUtils");
 	gtk_about_dialog_set_authors (GTK_ABOUT_DIALOG (a_dialog), authors);
 
-  
-	gtk_dialog_run(GTK_DIALOG (a_dialog)); /* Avvio il dialog a_dialog */
+  	gtk_dialog_run(GTK_DIALOG (a_dialog)); /* Avvio il dialog a_dialog */
 	gtk_widget_destroy(a_dialog); /* Alla pressione del pulsante chiudi il widget viene chiuso */
 }
 
@@ -81,8 +79,10 @@ int main (int argc, char *argv[]){
 	gtk_window_set_title (GTK_WINDOW (window), "FTP Client");
 	gtk_window_set_position (GTK_WINDOW(window), GTK_WIN_POS_CENTER);
 	gtk_window_set_default_size (GTK_WINDOW(window), 350, 250);
+	
 	/* Quando premiamo chiudi si 'disturgge' tutto */
 	g_signal_connect (window, "destroy", G_CALLBACK (gtk_main_quit), NULL);
+	
 	/* Impostiamo il bordo e dichiariamo le finestra ridimensionabile */
 	gtk_container_set_border_width (GTK_CONTAINER (window), 10);
 	gtk_window_set_resizable(GTK_WINDOW(window), TRUE);
