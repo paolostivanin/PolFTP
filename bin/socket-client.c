@@ -56,7 +56,7 @@ int main(int argc, char *argv[]){
 		// e li memorizza sul file 
 		write(fd, Buffer, nread);
 	}
-	printf("%s\n", Buffer);
+	printf("File ricevuto\n");
 	close(DescrittoreClient);
 	return EXIT_SUCCESS;
 }
