@@ -7,5 +7,5 @@ ftpclient: bin/ftpclient.c
 	
 ftpclient_gui: bin/gtk3/entry.c
 	@echo "--> Compiling gui..."
-	@gcc -Wall -g -O1 -o ftpclient_gui bin/gtk3/entry.c  `pkg-config --cflags --libs gtk+-3.0`
+	@gcc -Wall -g -O1 -o ftpclient_gui bin/gtk3/client_ui.c  `pkg-config --cflags --libs gtk+-3.0`
 	@echo "--> ...done!"
