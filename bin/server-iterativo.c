@@ -14,17 +14,18 @@
 
 int main(int argc, char *argv[]){
 	if(argc != 2){
-		perror("./server <numero porta>\n");
+		printf("Uso: ./server <numero porta>\n");
 		exit(1);
 	}
 	int DescrittoreServer, DescrittoreClient, LunghezzaClient;
 	int NumPorta = atoi(argv[1]);
 	struct sockaddr_in serv_addr, cli_addr; /* indirizzo del server e del client */
-	char Buffer[1024] = {};
-	int rc, fd;
+	//char Buffer[1024] = {};
+	int rc, fd, ret_val;
 	off_t offset = 0;
 	struct stat stat_buf;
 	char filename[1024] = {};
+	size_t fsize;
 	
 	DescrittoreServer = socket(AF_INET, SOCK_STREAM, 0);
 	if(DescrittoreServer < 0){
@@ -47,7 +48,7 @@ int main(int argc, char *argv[]){
 	LunghezzaClient = sizeof(cli_addr);
 	while(1){
 		/* int accept(int descrittore_socket, struct sockaddr* indirizzo, int* lunghezza_record_indirizzo) */
-		DescrittoreClient = accept(DescrittoreServer, (struct sockaddr *) &cli_addr, &LunghezzaClient);
+		DescrittoreClient = accept(DescrittoreServer, (struct sockaddr *) &cli_addr, (socklen_t *) &LunghezzaClient);
 		if(DescrittoreClient < 0){
 			perror("Errore: non è possibile stabilire la connessione\n");
 			close(DescrittoreServer);
@@ -61,23 +62,16 @@ int main(int argc, char *argv[]){
       		fprintf(stderr, "recv failed: %s\n", strerror(errno));
       		exit(1);
     	}
-    	if((strcmp(filename, "exit")) == 0){
-    		printf("Esco dal server...\n");
-    		strcpy(Buffer, "Server chiuso");
-			send(DescrittoreClient, Buffer, strlen(Buffer), 0);
-    		close(DescrittoreClient);
-    		close(DescrittoreServer);
-    		exit(0);
-    	}
 
-    	/* null terminate and strip any \r and \n from filename */
+		/* Terminiamo il nome del file con NULL e se ultimo carattere è \n o \r lo cambiamo con \0*/
 		filename[rc] = '\0';
     	if (filename[strlen(filename)-1] == '\n')
     		filename[strlen(filename)-1] = '\0';
     	if (filename[strlen(filename)-1] == '\r')
     		filename[strlen(filename)-1] = '\0';
-    
-    	fprintf(stderr, "Ricevuta richiesta di inviare il file: '%s'\n", filename);
+
+    	/* inet_ntoa converte un hostname in un ip decimale puntato */
+    	fprintf(stderr, "Ricevuta richiesta di inviare il file '%s' dall' indirizzo %s\n", filename, inet_ntoa(cli_addr.sin_addr));
 
     	/* open the file to be sent */
     	fd = open(filename, O_RDONLY);
@@ -88,20 +82,26 @@ int main(int argc, char *argv[]){
 
     	/* get the size of the file to be sent */
     	fstat(fd, &stat_buf);
-
+    	fsize = stat_buf.st_size;
+    	ret_val = send(DescrittoreClient, &fsize, sizeof(fsize), 0);
+    	if(ret_val == -1){
+    		printf("Errore durante l'invio della grandezza del file\n");
+    		close(DescrittoreClient);
+			close(fd);
+			close(DescrittoreServer);
+    		exit(1);
+    	}
     	/* copy file using sendfile */
     	offset = 0;
-    	rc = sendfile(DescrittoreClient, fd, &offset, stat_buf.st_size);
+   		rc = sendfile(DescrittoreClient, fd, &offset, stat_buf.st_size);
     	if (rc == -1) {
       		fprintf(stderr, "Errore durante l'invio di: '%s'\n", strerror(errno));
       		exit(1);
     	}
-    	if (rc != stat_buf.st_size) {
+    	if (rc != fsize) {
       		fprintf(stderr, "Trasferimento incompleto: %d di %d bytes\n", rc, (int)stat_buf.st_size);
       		exit(1);
     	}
-		char *ip_address = inet_ntoa(cli_addr.sin_addr); /* inet_ntoa converte un hostname in un ip */
-		printf("IP del client: %s\n", ip_address);		
 
 		close(DescrittoreClient);
 		close(fd);
@@ -109,9 +109,3 @@ int main(int argc, char *argv[]){
 	close(DescrittoreServer);
 	return EXIT_SUCCESS;
 }
-
-/* bind assegna un indirizzo al socket.
------------------------------------------------
-INADDR_ANY è in indirizzo ip speciale che permette alla macchina di lavorare senza conoscere il proprio indirizzio IP
------------------------------------------------
-*/
