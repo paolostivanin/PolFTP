@@ -33,7 +33,7 @@ int main(int argc, char *argv[]){
 	struct hostent *hp; /* con la struttura hostent definisco l'hostname del server */
 	char *filename = argv[3];
 	size_t fsize, nread = 0;
-	int total_bytes_read = 0, ret_val, ret_val_wr;
+	int total_bytes_read = 0;
 	
 	hp = gethostbyname(argv[1]);
 	bzero((char *) &serv_addr, sizeof(serv_addr)); /* bzero scrive dei null bytes dove specificato per la lunghezza specificata */
@@ -41,23 +41,27 @@ int main(int argc, char *argv[]){
 	serv_addr.sin_port = htons(NumPorta); /* la porta */
 	serv_addr.sin_addr.s_addr = ((struct in_addr*)(hp->h_addr)) -> s_addr; /* memorizzo il tutto nella struttura serv_addr */
 	
-	DescrittoreClient = socket(AF_INET, SOCK_STREAM, 0);
-	if(DescrittoreClient < 0){
+	if((DescrittoreClient = socket(AF_INET, SOCK_STREAM, 0)) < 0){
 		perror("Errore nella creazione della socket");
 		exit(1);
 	}
-	connect(DescrittoreClient, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
-	if(connect < 0){
+
+	if(connect(DescrittoreClient, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0){
 		perror("Errore nella connessione");
 		close(DescrittoreClient);
 		exit(1);
 	}
 
 	strcpy(Buffer, filename);
-	send(DescrittoreClient, Buffer, strlen(Buffer), 0);
-	ret_val = read(DescrittoreClient, &fsize, sizeof(fsize));
-	if(ret_val == -1){
-		printf("Errore durante ricezione grandezza file\n");
+
+	if(send(DescrittoreClient, Buffer, strlen(Buffer), 0) < 0){
+		perror("Errore durante l'invio")
+		close(DescrizioneClient);
+		exit(1);
+	}
+
+	if(read(DescrittoreClient, &fsize, sizeof(fsize)) < 0){
+		perror("Errore durante ricezione grandezza file\n");
 		close(DescrittoreClient);
 		exit(1);
 	}
@@ -70,8 +74,11 @@ int main(int argc, char *argv[]){
 	
 	while(total_bytes_read < fsize){
 		while ((nread = read(DescrittoreClient, Buffer, sizeof(Buffer))) > 0){
-			ret_val_wr = write(fd, Buffer, nread);
-			if(ret_val_wr == -1) perror("write");
+			if(write(fd, Buffer, nread) < 0){
+				perror("write");
+				close(DescrittoreClient);
+				exit(1);
+			}
 			total_bytes_read += nread;
 		}
 	}

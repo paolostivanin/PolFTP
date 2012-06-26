@@ -18,6 +18,17 @@
 #include <fcntl.h>
 #include <sys/sendfile.h>
 #include <sys/stat.h>
+#include <signal.h>
+
+void sig_handler(int signo, int DescrittoreServer, int DescrittoreClient, int fd){
+	if (signo == SIGINT){
+		printf("Received SIGINT, exiting...\n");
+    	close(DescrittoreClient);
+		close(fd);
+		close(DescrittoreServer);
+		exit(1);
+    }
+}
 
 int main(int argc, char *argv[]){
 	if(argc != 2){
@@ -27,15 +38,13 @@ int main(int argc, char *argv[]){
 	int DescrittoreServer, DescrittoreClient, LunghezzaClient;
 	int NumPorta = atoi(argv[1]);
 	struct sockaddr_in serv_addr, cli_addr; /* indirizzo del server e del client */
-	//char Buffer[1024] = {};
-	int rc, fd, ret_val;
+	int rc, fd;
 	off_t offset = 0;
 	struct stat stat_buf;
 	char filename[1024] = {};
 	size_t fsize;
 	
-	DescrittoreServer = socket(AF_INET, SOCK_STREAM, 0);
-	if(DescrittoreServer < 0){
+	if((DescrittoreServer = socket(AF_INET, SOCK_STREAM, 0)) < 0){
 		perror("Errore creazione socket\n");
 		exit(1);
 	}
@@ -44,29 +53,32 @@ int main(int argc, char *argv[]){
 	serv_addr.sin_port = htons(NumPorta); /* porta htons converte nell'ordine dei byte di rete */
 	serv_addr.sin_addr.s_addr = INADDR_ANY; /* dato che è un server bisogna associargli l'indirizzo della macchina su cui sta girando */
 	
-	/* int bind(int descrittore_socket, struct sockaddr* indirizzo, int lunghezza_record_indirizzo) */
 	if(bind(DescrittoreServer, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0){
 		perror("Errore di bind\n");
 		close(DescrittoreServer);
 		exit(1);
 	}
-	/* int listen (int descrittore_socket, int dimensione_coda) */
-	listen(DescrittoreServer, 5);
+
+	if(listen(DescrittoreServer, 5) < 0){
+			perror("Errore nella funzione listen");
+    		close(DescrittoreServer);
+      		exit(1);
+	}
 	LunghezzaClient = sizeof(cli_addr);
+	signal (SIGINT, ( void *)sig_handler); 
 	while(1){
-		/* int accept(int descrittore_socket, struct sockaddr* indirizzo, int* lunghezza_record_indirizzo) */
-		DescrittoreClient = accept(DescrittoreServer, (struct sockaddr *) &cli_addr, (socklen_t *) &LunghezzaClient);
-		if(DescrittoreClient < 0){
-			perror("Errore: non è possibile stabilire la connessione\n");
+		if((DescrittoreClient = accept(DescrittoreServer, (struct sockaddr *) &cli_addr, (socklen_t *) &LunghezzaClient)) < 0){
+			perror("Errore nella connessione\n");
 			close(DescrittoreServer);
 			close(DescrittoreClient);
 			exit(1);
 		}
 
 		/* get the file name from the client */
-    	rc = recv(DescrittoreClient, filename, sizeof(filename), 0);
-    	if (rc == -1) {
-      		fprintf(stderr, "recv failed: %s\n", strerror(errno));
+    	if((rc = recv(DescrittoreClient, filename, sizeof(filename), 0)) < 0){
+    		perror("Errore nella ricezione del nome del file");
+    		close(DescrittoreClient);
+    		close(DescrittoreServer);
       		exit(1);
     	}
 
@@ -82,17 +94,22 @@ int main(int argc, char *argv[]){
 
     	/* open the file to be sent */
     	fd = open(filename, O_RDONLY);
-   	 	if (fd == -1) {
+   	 	if (fd < 0) {
     		fprintf(stderr, "Impossibile aprire '%s': %s\n", filename, strerror(errno));
     		exit(1);
     	}
 
     	/* get the size of the file to be sent */
-    	fstat(fd, &stat_buf);
+    	if(fstat(fd, &stat_buf) < 0){
+    		perror("Errore fstat");
+    		close(DescrittoreClient);
+    		close(fd);
+    		close(DescrittoreServer);
+      		exit(1);
+    	}
     	fsize = stat_buf.st_size;
-    	ret_val = send(DescrittoreClient, &fsize, sizeof(fsize), 0);
-    	if(ret_val == -1){
-    		printf("Errore durante l'invio della grandezza del file\n");
+    	if(send(DescrittoreClient, &fsize, sizeof(fsize), 0) < 0){
+    		perror("Errore durante l'invio della grandezza del file\n");
     		close(DescrittoreClient);
 			close(fd);
 			close(DescrittoreServer);
