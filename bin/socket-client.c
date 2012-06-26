@@ -1,3 +1,10 @@
+/* Descrizione: Client FTP sviluppato come progetto per il corso di Reti di Calcolatori
+ * Sviluppatore: Paolo Stivanin
+ * Copyright: 2012
+ * Licenza: GNU GPL v3 <http://www.gnu.org/licenses/gpl-3.0.html>
+ * Sito web: <https://github.com/polslinux/FTPUtils>
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -25,8 +32,8 @@ int main(int argc, char *argv[]){
 	char Buffer[1024] = {}; /* contiene i dati di invio e ricezione */
 	struct hostent *hp; /* con la struttura hostent definisco l'hostname del server */
 	char *filename = argv[3];
-	size_t fsize;
-	int total_bytes_read = 0, ret_val, ret_val_wr, nread=0;
+	size_t fsize, nread = 0;
+	int total_bytes_read = 0, ret_val, ret_val_wr;
 	
 	hp = gethostbyname(argv[1]);
 	bzero((char *) &serv_addr, sizeof(serv_addr)); /* bzero scrive dei null bytes dove specificato per la lunghezza specificata */

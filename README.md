@@ -2,8 +2,7 @@ FTPUtils
 ========
 
 FTPUtils è composto da un server e un client FTP sviluppati in C. L'interfaccia del client è scritta con le librerie GTK+.<br>
-Esso sarà presentato come progetto per il corso di Reti di Calcolatori (appartenente alla laurea in Sicurezza dei Sistemi e delle Reti Informatiche presso il DTI di Crema) dell'anno scolastico 2011/2012 dai seguenti studenti:
-* Filippo Roncari
+Esso sarà presentato come progetto per il corso di Reti di Calcolatori (appartenente alla laurea in Sicurezza dei Sistemi e delle Reti Informatiche presso il DTI di Crema) dell'anno scolastico 2011/2012 dallo studente:
 * Paolo Stivanin
 
 Requisiti
@@ -11,7 +10,7 @@ Requisiti
 
 * GCC    : per compilare i programmi
 * GTK+	 : per l'interfaccia grafica (**versione >=3.4.0**)
-* UNIX	 : i software sono stati sviluppati su ambienti Unix (GNU/Linux e Mac OS X) e quindi **non** compilano su ambienti Windows.
+* UNIX	 : i software sono stati sviluppati su ambienti GNU/Linux e quindi **non** compileranno su ambienti Windows.
 
 Licenza
 -------

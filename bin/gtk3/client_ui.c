@@ -1,5 +1,5 @@
 /* Descrizione: GUI del Client FTP sviluppato come progetto per il corso di Reti di Calcolatori
- * Sviluppatori: Filippo Roncari, Paolo Stivanin, Stefano Agostini 
+ * Sviluppatore: Paolo Stivanin
  * Copyright: 2012
  * Licenza: GNU GPL v3 <http://www.gnu.org/licenses/gpl-3.0.html>
  * Sito web: <https://github.com/polslinux/FTPUtils>
@@ -25,7 +25,6 @@ static void a_clicked (GtkWidget *a_dialog, gpointer data){
 
 	const gchar *authors[] = /* Qui definisco gli autori*/
 	{
-		"Filippo Roncari",
 		"Paolo Stivanin",
 		NULL,
 	};
