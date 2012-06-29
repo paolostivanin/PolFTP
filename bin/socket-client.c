@@ -40,6 +40,8 @@ int main(int argc, char *argv[]){
 	serv_addr.sin_family = AF_INET; /* la famiglia dei protocolli */
 	serv_addr.sin_port = htons(NumPorta); /* la porta */
 	serv_addr.sin_addr.s_addr = ((struct in_addr*)(hp->h_addr)) -> s_addr; /* memorizzo il tutto nella struttura serv_addr */
+
+	strcpy(Buffer, filename); /* copio il nome del file nel buffer */
 	
 	if((DescrittoreClient = socket(AF_INET, SOCK_STREAM, 0)) < 0){
 		perror("Errore nella creazione della socket");
@@ -52,11 +54,9 @@ int main(int argc, char *argv[]){
 		exit(1);
 	}
 
-	strcpy(Buffer, filename);
-
 	if(send(DescrittoreClient, Buffer, strlen(Buffer), 0) < 0){
-		perror("Errore durante l'invio")
-		close(DescrizioneClient);
+		perror("Errore durante l'invio");
+		close(DescrittoreClient);
 		exit(1);
 	}
 
