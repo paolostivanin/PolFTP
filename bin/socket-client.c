@@ -21,17 +21,19 @@
 int main(int argc, char *argv[]){
 	
 	/* Controllo che vi sia argv[0], argv[1] e argv[2] */
-	if(argc != 4){
-		printf("Uso: ./client <hostname> <numero porta> <nomefile>\n");
+	if(argc != 5){
+		printf("Uso: ./client <hostname> <numero porta> <nomeutente> <password>\n");
 		exit(1);
 	}
 
 	int DescrittoreClient, fd; /* descrittore del socket */
-	int NumPorta = atoi(argv[2]); /* numero di porta */
+	int Num//strcpy(Buffer, filename); /* copio il nome del file nel buffer */Porta = atoi(argv[2]); /* numero di porta */
 	struct sockaddr_in serv_addr; /* indirizzo del server */
 	char Buffer[1024] = {}; /* contiene i dati di invio e ricezione */
+	char *user = argv[3]; /* contiene nome utente */
+	char *pass = argv[4]; /* contiene password */
+	char loginbuffer[256];
 	struct hostent *hp; /* con la struttura hostent definisco l'hostname del server */
-	char *filename = argv[3];
 	size_t fsize, nread = 0;
 	int total_bytes_read = 0;
 	
@@ -41,7 +43,8 @@ int main(int argc, char *argv[]){
 	serv_addr.sin_port = htons(NumPorta); /* la porta */
 	serv_addr.sin_addr.s_addr = ((struct in_addr*)(hp->h_addr)) -> s_addr; /* memorizzo il tutto nella struttura serv_addr */
 
-	strcpy(Buffer, filename); /* copio il nome del file nel buffer */
+	//strcpy(Buffer, filename); /* copio il nome del file nel buffer */
+	sprintf(loginbuffer, "USER %s", user);
 	
 	if((DescrittoreClient = socket(AF_INET, SOCK_STREAM, 0)) < 0){
 		perror("Errore nella creazione della socket");
@@ -54,10 +57,18 @@ int main(int argc, char *argv[]){
 		exit(1);
 	}
 
-	if(send(DescrittoreClient, Buffer, strlen(Buffer), 0) < 0){
+	if(send(DescrittoreClient, loginbuffer, strlen(loginbuffer), 0) < 0){
 		perror("Errore durante l'invio");
 		close(DescrittoreClient);
 		exit(1);
+	}
+
+	if(read(DescrittoreClient, Buffer, sizeof(Buffer)) < 0){
+		perror("Errore durante ricezione grandezza file\n");
+		close(DescrittoreClient);
+		exit(1);
+	} else{
+		
 	}
 
 	if(read(DescrittoreClient, &fsize, sizeof(fsize)) < 0){
