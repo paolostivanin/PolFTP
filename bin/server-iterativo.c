@@ -34,7 +34,9 @@ int main(int argc, char *argv[]){
 	int rc, fd;
 	off_t offset = 0;
 	struct stat stat_buf;
-	char filename[1024] = {};
+	struct hostent *local_ip;
+	static char filename[1024], buffer[256]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
+	char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL;
 	size_t fsize;
 	
 	if((sockd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
@@ -56,6 +58,10 @@ int main(int argc, char *argv[]){
     		onexit(0, sockd, 0, 1);
 	}
 	LunghezzaClient = sizeof(cli_addr);
+	if((local_ip = gethostbyname("localhost")) == NULL){
+		herror("gethostbyname()");
+		exit(1);
+	}	
 	signal (SIGINT, ( void *)sig_handler); 
 	while(1){
 		if((newsockd = accept(sockd, (struct sockaddr *) &cli_addr, (socklen_t *) &LunghezzaClient)) < 0){
@@ -63,30 +69,78 @@ int main(int argc, char *argv[]){
 			onexit(newsockd, sockd, 0, 2);
 		}
 
-		/* get the file name from the client */
-    	if((rc = recv(newsockd, filename, sizeof(filename), 0)) < 0){
-    		perror("Errore nella ricezione del nome del file");
+    	/* inet_ntoa converte un hostname in un ip decimale puntato */
+    	fprintf(stdout, "Ricevuta richiesta di connessione dall' indirizzo %s\n", inet_ntoa(cli_addr.sin_addr));
+
+    	/************************* MESSAGGIO DI BENVENUTO *************************/
+    	sprintf(buffer, "220 FTPUtils SERVER [%s]", local_ip->h_name);
+        if(send(newsockd, buffer, strlen(buffer), 0) < 0){
+			perror("Errore durante l'invio");
+			close(newsockd);
+			exit(1);
+		}
+		memset(buffer, '0', sizeof(buffer));
+    	/************************* FINE MESSAGGIO DI BENVENUTO *************************/
+
+    	/************************* RICEVIAMO NOME UTENTE *************************/
+		if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
+    		perror("Errore nella ricezione del nome utente");
+    		onexit(newsockd, sockd, 0, 2);
+    	}
+    	
+    	user_string = strtok(buffer, " ");
+    	username = strtok(NULL, "\n");
+    	fprintf(stdout, "%s %s\n", user_string, username);
+    	memset(buffer, '0', sizeof(buffer));
+    	strcpy(buffer, "USEROK\n");
+    	if(send(newsockd, buffer, strlen(buffer), 0) < 0){
+			perror("Errore durante l'invio");
+			close(newsockd);
+			exit(1);
+		}
+		memset(buffer, '0', sizeof(buffer));
+    	/************************* FINE NOME UTENTE *************************/
+
+    	/************************* RICEVIAMO PASSWORD *************************/
+    	if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
+    		perror("Errore nella ricezione del nome utente");
     		onexit(newsockd, sockd, 0, 2);
     	}
 
-		/* Terminiamo il nome del file con NULL e se ultimo carattere è \n o \r lo cambiamo con \0*/
-		filename[rc] = '\0';
-    	if (filename[strlen(filename)-1] == '\n')
-    		filename[strlen(filename)-1] = '\0';
-    	if (filename[strlen(filename)-1] == '\r')
-    		filename[strlen(filename)-1] = '\0';
+    	pass_string = strtok(buffer, " ");
+    	password = strtok(NULL, "\n");
+    	fprintf(stdout, "%s %s\n", pass_string, password);
+    	memset(buffer, '0', sizeof(buffer));
+   		strcpy(buffer, "PASSOK\n");
+    	if(send(newsockd, buffer, strlen(buffer), 0) < 0){
+			perror("Errore durante l'invio");
+			close(newsockd);
+			exit(1);
+		}
+		memset(buffer, '0', sizeof(buffer));
+    	/************************* FINE PASSWORD *************************/
 
-    	/* inet_ntoa converte un hostname in un ip decimale puntato */
-    	fprintf(stderr, "Ricevuta richiesta di inviare il file '%s' dall' indirizzo %s\n", filename, inet_ntoa(cli_addr.sin_addr));
+    	exit(0);
 
-    	/* open the file to be sent */
+    	/* open the file to be sent
     	fd = open(filename, O_RDONLY);
    	 	if (fd < 0) {
     		fprintf(stderr, "Impossibile aprire '%s': %s\n", filename, strerror(errno));
     		onexit(newsockd, sockd, 0, 2);
     	}
 
-    	/* get the size of the file to be sent */
+		/* get the file name from the client
+    	if((rc = recv(newsockd, filename, sizeof(filename), 0)) < 0){
+    		perror("Errore nella ricezione del nome del file");
+    		onexit(newsockd, sockd, 0, 2);
+    	}
+
+		/* Terminiamo il nome del file con NULL e se ultimo carattere è \n o \r lo cambiamo con \0
+		filename[rc] = '\0';
+    	if (filename[strlen(filename)-1] == '\n') filename[strlen(filename)-1] = '\0';
+    	if (filename[strlen(filename)-1] == '\r') filename[strlen(filename)-1] = '\0';
+
+    	/* get the size of the file to be sent
     	if(fstat(fd, &stat_buf) < 0){
     		perror("Errore fstat");
     		onexit(newsockd, sockd, fd, 3);
@@ -96,7 +150,7 @@ int main(int argc, char *argv[]){
     		perror("Errore durante l'invio della grandezza del file\n");
     		onexit(newsockd, sockd, fd, 3);
     	}
-    	/* copy file using sendfile */
+    	/* copy file using sendfile
     	offset = 0;
    		rc = sendfile(newsockd, fd, &offset, stat_buf.st_size);
     	if (rc == -1) {
@@ -106,7 +160,7 @@ int main(int argc, char *argv[]){
     	if (rc != fsize) {
       		fprintf(stderr, "Trasferimento incompleto: %d di %d bytes\n", rc, (int)stat_buf.st_size);
       		onexit(newsockd, sockd, fd, 3);
-    	}
+    	} */
 
 		onexit(newsockd, 0, fd, 4);
 	}

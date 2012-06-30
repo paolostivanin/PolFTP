@@ -27,12 +27,14 @@ int main(int argc, char *argv[]){
 	}
 
 	int DescrittoreClient, fd; /* descrittore del socket */
-	int Num//strcpy(Buffer, filename); /* copio il nome del file nel buffer */Porta = atoi(argv[2]); /* numero di porta */
+	int NumPorta = atoi(argv[2]); /* numero di porta */
+	//strcpy(buffer, filename); /* copio il nome del file nel buffer */
 	struct sockaddr_in serv_addr; /* indirizzo del server */
-	char Buffer[1024] = {}; /* contiene i dati di invio e ricezione */
+	static char filebuffer[1024]; /* contiene i dati di invio e ricezione */
 	char *user = argv[3]; /* contiene nome utente */
 	char *pass = argv[4]; /* contiene password */
-	char loginbuffer[256];
+	char *filename = NULL, *conferma = NULL;
+	static char buffer[256];
 	struct hostent *hp; /* con la struttura hostent definisco l'hostname del server */
 	size_t fsize, nread = 0;
 	int total_bytes_read = 0;
@@ -43,9 +45,8 @@ int main(int argc, char *argv[]){
 	serv_addr.sin_port = htons(NumPorta); /* la porta */
 	serv_addr.sin_addr.s_addr = ((struct in_addr*)(hp->h_addr)) -> s_addr; /* memorizzo il tutto nella struttura serv_addr */
 
-	//strcpy(Buffer, filename); /* copio il nome del file nel buffer */
-	sprintf(loginbuffer, "USER %s", user);
-	
+	//strcpy(buffer, filename); /* copio il nome del file nel buffer */
+
 	if((DescrittoreClient = socket(AF_INET, SOCK_STREAM, 0)) < 0){
 		perror("Errore nella creazione della socket");
 		exit(1);
@@ -56,14 +57,67 @@ int main(int argc, char *argv[]){
 		close(DescrittoreClient);
 		exit(1);
 	}
+	/************************* MESSAGGIO DI BENVENUTO *************************/
+	if(recv(DescrittoreClient, buffer, sizeof(buffer), 0) < 0){
+    	perror("Errore nella ricezione del messaggio di benvenuto\n");
+    	close(DescrittoreClient);
+    	exit(1);
+    }
+    printf("%s\n", buffer);
+    memset(buffer, '0', sizeof(buffer));
+	/************************* FINE MESSAGGIO DI BENVENUTO *************************/
 
-	if(send(DescrittoreClient, loginbuffer, strlen(loginbuffer), 0) < 0){
+	/************************* INVIO NOME UTENTE E RICEVO CONFERMA *************************/
+	sprintf(buffer, "USER %s\n", user);
+	if(send(DescrittoreClient, buffer, strlen(buffer), 0) < 0){
 		perror("Errore durante l'invio");
 		close(DescrittoreClient);
 		exit(1);
 	}
+	memset(buffer, '0', sizeof(buffer));
+	if(recv(DescrittoreClient, buffer, sizeof(buffer), 0) < 0){
+    	perror("Errore nella ricezione della conferma");
+    	close(DescrittoreClient);
+    	exit(1);
+    }
+    conferma = strtok(buffer, "\n");
+    if(strcmp(conferma, "USEROK") != 0){
+    	printf("Nome utente non ricevuto\n");
+    	close(DescrittoreClient);
+    	exit(1);
+    }
+    memset(buffer, '0', sizeof(buffer));
+    memset(conferma, '0', sizeof(conferma));
+    /************************* FINE PARTE NOME UTENTE *************************/
+	
+    /************************* INVIO PASSWORD E RICEVO CONFERMA *************************/
+	sprintf(buffer, "PASS %s\n", pass);
+	if(send(DescrittoreClient, buffer, strlen(buffer), 0) < 0){
+		perror("Errore durante l'invio");
+		close(DescrittoreClient);
+		exit(1);
+	}
+	memset(buffer, '0', sizeof(buffer));
+	if(recv(DescrittoreClient, buffer, sizeof(buffer), 0) < 0){
+    	perror("Errore nella ricezione della conferma");
+    	close(DescrittoreClient);
+    	exit(1);
+    }
+    conferma = strtok(buffer, "\n");
+    if(strcmp(conferma, "PASSOK") != 0){
+    	printf("Password non ricevuta\n");
+    	close(DescrittoreClient);
+    	exit(1);
+    }
+    memset(buffer, '0', sizeof(buffer));
+    memset(conferma, '0', sizeof(conferma));
+	/************************* FINE PARTE PASSWORD *************************/
 
-	if(read(DescrittoreClient, Buffer, sizeof(Buffer)) < 0){
+	printf("230: User %s logged in\n", argv[3]);
+
+	exit(0);
+
+	if(read(DescrittoreClient, buffer, sizeof(buffer)) < 0){
 		perror("Errore durante ricezione grandezza file\n");
 		close(DescrittoreClient);
 		exit(1);
@@ -84,8 +138,8 @@ int main(int argc, char *argv[]){
 	}
 	
 	while(total_bytes_read < fsize){
-		while ((nread = read(DescrittoreClient, Buffer, sizeof(Buffer))) > 0){
-			if(write(fd, Buffer, nread) < 0){
+		while ((nread = read(DescrittoreClient, filebuffer, sizeof(filebuffer))) > 0){
+			if(write(fd, buffer, nread) < 0){
 				perror("write");
 				close(DescrittoreClient);
 				exit(1);
