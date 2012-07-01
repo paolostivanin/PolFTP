@@ -1,4 +1,4 @@
-/* Descrizione: Client FTP sviluppato come progetto per il corso di Reti di Calcolatori
+/* Descrizione: Semplice client FTP sviluppato per progetto di Reti di Calcolatori
  * Sviluppatore: Paolo Stivanin
  * Copyright: 2012
  * Licenza: GNU GPL v3 <http://www.gnu.org/licenses/gpl-3.0.html>
@@ -15,31 +15,25 @@
 #include <sys/types.h>
 #include <netdb.h>
 #include <fcntl.h>
-#include <stdint.h>
-#include <inttypes.h>
+ #include "prototypes.h"
 
 int main(int argc, char *argv[]){
 	
-	/* Controllo che vi sia argv[0], argv[1] e argv[2] */
-	if(argc != 5){
-		printf("Uso: ./client <hostname> <numero porta> <nomeutente> <password>\n");
-		exit(1);
-	}
+	check_before_start(argc, argv);
 
-	int DescrittoreClient, fd; /* descrittore del socket */
+	int sockd, fd; /* descrittore del socket */
 	int NumPorta = atoi(argv[2]); /* numero di porta */
-	//strcpy(buffer, filename); /* copio il nome del file nel buffer */
-	struct sockaddr_in serv_addr; /* indirizzo del server */
-	static char filebuffer[1024]; /* contiene i dati di invio e ricezione */
+	struct sockaddr_in serv_addr; /* struttura contenente indirizzo del server */
+	static char filebuffer[1024]; /* buffer usato per contenere il file */
 	char *user = argv[3]; /* contiene nome utente */
 	char *pass = argv[4]; /* contiene password */
-	char *filename = NULL, *conferma = NULL;
-	static char buffer[256];
-	struct hostent *hp; /* con la struttura hostent definisco l'hostname del server */
-	size_t fsize, nread = 0;
-	int total_bytes_read = 0;
+	char *filename = NULL, *conferma = NULL; /* contiene nome del file, contiene la conferma di ricezione */
+	static char buffer[256], expected_string[256]; /* buffer usato per contenere vari dati */
+	struct hostent *hp; /* la struttura hostent mi servirà per l'indirizzo ip del server */
+	size_t fsize, nread = 0; /* fsize conterrà la grandezza del file e nread i bytes letti ogni volta del file */
+	int total_bytes_read = 0; /* bytes totali letti del file */
 	
-	hp = gethostbyname(argv[1]);
+	hp = gethostbyname(argv[1]); /* inseriamo nella struttura hp le informazione sull'host "argv[1]" */
 	bzero((char *) &serv_addr, sizeof(serv_addr)); /* bzero scrive dei null bytes dove specificato per la lunghezza specificata */
 	serv_addr.sin_family = AF_INET; /* la famiglia dei protocolli */
 	serv_addr.sin_port = htons(NumPorta); /* la porta */
@@ -47,87 +41,107 @@ int main(int argc, char *argv[]){
 
 	//strcpy(buffer, filename); /* copio il nome del file nel buffer */
 
-	if((DescrittoreClient = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+	if((sockd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
 		perror("Errore nella creazione della socket");
 		exit(1);
 	}
 
-	if(connect(DescrittoreClient, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0){
+	if(connect(sockd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0){
 		perror("Errore nella connessione");
-		close(DescrittoreClient);
+		close(sockd);
 		exit(1);
 	}
 	/************************* MESSAGGIO DI BENVENUTO *************************/
-	if(recv(DescrittoreClient, buffer, sizeof(buffer), 0) < 0){
+	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
     	perror("Errore nella ricezione del messaggio di benvenuto\n");
-    	close(DescrittoreClient);
+    	close(sockd);
     	exit(1);
     }
     printf("%s\n", buffer);
     memset(buffer, '0', sizeof(buffer));
 	/************************* FINE MESSAGGIO DI BENVENUTO *************************/
 
+    /************************* INIZIO PARTE LOGIN *************************/
 	/************************* INVIO NOME UTENTE E RICEVO CONFERMA *************************/
 	sprintf(buffer, "USER %s\n", user);
-	if(send(DescrittoreClient, buffer, strlen(buffer), 0) < 0){
+	if(send(sockd, buffer, strlen(buffer), 0) < 0){
 		perror("Errore durante l'invio");
-		close(DescrittoreClient);
+		close(sockd);
 		exit(1);
 	}
 	memset(buffer, '0', sizeof(buffer));
-	if(recv(DescrittoreClient, buffer, sizeof(buffer), 0) < 0){
+	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
     	perror("Errore nella ricezione della conferma");
-    	close(DescrittoreClient);
+    	close(sockd);
     	exit(1);
     }
     conferma = strtok(buffer, "\n");
     if(strcmp(conferma, "USEROK") != 0){
     	printf("Nome utente non ricevuto\n");
-    	close(DescrittoreClient);
+    	close(sockd);
     	exit(1);
     }
     memset(buffer, '0', sizeof(buffer));
     memset(conferma, '0', sizeof(conferma));
-    /************************* FINE PARTE NOME UTENTE *************************/
+    /************************* FINE NOME UTENTE *************************/
 	
     /************************* INVIO PASSWORD E RICEVO CONFERMA *************************/
 	sprintf(buffer, "PASS %s\n", pass);
-	if(send(DescrittoreClient, buffer, strlen(buffer), 0) < 0){
+	if(send(sockd, buffer, strlen(buffer), 0) < 0){
 		perror("Errore durante l'invio");
-		close(DescrittoreClient);
+		close(sockd);
 		exit(1);
 	}
 	memset(buffer, '0', sizeof(buffer));
-	if(recv(DescrittoreClient, buffer, sizeof(buffer), 0) < 0){
+	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
     	perror("Errore nella ricezione della conferma");
-    	close(DescrittoreClient);
+    	close(sockd);
     	exit(1);
     }
     conferma = strtok(buffer, "\n");
     if(strcmp(conferma, "PASSOK") != 0){
     	printf("Password non ricevuta\n");
-    	close(DescrittoreClient);
+    	close(sockd);
     	exit(1);
     }
     memset(buffer, '0', sizeof(buffer));
     memset(conferma, '0', sizeof(conferma));
-	/************************* FINE PARTE PASSWORD *************************/
+	/************************* FINE PASSWORD *************************/
 
-	printf("230: User %s logged in\n", argv[3]);
+	/************************* RICEZIONE CONFERMA LOG IN *************************/
+	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
+    	perror("Errore nella ricezione della conferma");
+    	close(sockd);
+    	exit(1);
+    }
+    conferma = strtok(buffer, "\n");
+    sprintf(expected_string, "230 USER %s logged in", argv[3]);
+    if(strcmp(conferma, expected_string) != 0){
+    	printf("Login non effettuato\n");
+    	close(sockd);
+    	exit(1);
+    } else{
+    	printf("%s\n", conferma);
+    }
+    memset(buffer, '0', sizeof(buffer));
+    memset(conferma, '0', sizeof(conferma));
+	/************************* FINE RICEZIONE CONFERMA LOG IN *************************/
+	/************************* FINE PARTE LOGIN *************************/
+
 
 	exit(0);
 
-	if(read(DescrittoreClient, buffer, sizeof(buffer)) < 0){
+	if(read(sockd, buffer, sizeof(buffer)) < 0){
 		perror("Errore durante ricezione grandezza file\n");
-		close(DescrittoreClient);
+		close(sockd);
 		exit(1);
 	} else{
 		
 	}
 
-	if(read(DescrittoreClient, &fsize, sizeof(fsize)) < 0){
+	if(read(sockd, &fsize, sizeof(fsize)) < 0){
 		perror("Errore durante ricezione grandezza file\n");
-		close(DescrittoreClient);
+		close(sockd);
 		exit(1);
 	}
 
@@ -138,10 +152,10 @@ int main(int argc, char *argv[]){
 	}
 	
 	while(total_bytes_read < fsize){
-		while ((nread = read(DescrittoreClient, filebuffer, sizeof(filebuffer))) > 0){
+		while ((nread = read(sockd, filebuffer, sizeof(filebuffer))) > 0){
 			if(write(fd, buffer, nread) < 0){
 				perror("write");
-				close(DescrittoreClient);
+				close(sockd);
 				exit(1);
 			}
 			total_bytes_read += nread;
@@ -149,6 +163,14 @@ int main(int argc, char *argv[]){
 	}
 	printf("File ricevuto\n");
 
-	close(DescrittoreClient);
+	close(sockd);
 	return EXIT_SUCCESS;
+}
+
+void check_before_start(int argc, char *argv[]){
+	/* Controllo che vi siano argv[0], argv[1], argv[2], argv[3] e argv[4] */
+	if(argc != 5){
+		printf("Uso: %s <hostname> <numero porta> <nomeutente> <password>\n", argv[0]);
+		exit(EXIT_FAILURE);
+	}
 }

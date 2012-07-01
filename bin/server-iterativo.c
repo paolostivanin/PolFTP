@@ -1,4 +1,4 @@
-/* Descrizione: GUI del Client FTP sviluppato come progetto per il corso di Reti di Calcolatori
+/* Descrizione: Semplice server FTP iterativo sviluppato per il progetto di Reti di Calcolatori
  * Sviluppatore: Paolo Stivanin
  * Copyright: 2012
  * Licenza: GNU GPL v3 <http://www.gnu.org/licenses/gpl-3.0.html>
@@ -19,30 +19,28 @@
 #include <sys/sendfile.h>
 #include <sys/stat.h>
 #include <signal.h>
-
-void onexit(int c, int s, int file, int flag);
-void sig_handler(int signo, int sockd, int newsockd, int fd);
+#include "prototypes.h"
 
 int main(int argc, char *argv[]){
-	if(argc != 2){
-		printf("Uso: ./server <numero porta>\n");
-		exit(1);
-	}
-	int sockd, newsockd, LunghezzaClient;
+	
+	check_before_start(argc, argv);
+	
+	int sockd, newsockd, socket_len;
 	int NumPorta = atoi(argv[1]);
-	struct sockaddr_in serv_addr, cli_addr; /* indirizzo del server e del client */
+	struct sockaddr_in serv_addr, cli_addr; /* strutture con indirizzo del server e del client */
 	int rc, fd;
 	off_t offset = 0;
 	struct stat stat_buf;
-	struct hostent *local_ip;
-	static char filename[1024], buffer[256]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
-	char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL;
-	size_t fsize;
+	struct hostent *local_ip; /* struttura con ip server */
+	static char filename[1024], buffer[256], saved_user[256]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
+	char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL; /* puntatori per uso durante autenticazione */
+	size_t fsize; /* grandezza file */
 	
 	if((sockd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
 		perror("Errore creazione socket\n");
 		exit(EXIT_FAILURE);
 	}
+
 	bzero((char *) &serv_addr, sizeof(serv_addr)); /* bzero scrive dei null bytes dove specificato per la lunghezza specificata */
 	serv_addr.sin_family = AF_INET; /* la famiglia dei protocolli */
 	serv_addr.sin_port = htons(NumPorta); /* porta htons converte nell'ordine dei byte di rete */
@@ -57,14 +55,17 @@ int main(int argc, char *argv[]){
 			perror("Errore nella funzione listen");
     		onexit(0, sockd, 0, 1);
 	}
-	LunghezzaClient = sizeof(cli_addr);
+	socket_len = sizeof(cli_addr);
+	
 	if((local_ip = gethostbyname("localhost")) == NULL){
-		herror("gethostbyname()");
+		perror("gethostbyname()");
 		exit(1);
 	}	
+	
 	signal (SIGINT, ( void *)sig_handler); 
+	
 	while(1){
-		if((newsockd = accept(sockd, (struct sockaddr *) &cli_addr, (socklen_t *) &LunghezzaClient)) < 0){
+		if((newsockd = accept(sockd, (struct sockaddr *) &cli_addr, (socklen_t *) &socket_len)) < 0){
 			perror("Errore nella connessione\n");
 			onexit(newsockd, sockd, 0, 2);
 		}
@@ -82,7 +83,8 @@ int main(int argc, char *argv[]){
 		memset(buffer, '0', sizeof(buffer));
     	/************************* FINE MESSAGGIO DI BENVENUTO *************************/
 
-    	/************************* RICEVIAMO NOME UTENTE *************************/
+		/************************* INIZIO PARTE LOGIN *************************/
+    	/************************* RICEVIAMO NOME UTENTE E MANDIAMO CONFERMA *************************/
 		if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
     		perror("Errore nella ricezione del nome utente");
     		onexit(newsockd, sockd, 0, 2);
@@ -91,6 +93,7 @@ int main(int argc, char *argv[]){
     	user_string = strtok(buffer, " ");
     	username = strtok(NULL, "\n");
     	fprintf(stdout, "%s %s\n", user_string, username);
+    	sprintf(saved_user, "%s", username);
     	memset(buffer, '0', sizeof(buffer));
     	strcpy(buffer, "USEROK\n");
     	if(send(newsockd, buffer, strlen(buffer), 0) < 0){
@@ -101,7 +104,7 @@ int main(int argc, char *argv[]){
 		memset(buffer, '0', sizeof(buffer));
     	/************************* FINE NOME UTENTE *************************/
 
-    	/************************* RICEVIAMO PASSWORD *************************/
+    	/************************* RICEVIAMO PASSWORD E MANDIAMO CONFERMA *************************/
     	if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
     		perror("Errore nella ricezione del nome utente");
     		onexit(newsockd, sockd, 0, 2);
@@ -119,6 +122,17 @@ int main(int argc, char *argv[]){
 		}
 		memset(buffer, '0', sizeof(buffer));
     	/************************* FINE PASSWORD *************************/
+    	
+    	/************************* INVIO CONFERMA LOG IN *************************/
+    	sprintf(buffer, "230 USER %s logged in\n", saved_user);
+    	if(send(newsockd, buffer, strlen(buffer), 0) < 0){
+			perror("Errore durante l'invio");
+			close(newsockd);
+			exit(1);
+		}
+		memset(buffer, '0', sizeof(buffer));
+		/************************* FINE CONFERMA LOG IN *************************/
+    	/************************* FINE PARTE LOGIN *************************/
 
     	exit(0);
 
@@ -168,6 +182,12 @@ int main(int argc, char *argv[]){
 	exit(EXIT_SUCCESS);
 }
 
+void check_before_start(int argc, char *argv[]){
+	if(argc != 2){
+		printf("Uso: ./server <numero porta>\n");
+		exit(1);
+	}
+}
 
 void onexit(int c, int s, int file, int flag){
 	if(flag == 1){
