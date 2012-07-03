@@ -1,16 +1,19 @@
 FTPUtils
 ========
 
-FTPUtils è composto da un server e un client FTP sviluppati in C. L'interfaccia del client è scritta con le librerie GTK+.<br>
-Esso sarà presentato come progetto per il corso di Reti di Calcolatori (appartenente al corso di laurea in Sicurezza dei Sistemi e delle Reti Informatiche presso il DTI di Crema) dell'anno scolastico 2011/2012 dallo studente:
+FTPUtils è sviluppato come progetto per corso di Reti di Calcolatori tenutosi presso il DTI di Crema durante l'anno scolastico 2011/2012.
+Esso è composto da un server e un client FTP che supportano solo le funzioni base quali USER, PASS, LIST, CWD, CD, RETR. 
+L'interfaccia del client (se sarà sviluppata completamente) è scritta con il toolkit GTK+.<br>
+Lo studente sviluppatore del progetto è:
+
 * Paolo Stivanin
 
 Requisiti
 ---------
 
-* GCC    : per compilare i programmi
-* GTK+	 : per l'interfaccia grafica (**versione >=3.4.0**)
-* UNIX	 : i software sono stati sviluppati su ambienti GNU/Linux e quindi **non** compileranno su ambienti Windows.
+* GCC		: per compilare i programmi (consigliata versione >= 4.4.0)
+* GTK+	 	: per l'interfaccia grafica (**obbligatoria versione >=3.4.0**)
+* GNU/Linux	: i software sono stati sviluppati su ambienti GNU/Linux e quindi **non** compileranno su ambienti MS Windows. Per quanto riguarda ambienti Mac OS X non ho la possibilità di verificare anche se la presenza di GCC 4.2.0 potrebbe causare problemi in fase di compilazione.
 
 Licenza
 -------
@@ -24,4 +27,5 @@ mentre il server FTP è rilasciato sotto licenza AGPL:<br>
 Sito web
 --------
 
-<https://github.com/polslinux/FTPUtils>
+Sito web dello sviluppatore: <http//www.polslinux.it>
+Sito web del progetto:		 <https://github.com/polslinux/FTPUtils>
