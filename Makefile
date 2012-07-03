@@ -2,12 +2,12 @@ all: ftpclient ftpserver ftpclient_gui
 
 ftpclient: bin/ftpclient.c
 	@echo "--> Compiling client..."
-	@gcc -Wall -O3 -D_FORTIFY_SOURCE=2 -o ftpclient bin/ftpclient.c
+	@gcc -Wall -O3 -D_FORTIFY_SOURCE=2 -o ftpclient bin/ftpclient.c bin/clear_buf.c
 	@echo "--> ...done"
 	
 ftpclient: bin/ftpserver.c
 	@echo "--> Compiling server..."
-	@gcc -Wall -O3 -D_FORTIFY_SOURCE=2 -o ftpserver bin/ftpserver.c bin/list-files.c bin/onexit.c
+	@gcc -Wall -O3 -D_FORTIFY_SOURCE=2 -o ftpserver bin/ftpserver.c bin/list-files.c bin/onexit.c bin/clear_buf.c
 	@echo "--> ...done"
 	
 ftpclient_gui: bin/gtk3/entry.c

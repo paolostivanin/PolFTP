@@ -27,15 +27,15 @@ int main(int argc, char *argv[]){
 	
 	check_before_start(argc, argv);
 	
-	int sockd, newsockd, socket_len, rc, rc_list, fd, fpl, i;
+	int sockd, newsockd, socket_len, rc, rc_list, fd, fpl;
 	int NumPorta = atoi(argv[1]);
 	struct sockaddr_in serv_addr, cli_addr; /* strutture contenenti indirizzo del server e del client */
 	off_t offset = 0, offset_list = 0; /* variabile di tipo offset */
-	struct stat stat_buf; /* struttura contenente informazioni sul file scelto */
+	struct stat fileStat; /* struttura contenente informazioni sul file scelto */
 	struct hostent *local_ip; /* struttura contenente ip server */
 	static char filename[1024], buffer[256], saved_user[256]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
 	char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL, *other = NULL; /* puntatori per uso vario */
-	size_t fsize, count; /* grandezza file */
+	size_t fsize, count, i; /* grandezza file */
   char **files;
   FILE *fp_list;
 	
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]){
       perror("Errore durante l'invio");
 			onexit(newsockd, sockd, 0, 2);
 		}
-		memset(buffer, '0', sizeof(buffer));
+		clear_buf(buffer, NULL, NULL, 1);
     /************************* FINE MESSAGGIO DI BENVENUTO *************************/
 
 		/************************* INIZIO PARTE LOGIN *************************/
@@ -95,13 +95,13 @@ int main(int argc, char *argv[]){
     username = strtok(NULL, "\n");
     fprintf(stdout, "%s %s\n", user_string, username);
     sprintf(saved_user, "%s", username);
-    memset(buffer, '0', sizeof(buffer));
+    clear_buf(buffer, NULL, NULL, 1);
     strcpy(buffer, "USEROK\n");
     if(send(newsockd, buffer, strlen(buffer), 0) < 0){
       perror("Errore durante l'invio");
 		  onexit(newsockd, sockd, 0, 2);
 		}
-		memset(buffer, '0', sizeof(buffer));
+		clear_buf(buffer, NULL, NULL, 1);
     /************************* FINE NOME UTENTE *************************/
 
     /************************* RICEVIAMO PASSWORD E MANDIAMO CONFERMA *************************/
@@ -112,13 +112,13 @@ int main(int argc, char *argv[]){
     pass_string = strtok(buffer, " ");
     password = strtok(NULL, "\n");
     fprintf(stdout, "%s %s\n", pass_string, password);
-    memset(buffer, '0', sizeof(buffer));
+    clear_buf(buffer, NULL, NULL, 1);
    	strcpy(buffer, "PASSOK\n");
     if(send(newsockd, buffer, strlen(buffer), 0) < 0){
       perror("Errore durante l'invio");
 		  onexit(newsockd, sockd, 0, 2);
 		}
-		memset(buffer, '0', sizeof(buffer));
+		clear_buf(buffer, NULL, NULL, 1);
     /************************* FINE PASSWORD *************************/
     	
     /************************* INVIO CONFERMA LOG IN *************************/
@@ -127,12 +127,12 @@ int main(int argc, char *argv[]){
 			perror("Errore durante l'invio");
 			onexit(newsockd, sockd, 0, 2);
 		}
-		memset(buffer, '0', sizeof(buffer));
+		clear_buf(buffer, NULL, NULL, 1);
 		/************************* FINE CONFERMA LOG IN *************************/
     /************************* FINE PARTE LOGIN *************************/
 
     /************************* RICEZIONE RICHIESTA LIST E INVIO LISTA *************************/
-    if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
+    if(recv(newsockd, buffer, 6, 0) < 0){
     	perror("Errore nella ricezione comando LIST");
     	onexit(newsockd, sockd, 0, 2);
     }
@@ -152,42 +152,39 @@ int main(int argc, char *argv[]){
         fprintf(fp_list, "%s\n", files[i]);
       }
     }
-
+    fclose(fp_list);
     if((fpl = open("listfiles.txt", O_RDONLY)) < 0){
       perror("open file with open");
       fclose(fp_list);
       onexit(newsockd, sockd, 0, 2);
       exit(1);
     }
-    if(fstat(fpl, &stat_buf) < 0){
+    if(fstat(fpl, &fileStat) < 0){
       perror("Errore fstat");
-      fclose(fp_list);
       onexit(newsockd, sockd, fpl, 3);
     }
-    fsize = stat_buf.st_size;
+    fsize = fileStat.st_size;
+    printf("File size: %zu\n", fsize);
     if(send(newsockd, &fsize, sizeof(fsize), 0) < 0){
       perror("Errore durante l'invio grande file list");
       onexit(newsockd, sockd, fpl, 3);
     }
-    rc_list = sendfile(newsockd, fpl, &offset_list, stat_buf.st_size);
+    rc_list = sendfile(newsockd, fpl, &offset_list, fileStat.st_size);
     if(rc_list == -1){
       perror("Invio file list non riuscito");
       fclose(fp_list);
       onexit(newsockd, sockd, fpl, 3);
     }
-    if(rc_list != fsize){
-      fprintf(stderr, "Trasferimento incompleto: %d di %d bytes\n", rc_list, (int)stat_buf.st_size);
-      fclose(fp_list);
+    if((size_t)rc_list != fsize){
+      fprintf(stderr, "Trasferimento incompleto: %d di %d bytes\n", rc_list, (int)fileStat.st_size);
       onexit(newsockd, sockd, fpl, 3);
     }
-    close(fpl);
-    fclose(fp_list);
     fsize = 0;
     printf("File inviato\n");
-		memset(buffer, '0', sizeof(buffer));
+		clear_buf(buffer, NULL, NULL, 1);
     /************************* FINE RICEZIONE LIST E INVIO LISTA *************************/
 
-    onexit(newsockd, sockd, 0, 2);
+    onexit(newsockd, sockd, fpl, 3);
 
     	/* open the file to be sent
     	fd = open(filename, O_RDONLY);
@@ -208,24 +205,24 @@ int main(int argc, char *argv[]){
     	if (filename[strlen(filename)-1] == '\r') filename[strlen(filename)-1] = '\0';
 
     	/* get the size of the file to be sent
-    	if(fstat(fd, &stat_buf) < 0){
+    	if(fstat(fd, &fileStat) < 0){
     		perror("Errore fstat");
     		onexit(newsockd, sockd, fd, 3);
     	}
-    	fsize = stat_buf.st_size;
+    	fsize = fileStat.st_size;
     	if(send(newsockd, &fsize, sizeof(fsize), 0) < 0){
     		perror("Errore durante l'invio della grandezza del file\n");
     		onexit(newsockd, sockd, fd, 3);
     	}
     	/* copy file using sendfile
     	offset = 0;
-   		rc = sendfile(newsockd, fd, &offset, stat_buf.st_size);
+   		rc = sendfile(newsockd, fd, &offset, fileStat.st_size);
     	if (rc == -1) {
       		fprintf(stderr, "Errore durante l'invio di: '%s'\n", strerror(errno));
       		onexit(newsockd, sockd, fd, 3);
     	}
     	if (rc != fsize) {
-      		fprintf(stderr, "Trasferimento incompleto: %d di %d bytes\n", rc, (int)stat_buf.st_size);
+      		fprintf(stderr, "Trasferimento incompleto: %d di %d bytes\n", rc, (int)fileStat.st_size);
       		onexit(newsockd, sockd, fd, 3);
     	} */
 

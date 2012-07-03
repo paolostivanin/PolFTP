@@ -17,6 +17,8 @@
 #include <fcntl.h>
 #include "prototypes.h"
 
+void clear_var(int, int, size_t);
+
 int main(int argc, char *argv[]){
 	
 	check_before_start(argc, argv);
@@ -24,11 +26,10 @@ int main(int argc, char *argv[]){
 	int sockd, fd; /* descrittore del socket */
 	int NumPorta = atoi(argv[2]); /* numero di porta */
 	struct sockaddr_in serv_addr; /* struttura contenente indirizzo del server */
-	static char filebuffer[1024]; /* buffer usato per contenere il file */
 	char *user = argv[3]; /* contiene nome utente */
 	char *pass = argv[4]; /* contiene password */
 	char *filename = NULL, *conferma = NULL; /* contiene nome del file, contiene la conferma di ricezione */
-	static char buffer[256], expected_string[256]; /* buffer usato per contenere vari dati */
+	static char filebuffer[1024], buffer[256], expected_string[256]; /* buffer usato per contenere vari dati */
 	struct hostent *hp; /* la struttura hostent mi servirà per l'indirizzo ip del server */
 	size_t fsize, nread = 0; /* fsize conterrà la grandezza del file e nread i bytes letti ogni volta del file */
 	int total_bytes_read = 0; /* bytes totali letti del file */
@@ -58,7 +59,7 @@ int main(int argc, char *argv[]){
     	exit(1);
     }
     printf("%s\n", buffer);
-    memset(buffer, '0', sizeof(buffer));
+    clear_buf(buffer, NULL, NULL, 1);
 	/************************* FINE MESSAGGIO DI BENVENUTO *************************/
 
     /************************* INIZIO PARTE LOGIN *************************/
@@ -69,7 +70,7 @@ int main(int argc, char *argv[]){
 		close(sockd);
 		exit(1);
 	}
-	memset(buffer, '0', sizeof(buffer));
+	clear_buf(buffer, NULL, NULL, 1);
 	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
     	perror("Errore nella ricezione della conferma USER");
     	close(sockd);
@@ -81,8 +82,7 @@ int main(int argc, char *argv[]){
     	close(sockd);
     	exit(1);
     }
-    memset(buffer, '0', sizeof(buffer));
-    memset(conferma, '0', sizeof(conferma));
+    clear_buf(buffer, NULL, conferma, 4);
     /************************* FINE NOME UTENTE *************************/
 	
     /************************* INVIO PASSWORD E RICEVO CONFERMA *************************/
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]){
 		close(sockd);
 		exit(1);
 	}
-	memset(buffer, '0', sizeof(buffer));
+	clear_buf(buffer, NULL, NULL, 1);
 	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
     	perror("Errore nella ricezione della conferma PASS");
     	close(sockd);
@@ -104,8 +104,7 @@ int main(int argc, char *argv[]){
     	close(sockd);
     	exit(1);
     }
-    memset(buffer, '0', sizeof(buffer));
-    memset(conferma, '0', sizeof(conferma));
+    clear_buf(buffer, NULL, conferma, 4);
 	/************************* FINE PASSWORD *************************/
 
 	/************************* RICEZIONE CONFERMA LOG IN *************************/
@@ -123,8 +122,7 @@ int main(int argc, char *argv[]){
     } else{
     	printf("%s\n", conferma);
     }
-    memset(buffer, '0', sizeof(buffer));
-    memset(conferma, '0', sizeof(conferma));
+    clear_buf(buffer, NULL, conferma, 4);
 	/************************* FINE RICEZIONE CONFERMA LOG IN *************************/
 	/************************* FINE PARTE LOGIN *************************/
 
@@ -140,15 +138,15 @@ int main(int argc, char *argv[]){
     	close(sockd);
     	exit(1);
     }
-    printf("Grandezza file list: %zu\n", fsize);
+    printf("File size: %zu\n", fsize);
     if((fd = open("listfiles.txt", O_CREAT | O_WRONLY,0644)) < 0){
     	perror("open file list");
     	close(sockd);
     	exit(1);
     }
-    while(total_bytes_read < fsize){
+    while((size_t)total_bytes_read < fsize){
 		while ((nread = read(sockd, filebuffer, sizeof(filebuffer))) > 0){
-			if(write(fd, buffer, nread) < 0){
+			if(write(fd, filebuffer, nread) < 0){
 				perror("write");
 				close(sockd);
 				exit(1);
@@ -156,9 +154,7 @@ int main(int argc, char *argv[]){
 			total_bytes_read += nread;
 		}
 	}
-	total_bytes_read = 0;
-	nread = 0;
-	fsize = 0;
+	clear_buf(buffer, filebuffer, NULL, 2);
 	close(fd);
 	/************************* FINE RICHIESTA FILE LISTING *************************/
 
