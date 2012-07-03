@@ -27,5 +27,5 @@ mentre il server FTP è rilasciato sotto licenza AGPL:<br>
 Sito web
 --------
 
-Sito web dello sviluppatore:	<http//www.polslinux.it><br>
+Sito web dello sviluppatore:	<http://www.polslinux.it>
 Sito web del progetto:		 	<https://github.com/polslinux/FTPUtils>
