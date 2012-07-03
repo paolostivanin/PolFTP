@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-void clear_buf(char bf[256], char fbf[1024], char *cnf, int flag){
+void clear_buf(char *bf, char *fbf, char *cnf, int flag){
 	if(flag == 1){
 		memset(bf, 0, sizeof(bf));
 	}

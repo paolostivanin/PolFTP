@@ -138,25 +138,47 @@ int main(int argc, char *argv[]){
     	close(sockd);
     	exit(1);
     }
-    printf("File size: %zu\n", fsize);
     if((fd = open("listfiles.txt", O_CREAT | O_WRONLY,0644)) < 0){
     	perror("open file list");
     	close(sockd);
     	exit(1);
     }
-    while((size_t)total_bytes_read < fsize){
-		while ((nread = read(sockd, filebuffer, sizeof(filebuffer))) > 0){
-			if(write(fd, filebuffer, nread) < 0){
-				perror("write");
-				close(sockd);
-				exit(1);
-			}
-			total_bytes_read += nread;
+    while((total_bytes_read != fsize) && ((nread = read(sockd, filebuffer, sizeof(filebuffer))) > 0)){
+		if(write(fd, filebuffer, nread) < 0){
+			perror("write");
+			close(sockd);
+			exit(1);
 		}
+		total_bytes_read += nread;
 	}
 	clear_buf(buffer, filebuffer, NULL, 2);
 	close(fd);
+	printf("----- FILE LIST -----\n");
+	system("cat listfiles.txt");
+	printf("----- END FILE LIST -----\n");
 	/************************* FINE RICHIESTA FILE LISTING *************************/
+
+	/************************* RICHIESTA CWD *************************/
+	strcpy(buffer, "CWD\n");
+	if(send(sockd, buffer, strlen(buffer), 0) < 0){
+		perror("Errore durante l'invio richiesta CWD");
+		close(sockd);
+		exit(1);
+	}
+	clear_buf(buffer, NULL, NULL, 1);
+	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
+    	perror("Errore nella ricezione CWD");
+    	close(sockd);
+    	exit(1);
+    }
+	conferma = strtok(buffer, "\n");
+   	printf("%s\n", conferma);
+    clear_buf(buffer, NULL, conferma, 4);
+	/************************* FINE RICHIESTA CWD *************************/
+
+	/************************* INVIO RICHIESTA CD *************************/
+
+	/************************* FINE RICHIESTA CD *************************/
 
 
 	exit(0);

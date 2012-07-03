@@ -5,6 +5,8 @@
  * Sito web: <https://github.com/polslinux/FTPUtils>
  */
 
+#define _GNU_SOURCE /* per definire get_current_dir_name */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -20,6 +22,7 @@
 #include <sys/stat.h>
 #include <signal.h>
 #include <dirent.h>
+#include <inttypes.h>
 #include "prototypes.h"
 
 
@@ -144,7 +147,7 @@ int main(int argc, char *argv[]){
     count = file_list("./", &files);
     if((fp_list = fopen("listfiles.txt", "w")) == NULL){
       perror("Impossibile aprire il file per la scrittura LIST");
-      exit(EXIT_FAILURE);
+      onexit(newsockd, sockd, 0, 2);
     }
     for(i=0; i < count; i++){
       if(strcmp(files[i], "DIR ..") == 0 || strcmp(files[i], "DIR .") == 0) continue;
@@ -155,7 +158,6 @@ int main(int argc, char *argv[]){
     fclose(fp_list);
     if((fpl = open("listfiles.txt", O_RDONLY)) < 0){
       perror("open file with open");
-      fclose(fp_list);
       onexit(newsockd, sockd, 0, 2);
       exit(1);
     }
@@ -172,19 +174,35 @@ int main(int argc, char *argv[]){
     rc_list = sendfile(newsockd, fpl, &offset_list, fileStat.st_size);
     if(rc_list == -1){
       perror("Invio file list non riuscito");
-      fclose(fp_list);
       onexit(newsockd, sockd, fpl, 3);
     }
     if((size_t)rc_list != fsize){
       fprintf(stderr, "Trasferimento incompleto: %d di %d bytes\n", rc_list, (int)fileStat.st_size);
       onexit(newsockd, sockd, fpl, 3);
     }
-    fsize = 0;
     printf("File inviato\n");
+    close(fpl);
 		clear_buf(buffer, NULL, NULL, 1);
     /************************* FINE RICEZIONE LIST E INVIO LISTA *************************/
 
-    onexit(newsockd, sockd, fpl, 3);
+    /************************* RICHIESTA CWD *************************/
+    if(recv(newsockd, buffer, 5, 0) < 0){
+      perror("Errore nella ricezione comando CWD");
+      onexit(newsockd, sockd, 0, 2);
+    }
+    other = strtok(buffer, "\n");
+    if(strcmp(other, "CWD") == 0){
+      printf("Ricevuta richiesta CWD\n");
+    } else onexit(newsockd, sockd, 0, 2); 
+    clear_buf(buffer, NULL, NULL, 1);
+    sprintf(buffer, "CWD %s\n", (char *)(intptr_t)get_current_dir_name());
+    if(send(newsockd, buffer, strlen(buffer), 0) < 0){
+      perror("Errore durante l'invio");
+      onexit(newsockd, sockd, 0, 2);
+    }
+    clear_buf(buffer, NULL, other, 4);
+    /************************* FINE RICHIESTA CWD *************************/
+    onexit(newsockd, sockd, 0, 2);
 
     	/* open the file to be sent
     	fd = open(filename, O_RDONLY);
