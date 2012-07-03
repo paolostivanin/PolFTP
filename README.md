@@ -15,6 +15,20 @@ Requisiti
 * GTK+	 	: per l'interfaccia grafica (**obbligatoria versione >=3.4.0**)
 * GNU/Linux	: i software sono stati sviluppati su ambienti GNU/Linux e quindi **non** compileranno su ambienti MS Windows. Per quanto riguarda ambienti Mac OS X non ho la possibilità di verificare anche se la presenza di GCC 4.2.0 potrebbe causare problemi in fase di compilazione.
 
+Compilazione
+------------
+Clonare il repository e, una volta entrato nella root, dare il comando make.
+Verranno creati due file, il client e il server.
+
+Come usare client e server
+--------------------------
+./ftpclient <host> <numporta> <username> <password>
+./ftpserver <numporta>
+
+Importante
+----------
+Il codice **non è ottimizzato per essere eseguito su architetture differenti** quindi **il server e il client devono essere compilati ed eseguiti sulla stessa architettura** (x86 o x64)
+
 Licenza
 -------
 

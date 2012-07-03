@@ -30,9 +30,11 @@ size_t file_list(char *path, char ***ls){
   rewinddir(dp);
 
   *ls = calloc(count, sizeof(char *));
+  /* oppure *ls = malloc(count * sizeof(char *));
+   * memset(*ls, 0, count * sizeof(char *)); */
   count = 0;
   ep = readdir(dp);
-  while(NULL != ep){
+  while(ep != NULL){
     if((file = open(ep->d_name, O_RDONLY)) < 0){
       perror("apertura file");
       exit(1);
@@ -40,8 +42,10 @@ size_t file_list(char *path, char ***ls){
     if(fstat(file, &fileStat) != 0){
       perror("filestat");
       free(*ls);
+      close(file);
       exit(EXIT_FAILURE);
     }
+    close(file);
     if(S_ISDIR(fileStat.st_mode)){
       len = strlen(ep->d_name);
       (*ls)[count] = malloc(len+5); /* lunghezza stringa + "DIR \n" */
