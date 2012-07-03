@@ -15,7 +15,7 @@
 #include <sys/types.h>
 #include <netdb.h>
 #include <fcntl.h>
- #include "prototypes.h"
+#include "prototypes.h"
 
 int main(int argc, char *argv[]){
 	
@@ -65,13 +65,13 @@ int main(int argc, char *argv[]){
 	/************************* INVIO NOME UTENTE E RICEVO CONFERMA *************************/
 	sprintf(buffer, "USER %s\n", user);
 	if(send(sockd, buffer, strlen(buffer), 0) < 0){
-		perror("Errore durante l'invio");
+		perror("Errore durante l'invio di USER");
 		close(sockd);
 		exit(1);
 	}
 	memset(buffer, '0', sizeof(buffer));
 	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
-    	perror("Errore nella ricezione della conferma");
+    	perror("Errore nella ricezione della conferma USER");
     	close(sockd);
     	exit(1);
     }
@@ -88,13 +88,13 @@ int main(int argc, char *argv[]){
     /************************* INVIO PASSWORD E RICEVO CONFERMA *************************/
 	sprintf(buffer, "PASS %s\n", pass);
 	if(send(sockd, buffer, strlen(buffer), 0) < 0){
-		perror("Errore durante l'invio");
+		perror("Errore durante l'invio di PASS");
 		close(sockd);
 		exit(1);
 	}
 	memset(buffer, '0', sizeof(buffer));
 	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
-    	perror("Errore nella ricezione della conferma");
+    	perror("Errore nella ricezione della conferma PASS");
     	close(sockd);
     	exit(1);
     }
@@ -110,7 +110,7 @@ int main(int argc, char *argv[]){
 
 	/************************* RICEZIONE CONFERMA LOG IN *************************/
 	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
-    	perror("Errore nella ricezione della conferma");
+    	perror("Errore nella ricezione della conferma LOG IN");
     	close(sockd);
     	exit(1);
     }
@@ -128,17 +128,44 @@ int main(int argc, char *argv[]){
 	/************************* FINE RICEZIONE CONFERMA LOG IN *************************/
 	/************************* FINE PARTE LOGIN *************************/
 
-
-	exit(0);
-
-	if(read(sockd, buffer, sizeof(buffer)) < 0){
-		perror("Errore durante ricezione grandezza file\n");
+	/************************* INVIO RICHIESTA FILE LISTING *************************/
+	strcpy(buffer, "LIST\n");
+	if(send(sockd, buffer, strlen(buffer), 0) < 0){
+		perror("Errore durante l'invio richiesta LIST");
 		close(sockd);
 		exit(1);
-	} else{
-		
 	}
+	if(recv(sockd, &fsize, sizeof(fsize), 0) < 0){
+    	perror("Errore nella ricezione della grandezza del file");
+    	close(sockd);
+    	exit(1);
+    }
+    printf("Grandezza file list: %zu\n", fsize);
+    if((fd = open("listfiles.txt", O_CREAT | O_WRONLY,0644)) < 0){
+    	perror("open file list");
+    	close(sockd);
+    	exit(1);
+    }
+    while(total_bytes_read < fsize){
+		while ((nread = read(sockd, filebuffer, sizeof(filebuffer))) > 0){
+			if(write(fd, buffer, nread) < 0){
+				perror("write");
+				close(sockd);
+				exit(1);
+			}
+			total_bytes_read += nread;
+		}
+	}
+	total_bytes_read = 0;
+	nread = 0;
+	fsize = 0;
+	close(fd);
+	/************************* FINE RICHIESTA FILE LISTING *************************/
 
+
+	exit(0);
+}
+	/*
 	if(read(sockd, &fsize, sizeof(fsize)) < 0){
 		perror("Errore durante ricezione grandezza file\n");
 		close(sockd);
@@ -165,7 +192,7 @@ int main(int argc, char *argv[]){
 
 	close(sockd);
 	return EXIT_SUCCESS;
-}
+}*/
 
 void check_before_start(int argc, char *argv[]){
 	/* Controllo che vi siano argv[0], argv[1], argv[2], argv[3] e argv[4] */
