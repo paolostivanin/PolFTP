@@ -6,14 +6,15 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <stdint.h>
 #include <dirent.h>
 #include "prototypes.h"
 
-size_t file_list(char *path, char ***ls){
+uint32_t file_list(char *path, char ***ls){
 	DIR *dp;
   struct stat fileStat;
   struct dirent *ep = NULL;
-  size_t len, count = 0;
+  uint32_t len, count = 0;
   int file = 0;
   *ls = NULL;
   dp = opendir (path);
@@ -30,8 +31,6 @@ size_t file_list(char *path, char ***ls){
   rewinddir(dp);
 
   *ls = calloc(count, sizeof(char *));
-  /* oppure *ls = malloc(count * sizeof(char *));
-   * memset(*ls, 0, count * sizeof(char *)); */
   count = 0;
   ep = readdir(dp);
   while(ep != NULL){
@@ -50,8 +49,8 @@ size_t file_list(char *path, char ***ls){
       len = strlen(ep->d_name);
       (*ls)[count] = malloc(len+5); /* lunghezza stringa + "DIR \n" */
       strcpy((*ls)[count], "DIR "); /* copio DIR */
-      strcat((*ls)[count++], ep->d_name);
-      free((*ls)[count]);
+      strcat((*ls)[count], ep->d_name);
+      free((*ls)[count++]);
       ep = readdir(dp);
     } else{
       (*ls)[count++] = strdup(ep->d_name);

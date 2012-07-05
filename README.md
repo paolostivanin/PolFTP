@@ -22,12 +22,8 @@ Verranno creati due file, il client e il server.
 
 Come usare client e server
 --------------------------
-./ftpclient <host> <numporta> <username> <password>
-./ftpserver <numporta>
-
-Importante
-----------
-Il codice **non è ottimizzato per essere eseguito su architetture differenti** quindi **il server e il client devono essere compilati ed eseguiti sulla stessa architettura** (x86 o x64)
+`./ftpclient <host> <numporta> <username> <password>`
+`./ftpserver <numporta>`
 
 Licenza
 -------

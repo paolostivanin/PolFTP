@@ -2,6 +2,7 @@
 #include "prototypes.h"
 #include <string.h>
 #include <unistd.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 void clear_buf(char *bf, char *fbf, char *cnf, int flag){

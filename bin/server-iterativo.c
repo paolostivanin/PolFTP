@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdint.h> /* per usare uint32_t invece di size_t */
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -22,15 +23,14 @@
 #include <sys/stat.h>
 #include <signal.h>
 #include <dirent.h>
-#include <inttypes.h>
+#include <inttypes.h> /* per printare il tipo di dato uint32_t */
 #include "prototypes.h"
-
 
 int main(int argc, char *argv[]){
 	
 	check_before_start(argc, argv);
 	
-	int sockd, newsockd, socket_len, rc, rc_list, fd, fpl;
+	int sockd, newsockd, socket_len, rc, rc_list, fd, fpl, n = 1;
 	int NumPorta = atoi(argv[1]);
 	struct sockaddr_in serv_addr, cli_addr; /* strutture contenenti indirizzo del server e del client */
 	off_t offset = 0, offset_list = 0; /* variabile di tipo offset */
@@ -38,7 +38,7 @@ int main(int argc, char *argv[]){
 	struct hostent *local_ip; /* struttura contenente ip server */
 	static char filename[1024], buffer[256], saved_user[256]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
 	char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL, *other = NULL; /* puntatori per uso vario */
-	size_t fsize, count, i; /* grandezza file */
+	uint32_t fsize, count, i; /* grandezza file */
   char **files;
   FILE *fp_list;
 	
@@ -152,7 +152,9 @@ int main(int argc, char *argv[]){
     for(i=0; i < count; i++){
       if(strcmp(files[i], "DIR ..") == 0 || strcmp(files[i], "DIR .") == 0) continue;
       else{
-        fprintf(fp_list, "%s\n", files[i]);
+        if(n%2 == 0) fprintf(fp_list, "%s\n", files[i]);
+        else fprintf(fp_list, "%20s\t", files[i]);
+        n++;
       }
     }
     fclose(fp_list);
@@ -166,7 +168,7 @@ int main(int argc, char *argv[]){
       onexit(newsockd, sockd, fpl, 3);
     }
     fsize = fileStat.st_size;
-    printf("File size: %zu\n", fsize);
+    printf("File size: %"PRIu32"\n", fsize);
     if(send(newsockd, &fsize, sizeof(fsize), 0) < 0){
       perror("Errore durante l'invio grande file list");
       onexit(newsockd, sockd, fpl, 3);
@@ -176,7 +178,7 @@ int main(int argc, char *argv[]){
       perror("Invio file list non riuscito");
       onexit(newsockd, sockd, fpl, 3);
     }
-    if((size_t)rc_list != fsize){
+    if((uint32_t)rc_list != fsize){
       fprintf(stderr, "Trasferimento incompleto: %d di %d bytes\n", rc_list, (int)fileStat.st_size);
       onexit(newsockd, sockd, fpl, 3);
     }

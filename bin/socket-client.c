@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdint.h> /* per usare uint32_t invece di size_t */
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -17,13 +18,11 @@
 #include <fcntl.h>
 #include "prototypes.h"
 
-void clear_var(int, int, size_t);
-
 int main(int argc, char *argv[]){
 	
 	check_before_start(argc, argv);
 
-	int sockd, fd; /* descrittore del socket */
+	int sockd, fd, total_bytes_read = 0; /* descrittore del socket, file, bytes letti alla ricezione del file in totale */
 	int NumPorta = atoi(argv[2]); /* numero di porta */
 	struct sockaddr_in serv_addr; /* struttura contenente indirizzo del server */
 	char *user = argv[3]; /* contiene nome utente */
@@ -31,8 +30,9 @@ int main(int argc, char *argv[]){
 	char *filename = NULL, *conferma = NULL; /* contiene nome del file, contiene la conferma di ricezione */
 	static char filebuffer[1024], buffer[256], expected_string[256]; /* buffer usato per contenere vari dati */
 	struct hostent *hp; /* la struttura hostent mi servirà per l'indirizzo ip del server */
-	size_t fsize, nread = 0; /* fsize conterrà la grandezza del file e nread i bytes letti ogni volta del file */
-	int total_bytes_read = 0; /* bytes totali letti del file */
+	uint32_t fsize, nread = 0; /* fsize conterrà la grandezza del file e nread i bytes letti ogni volta del file */
+	FILE *fp; /* file usato per leggere listfiles.txt */
+	char c; /* usato per printare il file list 1 carattere per volta */
 	
 	hp = gethostbyname(argv[1]); /* inseriamo nella struttura hp le informazione sull'host "argv[1]" */
 	bzero((char *) &serv_addr, sizeof(serv_addr)); /* bzero scrive dei null bytes dove specificato per la lunghezza specificata */
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]){
     	close(sockd);
     	exit(1);
     }
-    while((total_bytes_read != fsize) && ((nread = read(sockd, filebuffer, sizeof(filebuffer))) > 0)){
+    while(((uint32_t)total_bytes_read != fsize) && ((nread = read(sockd, filebuffer, sizeof(filebuffer))) > 0)){
 		if(write(fd, filebuffer, nread) < 0){
 			perror("write");
 			close(sockd);
@@ -154,7 +154,14 @@ int main(int argc, char *argv[]){
 	clear_buf(buffer, filebuffer, NULL, 2);
 	close(fd);
 	printf("----- FILE LIST -----\n");
-	system("cat listfiles.txt");
+	if((fp=fopen("listfiles.txt", "r+")) == NULL){
+		perror("open file for read");
+		close(sockd);
+		exit(EXIT_FAILURE);
+	}
+	while((c=getc(fp)) != EOF){
+		putchar(c);
+	}
 	printf("----- END FILE LIST -----\n");
 	/************************* FINE RICHIESTA FILE LISTING *************************/
 
