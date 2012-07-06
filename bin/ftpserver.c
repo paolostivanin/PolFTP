@@ -37,7 +37,7 @@ int main(int argc, char *argv[]){
 	struct stat fileStat; /* struttura contenente informazioni sul file scelto */
 	struct hostent *local_ip; /* struttura contenente ip server */
 	static char filename[1024], buffer[256], saved_user[256]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
-	char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL, *other = NULL; /* puntatori per uso vario */
+	char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL, *other = NULL, *cd_path = NULL, *path = NULL; 
 	uint32_t fsize, count, i; /* grandezza file */
   char **files;
   FILE *fp_list;
@@ -187,23 +187,46 @@ int main(int argc, char *argv[]){
 		clear_buf(buffer, NULL, NULL, 1);
     /************************* FINE RICEZIONE LIST E INVIO LISTA *************************/
 
-    /************************* RICHIESTA CWD *************************/
+    /************************* RICHIESTA PWD *************************/
     if(recv(newsockd, buffer, 5, 0) < 0){
-      perror("Errore nella ricezione comando CWD");
+      perror("Errore nella ricezione comando PWD");
       onexit(newsockd, sockd, 0, 2);
     }
     other = strtok(buffer, "\n");
-    if(strcmp(other, "CWD") == 0){
-      printf("Ricevuta richiesta CWD\n");
+    if(strcmp(other, "PWD") == 0){
+      printf("Ricevuta richiesta PWD\n");
     } else onexit(newsockd, sockd, 0, 2); 
     clear_buf(buffer, NULL, NULL, 1);
-    sprintf(buffer, "CWD %s\n", (char *)(intptr_t)get_current_dir_name());
+    sprintf(buffer, "PWD: %s\n", (char *)(intptr_t)get_current_dir_name());
+    if(send(newsockd, buffer, strlen(buffer), 0) < 0){
+      perror("Errore durante l'invio PWD");
+      onexit(newsockd, sockd, 0, 2);
+    }
+    clear_buf(buffer, NULL, other, 4);
+    /************************* FINE RICHIESTA PWD *************************/
+
+    /************************* RICHIESTA CWD *************************/
+    if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
+      perror("Errore nella ricezione comando CWD");
+      onexit(newsockd, sockd, 0, 2);
+    }
+    cd_path = strtok(buffer, " ");
+    path = strtok(NULL, "\n");
+    if(strcmp(cd_path, "CWD") == 0){
+      printf("Ricevuta richiesta CWD\n");
+    } else onexit(newsockd, sockd, 0, 2);
+    if(chdir(path) < 0){
+      perror("chdir");
+      onexit(newsockd, sockd, 0, 2);
+    }
+    clear_buf(buffer, NULL, NULL, 1);
+    sprintf(buffer, "250 CWD command successful. PWD: %s\n", (char *)(intptr_t)get_current_dir_name());
     if(send(newsockd, buffer, strlen(buffer), 0) < 0){
       perror("Errore durante l'invio");
       onexit(newsockd, sockd, 0, 2);
     }
-    clear_buf(buffer, NULL, other, 4);
-    /************************* FINE RICHIESTA CWD *************************/
+    clear_buf(buffer, NULL, NULL, 1);
+    /************************* FINE RICHIESTA CD *************************/
     onexit(newsockd, sockd, 0, 2);
 
     	/* open the file to be sent

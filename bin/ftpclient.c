@@ -18,6 +18,8 @@
 #include <fcntl.h>
 #include "prototypes.h"
 
+#define BUFFGETS 150
+
 int main(int argc, char *argv[]){
 	
 	check_before_start(argc, argv);
@@ -28,7 +30,7 @@ int main(int argc, char *argv[]){
 	char *user = argv[3]; /* contiene nome utente */
 	char *pass = argv[4]; /* contiene password */
 	char *filename = NULL, *conferma = NULL; /* contiene nome del file, contiene la conferma di ricezione */
-	static char filebuffer[1024], buffer[256], expected_string[256]; /* buffer usato per contenere vari dati */
+	static char filebuffer[1024], buffer[256], expected_string[256], dirpath[BUFFGETS]; /* buffer usato per contenere vari dati */
 	struct hostent *hp; /* la struttura hostent mi servirà per l'indirizzo ip del server */
 	uint32_t fsize, nread = 0; /* fsize conterrà la grandezza del file e nread i bytes letti ogni volta del file */
 	FILE *fp; /* file usato per leggere listfiles.txt */
@@ -153,7 +155,7 @@ int main(int argc, char *argv[]){
 	}
 	clear_buf(buffer, filebuffer, NULL, 2);
 	close(fd);
-	printf("----- FILE LIST -----\n");
+	printf("\n----- FILE LIST -----\n");
 	if((fp=fopen("listfiles.txt", "r+")) == NULL){
 		perror("open file for read");
 		close(sockd);
@@ -165,8 +167,31 @@ int main(int argc, char *argv[]){
 	printf("----- END FILE LIST -----\n");
 	/************************* FINE RICHIESTA FILE LISTING *************************/
 
-	/************************* RICHIESTA CWD *************************/
-	strcpy(buffer, "CWD\n");
+	/************************* RICHIESTA PWD *************************/
+	strcpy(buffer, "PWD\n");
+	if(send(sockd, buffer, strlen(buffer), 0) < 0){
+		perror("Errore durante l'invio richiesta PWD");
+		close(sockd);
+		exit(1);
+	}
+	clear_buf(buffer, NULL, NULL, 1);
+	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
+    	perror("Errore ricezione PWD");
+    	close(sockd);
+    	exit(1);
+    }
+	conferma = strtok(buffer, "\n");
+   	printf("%s\n", conferma);
+    clear_buf(buffer, NULL, conferma, 4);
+	/************************* FINE RICHIESTA PWD *************************/
+
+	/************************* INVIO RICHIESTA CWD *************************/
+	printf("Inserire percorso: ");
+	if(fgets(dirpath, BUFFGETS, stdin) == NULL){
+		perror("fgets");
+		close(sockd);
+	}
+	sprintf(buffer, "CWD %s", dirpath);
 	if(send(sockd, buffer, strlen(buffer), 0) < 0){
 		perror("Errore durante l'invio richiesta CWD");
 		close(sockd);
@@ -174,20 +199,15 @@ int main(int argc, char *argv[]){
 	}
 	clear_buf(buffer, NULL, NULL, 1);
 	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
-    	perror("Errore nella ricezione CWD");
+    	perror("Errore ricezione CWD");
     	close(sockd);
     	exit(1);
     }
-	conferma = strtok(buffer, "\n");
-   	printf("%s\n", conferma);
+	conferma = strtok(buffer, "\0");
+   	printf("%s", conferma);
     clear_buf(buffer, NULL, conferma, 4);
 	/************************* FINE RICHIESTA CWD *************************/
-
-	/************************* INVIO RICHIESTA CD *************************/
-
-	/************************* FINE RICHIESTA CD *************************/
-
-
+    close(sockd);
 	exit(0);
 }
 	/*
