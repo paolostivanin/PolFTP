@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdint.h> /* per usare uint32_t invece di size_t */
+#include <inttypes.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -18,7 +19,7 @@
 #include <fcntl.h>
 #include "prototypes.h"
 
-#define BUFFGETS 150
+#define BUFFGETS 256
 
 int main(int argc, char *argv[]){
 	
@@ -30,7 +31,7 @@ int main(int argc, char *argv[]){
 	char *user = argv[3]; /* contiene nome utente */
 	char *pass = argv[4]; /* contiene password */
 	char *filename = NULL, *conferma = NULL; /* contiene nome del file, contiene la conferma di ricezione */
-	static char filebuffer[1024], buffer[256], expected_string[256], dirpath[BUFFGETS]; /* buffer usato per contenere vari dati */
+	static char filebuffer[1024], buffer[256], expected_string[128], dirpath[BUFFGETS]; /* buffer usato per contenere vari dati */
 	struct hostent *hp; /* la struttura hostent mi servirà per l'indirizzo ip del server */
 	uint32_t fsize, nread = 0; /* fsize conterrà la grandezza del file e nread i bytes letti ogni volta del file */
 	FILE *fp; /* file usato per leggere listfiles.txt */
@@ -41,8 +42,6 @@ int main(int argc, char *argv[]){
 	serv_addr.sin_family = AF_INET; /* la famiglia dei protocolli */
 	serv_addr.sin_port = htons(NumPorta); /* la porta */
 	serv_addr.sin_addr.s_addr = ((struct in_addr*)(hp->h_addr)) -> s_addr; /* memorizzo il tutto nella struttura serv_addr */
-
-	//strcpy(buffer, filename); /* copio il nome del file nel buffer */
 
 	if((sockd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
 		perror("Errore nella creazione della socket");
@@ -61,7 +60,7 @@ int main(int argc, char *argv[]){
     	exit(1);
     }
     printf("%s\n", buffer);
-    clear_buf(buffer, NULL, NULL, 1);
+    memset(buffer, 0, sizeof(buffer));
 	/************************* FINE MESSAGGIO DI BENVENUTO *************************/
 
     /************************* INIZIO PARTE LOGIN *************************/
@@ -72,7 +71,7 @@ int main(int argc, char *argv[]){
 		close(sockd);
 		exit(1);
 	}
-	clear_buf(buffer, NULL, NULL, 1);
+	memset(buffer, 0, sizeof(buffer));
 	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
     	perror("Errore nella ricezione della conferma USER");
     	close(sockd);
@@ -84,7 +83,7 @@ int main(int argc, char *argv[]){
     	close(sockd);
     	exit(1);
     }
-    clear_buf(buffer, NULL, conferma, 4);
+    memset(buffer, 0, sizeof(buffer));
     /************************* FINE NOME UTENTE *************************/
 	
     /************************* INVIO PASSWORD E RICEVO CONFERMA *************************/
@@ -94,7 +93,7 @@ int main(int argc, char *argv[]){
 		close(sockd);
 		exit(1);
 	}
-	clear_buf(buffer, NULL, NULL, 1);
+	memset(buffer, 0, sizeof(buffer));
 	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
     	perror("Errore nella ricezione della conferma PASS");
     	close(sockd);
@@ -106,7 +105,7 @@ int main(int argc, char *argv[]){
     	close(sockd);
     	exit(1);
     }
-    clear_buf(buffer, NULL, conferma, 4);
+    memset(buffer, 0, sizeof(buffer));
 	/************************* FINE PASSWORD *************************/
 
 	/************************* RICEZIONE CONFERMA LOG IN *************************/
@@ -124,7 +123,7 @@ int main(int argc, char *argv[]){
     } else{
     	printf("%s\n", conferma);
     }
-    clear_buf(buffer, NULL, conferma, 4);
+    memset(buffer, 0, sizeof(buffer));
 	/************************* FINE RICEZIONE CONFERMA LOG IN *************************/
 	/************************* FINE PARTE LOGIN *************************/
 
@@ -153,7 +152,8 @@ int main(int argc, char *argv[]){
 		}
 		total_bytes_read += nread;
 	}
-	clear_buf(buffer, filebuffer, NULL, 2);
+	memset(buffer, 0, sizeof(buffer));
+	memset(filebuffer, 0, sizeof(filebuffer));
 	close(fd);
 	printf("\n----- FILE LIST -----\n");
 	if((fp=fopen("listfiles.txt", "r+")) == NULL){
@@ -174,7 +174,7 @@ int main(int argc, char *argv[]){
 		close(sockd);
 		exit(1);
 	}
-	clear_buf(buffer, NULL, NULL, 1);
+	memset(buffer, 0, sizeof(buffer));
 	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
     	perror("Errore ricezione PWD");
     	close(sockd);
@@ -182,13 +182,13 @@ int main(int argc, char *argv[]){
     }
 	conferma = strtok(buffer, "\n");
    	printf("%s\n", conferma);
-    clear_buf(buffer, NULL, conferma, 4);
+    memset(buffer, 0, sizeof(buffer));
 	/************************* FINE RICHIESTA PWD *************************/
 
 	/************************* INVIO RICHIESTA CWD *************************/
 	printf("Inserire percorso: ");
 	if(fgets(dirpath, BUFFGETS, stdin) == NULL){
-		perror("fgets");
+		perror("fgets dir path");
 		close(sockd);
 	}
 	sprintf(buffer, "CWD %s", dirpath);
@@ -197,7 +197,7 @@ int main(int argc, char *argv[]){
 		close(sockd);
 		exit(1);
 	}
-	clear_buf(buffer, NULL, NULL, 1);
+	memset(buffer, 0, sizeof(buffer));
 	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
     	perror("Errore ricezione CWD");
     	close(sockd);
@@ -205,39 +205,51 @@ int main(int argc, char *argv[]){
     }
 	conferma = strtok(buffer, "\0");
    	printf("%s", conferma);
-    clear_buf(buffer, NULL, conferma, 4);
+    memset(buffer, 0, sizeof(buffer));
+    memset(dirpath, 0, sizeof(dirpath));
 	/************************* FINE RICHIESTA CWD *************************/
-    close(sockd);
-	exit(0);
-}
-	/*
+
+	/************************* INVIO NOME FILE E RICEZIONE FILE *************************/
+	printf("Inserire il nome del file da scaricare: ");
+	if(fgets(dirpath, BUFFGETS, stdin) == NULL){
+		perror("fgets nome file");
+		close(sockd);
+	}
+	filename = strtok(dirpath, "\n");
+	sprintf(buffer, "RETR %s", dirpath);
+	if(send(sockd, buffer, strlen(buffer), 0) < 0){
+		perror("Errore durante l'invio del nome del file");
+		close(sockd);
+		exit(1);
+	}
 	if(read(sockd, &fsize, sizeof(fsize)) < 0){
 		perror("Errore durante ricezione grandezza file\n");
 		close(sockd);
 		exit(1);
 	}
-
 	fd = open(filename, O_CREAT | O_WRONLY,0644);
 	if (fd  < 0) {
 		perror("open");
 		exit(1);
 	}
 	
-	while(total_bytes_read < fsize){
-		while ((nread = read(sockd, filebuffer, sizeof(filebuffer))) > 0){
-			if(write(fd, buffer, nread) < 0){
-				perror("write");
-				close(sockd);
-				exit(1);
-			}
-			total_bytes_read += nread;
+    while(((uint32_t)total_bytes_read != fsize) && ((nread = read(sockd, filebuffer, sizeof(filebuffer))) > 0)){
+		if(write(fd, filebuffer, nread) < 0){
+			perror("write");
+			close(sockd);
+			exit(1);
 		}
+		total_bytes_read += nread;
 	}
-	printf("File ricevuto\n");
+	printf("226 File trasferito con successo\n"); /* da far inviare al server */
+	printf("221 Goodbye\n") /* da far inviare al server */
+	close(fd);
+	/************************* FINE INVIO NOME FILE E RICEZIONE FILE *************************/
 
 	close(sockd);
 	return EXIT_SUCCESS;
-}*/
+}
+
 
 void check_before_start(int argc, char *argv[]){
 	/* Controllo che vi siano argv[0], argv[1], argv[2], argv[3] e argv[4] */
