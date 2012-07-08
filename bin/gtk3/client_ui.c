@@ -31,7 +31,7 @@ static void a_clicked (GtkWidget *a_dialog, gpointer data){
 
 	a_dialog = gtk_about_dialog_new ();
 	gtk_about_dialog_set_program_name (GTK_ABOUT_DIALOG (a_dialog), "FTP UTILS");
-	gtk_about_dialog_set_version (GTK_ABOUT_DIALOG (a_dialog), "1.0-prealpha");
+	gtk_about_dialog_set_version (GTK_ABOUT_DIALOG (a_dialog), "1.0-alpha1");
 	gtk_about_dialog_set_copyright (GTK_ABOUT_DIALOG (a_dialog), "Copyright (C) 2012");
 	gtk_about_dialog_set_comments (GTK_ABOUT_DIALOG (a_dialog), "Semplice client FTP sviluppato in C/GTK+");
 	gtk_about_dialog_set_license(GTK_ABOUT_DIALOG(a_dialog),
@@ -42,7 +42,7 @@ static void a_clicked (GtkWidget *a_dialog, gpointer data){
 "You should have received a copy of the GNU General Public License along with this program.\n"
 "If not, see http://www.gnu.org/licenses\n"
 "\n"
-"FTPUtils is Copyright (C) 2012 by Filippo Roncari, Paolo Stivanin, Stefano Agostini.\n");
+"FTPUtils is Copyright (C) 2012 by Paolo Stivanin.\n");
 	gtk_about_dialog_set_wrap_license(GTK_ABOUT_DIALOG(a_dialog), TRUE);
 	gtk_about_dialog_set_website (GTK_ABOUT_DIALOG (a_dialog), "https://github.com/polslinux/FTPUtils");
 	gtk_about_dialog_set_authors (GTK_ABOUT_DIALOG (a_dialog), authors);

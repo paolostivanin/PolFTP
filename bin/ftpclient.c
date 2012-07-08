@@ -146,7 +146,7 @@ int main(int argc, char *argv[]){
     }
     fsize_tmp = fsize;
     while(((uint32_t)total_bytes_read != fsize) && ((nread = read(sockd, filebuffer, fsize)) > 0)){
-		if(write(fd, filebuffer, nread) < 0){
+		if(write(fd, filebuffer, nread) != nread){
 			perror("write");
 			close(sockd);
 			exit(1);
@@ -240,8 +240,8 @@ int main(int argc, char *argv[]){
 	}
 	fsize_tmp = fsize;
     while(((uint32_t)total_bytes_read != fsize) && ((nread = read(sockd, filebuffer, fsize_tmp)) > 0)){
-		if(write(fd, filebuffer, nread) < 0){
-			perror("write");
+		if(write(fd, filebuffer, nread) != nread){
+			perror("write RETR");
 			close(sockd);
 			exit(1);
 		}
