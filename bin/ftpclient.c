@@ -31,9 +31,9 @@ int main(int argc, char *argv[]){
 	char *user = argv[3]; /* contiene nome utente */
 	char *pass = argv[4]; /* contiene password */
 	char *filename = NULL, *conferma = NULL; /* contiene nome del file, contiene la conferma di ricezione */
-	static char filebuffer[1024], buffer[256], expected_string[128], dirpath[BUFFGETS]; /* buffer usato per contenere vari dati */
+	static char filebuffer[1048576], buffer[256], expected_string[128], dirpath[BUFFGETS]; /* buffer usato per contenere vari dati */
 	struct hostent *hp; /* la struttura hostent mi servirà per l'indirizzo ip del server */
-	uint32_t fsize, nread = 0; /* fsize conterrà la grandezza del file e nread i bytes letti ogni volta del file */
+	uint32_t fsize, nread = 0, fsize_tmp; /* fsize conterrà la grandezza del file e nread i bytes letti ogni volta del file */
 	FILE *fp; /* file usato per leggere listfiles.txt */
 	char c; /* usato per printare il file list 1 carattere per volta */
 	
@@ -144,7 +144,8 @@ int main(int argc, char *argv[]){
     	close(sockd);
     	exit(1);
     }
-    while(((uint32_t)total_bytes_read != fsize) && ((nread = read(sockd, filebuffer, sizeof(filebuffer))) > 0)){
+    fsize_tmp = fsize;
+    while(((uint32_t)total_bytes_read != fsize) && ((nread = read(sockd, filebuffer, fsize)) > 0)){
 		if(write(fd, filebuffer, nread) < 0){
 			perror("write");
 			close(sockd);
@@ -165,6 +166,11 @@ int main(int argc, char *argv[]){
 		putchar(c);
 	}
 	printf("----- END FILE LIST -----\n");
+    if(remove( "listfiles.txt" ) == -1 ){
+      perror("errore cancellazione file");
+      close(sockd);
+      exit(EXIT_FAILURE);
+    }
 	/************************* FINE RICHIESTA FILE LISTING *************************/
 
 	/************************* RICHIESTA PWD *************************/
@@ -227,23 +233,37 @@ int main(int argc, char *argv[]){
 		close(sockd);
 		exit(1);
 	}
-	fd = open(filename, O_CREAT | O_WRONLY,0644);
+	fd = open(filename, O_CREAT | O_WRONLY, 0644);
 	if (fd  < 0) {
 		perror("open");
 		exit(1);
 	}
-	
-    while(((uint32_t)total_bytes_read != fsize) && ((nread = read(sockd, filebuffer, sizeof(filebuffer))) > 0)){
+	fsize_tmp = fsize;
+    while(((uint32_t)total_bytes_read != fsize) && ((nread = read(sockd, filebuffer, fsize_tmp)) > 0)){
 		if(write(fd, filebuffer, nread) < 0){
 			perror("write");
 			close(sockd);
 			exit(1);
 		}
 		total_bytes_read += nread;
+		fsize_tmp -= nread;
 	}
-	printf("226 File trasferito con successo\n"); /* da far inviare al server */
-	printf("221 Goodbye\n") /* da far inviare al server */
-	close(fd);
+	memset(buffer, 0, sizeof(buffer));
+	if(recv(sockd, buffer, 34, 0) < 0){
+    	perror("Errore ricezione 226");
+    	close(sockd);
+    	exit(1);
+    }
+    printf("%s", buffer);
+    memset(buffer, 0, sizeof(buffer));
+	if(recv(sockd, buffer, 13, 0) < 0){
+    	perror("Errore ricezione 221");
+    	close(sockd);
+    	exit(1);
+    }
+    printf("%s", buffer);
+    memset(buffer, 0, sizeof(buffer));
+    close(fd);
 	/************************* FINE INVIO NOME FILE E RICEZIONE FILE *************************/
 
 	close(sockd);
@@ -252,7 +272,6 @@ int main(int argc, char *argv[]){
 
 
 void check_before_start(int argc, char *argv[]){
-	/* Controllo che vi siano argv[0], argv[1], argv[2], argv[3] e argv[4] */
 	if(argc != 5){
 		printf("Uso: %s <hostname> <numero porta> <nomeutente> <password>\n", argv[0]);
 		exit(EXIT_FAILURE);

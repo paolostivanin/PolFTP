@@ -179,11 +179,15 @@ int main(int argc, char *argv[]){
       onexit(newsockd, sockd, fpl, 3);
     }
     if((uint32_t)rc_list != fsize){
-      fprintf(stderr, "Trasferimento incompleto: %d di %d bytes\n", rc_list, (int)fileStat.st_size);
+      fprintf(stderr, "Trasferimento incompleto: %d di %d bytes inviati\n", rc_list, (int)fileStat.st_size);
       onexit(newsockd, sockd, fpl, 3);
     }
     printf("File inviato\n");
     close(fpl);
+    if(remove( "listfiles.txt" ) == -1 ){
+      perror("errore cancellazione file");
+      onexit(newsockd, sockd, 0, 2);
+    }
 		memset(buffer, 0, sizeof(buffer));
     /************************* FINE RICEZIONE LIST E INVIO LISTA *************************/
 
@@ -255,21 +259,29 @@ int main(int argc, char *argv[]){
     	onexit(newsockd, sockd, fd, 3);
     }
 
-    offset = 0;
-    printf("Invio file\n");
    	rc = sendfile(newsockd, fd, &offset, fileStat.st_size);
-    if (rc == -1) {
+    if(rc == -1) {
      		fprintf(stderr, "Errore durante l'invio di: '%s'\n", strerror(errno));
      		onexit(newsockd, sockd, fd, 3);
     }
-    if ((uint32_t)rc != fsize) {
-    	fprintf(stderr, "Trasferimento incompleto: %d di %d bytes\n", rc, (int)fileStat.st_size);
+    if((uint32_t)rc != fsize) {
+    	fprintf(stderr, "Trasferimento incompleto: %d di %d bytes inviati\n", rc, (int)fileStat.st_size);
     	onexit(newsockd, sockd, fd, 3);
     }
-    printf("file inviato\n");
+    memset(buffer, 0, sizeof(buffer));
+    strcpy(buffer, "226 File trasferito con successo\n\0");
+    if(send(newsockd, buffer, strlen(buffer)+1, 0) < 0){
+      perror("Errore durante l'invio 226");
+      onexit(newsockd, sockd, 0, 2);
+    }
+    memset(buffer, 0, sizeof(buffer));
+    strcpy(buffer, "221 Goodbye\n\0");
+    if(send(newsockd, buffer, strlen(buffer)+1, 0) < 0){
+      perror("Errore durante l'invio 221");
+      onexit(newsockd, sockd, 0, 2);
+    }
     /************************* FINE RICEZIONE NOME FILE ED INVIO FILE *************************/
-
-		onexit(newsockd, 0, fd, 4);
+    onexit(newsockd, 0, fd, 4);
 	}
 	close(sockd);
 	exit(EXIT_SUCCESS);
@@ -287,7 +299,7 @@ void sig_handler(int signo, int sockd, int newsockd, int file){
     printf("Ricevuto SIGINT, esco...\n");
     close(newsockd);
     close(sockd);
-    close(file);
+    if(file) close(file);
     exit(EXIT_SUCCESS);
-    }
+  }
 }
