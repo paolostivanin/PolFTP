@@ -1,3 +1,5 @@
 TO ADD: dynamic filebuffer (now it is set to 1MB = 1024 KB)
 TO ADD: server send errors on all possible failure (dir doesn't exits, file doesn't exists, etc)
 TO ADD: file list when changing directory
+TO ADD: username and password into the client instead of argv. Password will be "obscured" thanks to termios.h
+TO ADD: fork server

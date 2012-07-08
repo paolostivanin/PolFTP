@@ -1,14 +1,23 @@
-23/07/2012 - v1.0-alpha1
-	* NEW: basic ftp server completed (USER, LIST, CD, RETR)
-	* NEW: basic ftp client completed (request LOGIN, request LIST, request CD, files DOWNLOAD)
+08/07/2012 - v1.0-alpha1
+	* NEW: basic ftp server completed (USER, PASS, LIST, PWD, CD, RETR)
+	* NEW: basic ftp client completed (USER, PASS, LIST, PWD, CD, RETR)
 	
 	
-26/07/2012 - v1.0-alpha2 (not sure about this)
-	* NEW: gtk ui for ftp client
+xx/07/2012 - v1.0-alpha2
+	* ADDED: dynamic filebuffer
+	* ADDED: file list when changing directory
+	* ADDED: username and password into the client instead of argv. Password will be "obscured" thanks to termios.h
+	
+xx/07/2012 - v1.0-alpha3
+	* ADDED: server send errors on all possible failure (dir doesn't exits, file doesn't exists, etc)
 
-27/07/2012 - v1.0-beta
+xx/07/2012 - v1.0-alpha4
+	* ADDED: server with fork
+	* UPDATED: readme
+
+xx/07/2012 - v1.0-beta
 	* FIXED: all possible bugs
 	* ADDED: documentation
 
-30/07/2012 - v1.0
+xx/07-08/2012 - v1.0
 	* Newstable release
