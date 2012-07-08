@@ -1,0 +1,2 @@
+* dynamic filebuffer (now it is set to 1MB = 1024 KB)
+* server send errors on all possible failure (dir doesn't exits, file doesn't exists, etc)
