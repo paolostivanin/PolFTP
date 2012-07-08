@@ -36,8 +36,8 @@ int main(int argc, char *argv[]){
 	off_t offset = 0, offset_list = 0; /* variabile di tipo offset */
 	struct stat fileStat; /* struttura contenente informazioni sul file scelto */
 	struct hostent *local_ip; /* struttura contenente ip server */
-	static char filename[1024], buffer[256], saved_user[256]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
-	char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL, *other = NULL; /* puntatori per uso vario */
+	static char buffer[256], saved_user[256]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
+	char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL, *other = NULL, *cd_path = NULL, *path = NULL, *filename = NULL; 
 	uint32_t fsize, count, i; /* grandezza file */
   char **files;
   FILE *fp_list;
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]){
       perror("Errore durante l'invio");
 			onexit(newsockd, sockd, 0, 2);
 		}
-		clear_buf(buffer, NULL, NULL, 1);
+		memset(buffer, 0, sizeof(buffer));
     /************************* FINE MESSAGGIO DI BENVENUTO *************************/
 
 		/************************* INIZIO PARTE LOGIN *************************/
@@ -98,13 +98,13 @@ int main(int argc, char *argv[]){
     username = strtok(NULL, "\n");
     fprintf(stdout, "%s %s\n", user_string, username);
     sprintf(saved_user, "%s", username);
-    clear_buf(buffer, NULL, NULL, 1);
+    memset(buffer, 0, sizeof(buffer));
     strcpy(buffer, "USEROK\n");
     if(send(newsockd, buffer, strlen(buffer), 0) < 0){
       perror("Errore durante l'invio");
 		  onexit(newsockd, sockd, 0, 2);
 		}
-		clear_buf(buffer, NULL, NULL, 1);
+		memset(buffer, 0, sizeof(buffer));
     /************************* FINE NOME UTENTE *************************/
 
     /************************* RICEVIAMO PASSWORD E MANDIAMO CONFERMA *************************/
@@ -115,13 +115,13 @@ int main(int argc, char *argv[]){
     pass_string = strtok(buffer, " ");
     password = strtok(NULL, "\n");
     fprintf(stdout, "%s %s\n", pass_string, password);
-    clear_buf(buffer, NULL, NULL, 1);
+    memset(buffer, 0, sizeof(buffer));
    	strcpy(buffer, "PASSOK\n");
     if(send(newsockd, buffer, strlen(buffer), 0) < 0){
       perror("Errore durante l'invio");
 		  onexit(newsockd, sockd, 0, 2);
 		}
-		clear_buf(buffer, NULL, NULL, 1);
+		memset(buffer, 0, sizeof(buffer));
     /************************* FINE PASSWORD *************************/
     	
     /************************* INVIO CONFERMA LOG IN *************************/
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]){
 			perror("Errore durante l'invio");
 			onexit(newsockd, sockd, 0, 2);
 		}
-		clear_buf(buffer, NULL, NULL, 1);
+		memset(buffer, 0, sizeof(buffer));
 		/************************* FINE CONFERMA LOG IN *************************/
     /************************* FINE PARTE LOGIN *************************/
 
@@ -179,74 +179,109 @@ int main(int argc, char *argv[]){
       onexit(newsockd, sockd, fpl, 3);
     }
     if((uint32_t)rc_list != fsize){
-      fprintf(stderr, "Trasferimento incompleto: %d di %d bytes\n", rc_list, (int)fileStat.st_size);
+      fprintf(stderr, "Trasferimento incompleto: %d di %d bytes inviati\n", rc_list, (int)fileStat.st_size);
       onexit(newsockd, sockd, fpl, 3);
     }
     printf("File inviato\n");
     close(fpl);
-		clear_buf(buffer, NULL, NULL, 1);
+    if(remove( "listfiles.txt" ) == -1 ){
+      perror("errore cancellazione file");
+      onexit(newsockd, sockd, 0, 2);
+    }
+		memset(buffer, 0, sizeof(buffer));
     /************************* FINE RICEZIONE LIST E INVIO LISTA *************************/
 
-    /************************* RICHIESTA CWD *************************/
+    /************************* RICHIESTA PWD *************************/
     if(recv(newsockd, buffer, 5, 0) < 0){
-      perror("Errore nella ricezione comando CWD");
+      perror("Errore nella ricezione comando PWD");
       onexit(newsockd, sockd, 0, 2);
     }
     other = strtok(buffer, "\n");
-    if(strcmp(other, "CWD") == 0){
-      printf("Ricevuta richiesta CWD\n");
+    if(strcmp(other, "PWD") == 0){
+      printf("Ricevuta richiesta PWD\n");
     } else onexit(newsockd, sockd, 0, 2); 
-    clear_buf(buffer, NULL, NULL, 1);
-    sprintf(buffer, "CWD %s\n", (char *)(intptr_t)get_current_dir_name());
+    memset(buffer, 0, sizeof(buffer));
+    sprintf(buffer, "PWD: %s\n", (char *)(intptr_t)get_current_dir_name());
+    if(send(newsockd, buffer, strlen(buffer), 0) < 0){
+      perror("Errore durante l'invio PWD");
+      onexit(newsockd, sockd, 0, 2);
+    }
+    memset(buffer, 0, sizeof(buffer));
+    /************************* FINE RICHIESTA PWD *************************/
+
+    /************************* RICHIESTA CWD *************************/
+    if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
+      perror("Errore nella ricezione comando CWD");
+      onexit(newsockd, sockd, 0, 2);
+    }
+    cd_path = strtok(buffer, " ");
+    path = strtok(NULL, "\n");
+    if(strcmp(cd_path, "CWD") == 0){
+      printf("Ricevuta richiesta CWD\n");
+    } else onexit(newsockd, sockd, 0, 2);
+    if(chdir(path) < 0){
+      perror("chdir");
+      onexit(newsockd, sockd, 0, 2);
+    }
+    memset(buffer, 0, sizeof(buffer));
+    sprintf(buffer, "250 CWD command successful. PWD: %s\n", (char *)(intptr_t)get_current_dir_name());
     if(send(newsockd, buffer, strlen(buffer), 0) < 0){
       perror("Errore durante l'invio");
       onexit(newsockd, sockd, 0, 2);
     }
-    clear_buf(buffer, NULL, other, 4);
-    /************************* FINE RICHIESTA CWD *************************/
-    onexit(newsockd, sockd, 0, 2);
+    memset(buffer, 0, sizeof(buffer));
+    /************************* FINE RICHIESTA CD *************************/
 
-    	/* open the file to be sent
-    	fd = open(filename, O_RDONLY);
-   	 	if (fd < 0) {
-    		fprintf(stderr, "Impossibile aprire '%s': %s\n", filename, strerror(errno));
-    		onexit(newsockd, sockd, 0, 2);
-    	}
+    /************************* RICEZIONE NOME FILE ED INVIO FILE *************************/
+    if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
+      perror("Errore nella ricezione del nome del file");
+      onexit(newsockd, sockd, 0, 2);
+    }
+    other = strtok(buffer, " ");
+    filename = strtok(NULL, "\n");
+    if(strcmp(other, "RETR") == 0){
+      printf("Ricevuta richiesta RETR\n");
+    } else onexit(newsockd, sockd, 0, 2);
+    
+    fd = open(filename, O_RDONLY);
+   		if (fd < 0) {
+    	fprintf(stderr, "Impossibile aprire '%s': %s\n", filename, strerror(errno));
+    	onexit(newsockd, sockd, 0, 2);
+    }
 
-		/* get the file name from the client
-    	if((rc = recv(newsockd, filename, sizeof(filename), 0)) < 0){
-    		perror("Errore nella ricezione del nome del file");
-    		onexit(newsockd, sockd, 0, 2);
-    	}
+    if(fstat(fd, &fileStat) < 0){
+    	perror("Errore fstat");
+    	onexit(newsockd, sockd, fd, 3);
+    }
+    fsize = fileStat.st_size;
+    if(send(newsockd, &fsize, sizeof(fsize), 0) < 0){
+    	perror("Errore durante l'invio della grandezza del file\n");
+    	onexit(newsockd, sockd, fd, 3);
+    }
 
-		/* Terminiamo il nome del file con NULL e se ultimo carattere è \n o \r lo cambiamo con \0
-		filename[rc] = '\0';
-    	if (filename[strlen(filename)-1] == '\n') filename[strlen(filename)-1] = '\0';
-    	if (filename[strlen(filename)-1] == '\r') filename[strlen(filename)-1] = '\0';
-
-    	/* get the size of the file to be sent
-    	if(fstat(fd, &fileStat) < 0){
-    		perror("Errore fstat");
-    		onexit(newsockd, sockd, fd, 3);
-    	}
-    	fsize = fileStat.st_size;
-    	if(send(newsockd, &fsize, sizeof(fsize), 0) < 0){
-    		perror("Errore durante l'invio della grandezza del file\n");
-    		onexit(newsockd, sockd, fd, 3);
-    	}
-    	/* copy file using sendfile
-    	offset = 0;
-   		rc = sendfile(newsockd, fd, &offset, fileStat.st_size);
-    	if (rc == -1) {
-      		fprintf(stderr, "Errore durante l'invio di: '%s'\n", strerror(errno));
-      		onexit(newsockd, sockd, fd, 3);
-    	}
-    	if (rc != fsize) {
-      		fprintf(stderr, "Trasferimento incompleto: %d di %d bytes\n", rc, (int)fileStat.st_size);
-      		onexit(newsockd, sockd, fd, 3);
-    	} */
-
-		onexit(newsockd, 0, fd, 4);
+   	rc = sendfile(newsockd, fd, &offset, fileStat.st_size);
+    if(rc == -1) {
+     		fprintf(stderr, "Errore durante l'invio di: '%s'\n", strerror(errno));
+     		onexit(newsockd, sockd, fd, 3);
+    }
+    if((uint32_t)rc != fsize) {
+    	fprintf(stderr, "Trasferimento incompleto: %d di %d bytes inviati\n", rc, (int)fileStat.st_size);
+    	onexit(newsockd, sockd, fd, 3);
+    }
+    memset(buffer, 0, sizeof(buffer));
+    strcpy(buffer, "226 File trasferito con successo\n\0");
+    if(send(newsockd, buffer, strlen(buffer)+1, 0) < 0){
+      perror("Errore durante l'invio 226");
+      onexit(newsockd, sockd, 0, 2);
+    }
+    memset(buffer, 0, sizeof(buffer));
+    strcpy(buffer, "221 Goodbye\n\0");
+    if(send(newsockd, buffer, strlen(buffer)+1, 0) < 0){
+      perror("Errore durante l'invio 221");
+      onexit(newsockd, sockd, 0, 2);
+    }
+    /************************* FINE RICEZIONE NOME FILE ED INVIO FILE *************************/
+    onexit(newsockd, 0, fd, 4);
 	}
 	close(sockd);
 	exit(EXIT_SUCCESS);
@@ -264,7 +299,7 @@ void sig_handler(int signo, int sockd, int newsockd, int file){
     printf("Ricevuto SIGINT, esco...\n");
     close(newsockd);
     close(sockd);
-    close(file);
+    if(file) close(file);
     exit(EXIT_SUCCESS);
-    }
+  }
 }
