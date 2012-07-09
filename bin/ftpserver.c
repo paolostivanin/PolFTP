@@ -269,13 +269,13 @@ int main(int argc, char *argv[]){
     	onexit(newsockd, sockd, fd, 3);
     }
     memset(buffer, 0, sizeof(buffer));
-    strcpy(buffer, "226 File trasferito con successo\n\0");
+    strcpy(buffer, "226 File trasferito con successo\n");
     if(send(newsockd, buffer, strlen(buffer)+1, 0) < 0){
       perror("Errore durante l'invio 226");
       onexit(newsockd, sockd, 0, 2);
     }
     memset(buffer, 0, sizeof(buffer));
-    strcpy(buffer, "221 Goodbye\n\0");
+    strcpy(buffer, "221 Goodbye\n");
     if(send(newsockd, buffer, strlen(buffer)+1, 0) < 0){
       perror("Errore durante l'invio 221");
       onexit(newsockd, sockd, 0, 2);

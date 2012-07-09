@@ -249,14 +249,14 @@ int main(int argc, char *argv[]){
 		fsize_tmp -= nread;
 	}
 	memset(buffer, 0, sizeof(buffer));
-	if(recv(sockd, buffer, 34, 0) < 0){
+	if(recv(sockd, buffer, 33, 0) < 0){
     	perror("Errore ricezione 226");
     	close(sockd);
     	exit(1);
     }
     printf("%s", buffer);
     memset(buffer, 0, sizeof(buffer));
-	if(recv(sockd, buffer, 13, 0) < 0){
+	if(recv(sockd, buffer, 12, 0) < 0){
     	perror("Errore ricezione 221");
     	close(sockd);
     	exit(1);
