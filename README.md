@@ -2,7 +2,7 @@ FTPUtils
 ========
 
 FTPUtils è sviluppato come progetto per corso di Reti di Calcolatori tenutosi presso il DTI di Crema durante l'anno scolastico 2011/2012.
-Esso è composto da un server e un client FTP che supportano solo le funzioni base quali USER, PASS, LIST, PWD, CD, RETR. 
+Esso è composto da un server e un client FTP che supportano solo le funzioni base quali USER, PASS, LIST, SYST, PWD, CD, RETR. 
 L'interfaccia del client (se sarà sviluppata completamente) è sviluppata con il toolkit GTK+.<br>
 Lo studente sviluppatore del progetto è:
 
@@ -14,7 +14,7 @@ Requisiti
 * GCC		: per compilare i programmi (consigliata versione >= 4.4.0)
 * Make      : per lanciare il Makefile
 * GTK+	 	: per l'interfaccia grafica (**obbligatoria versione >=3.4.0**)
-* GNU/Linux	: i software sono stati sviluppati su ambienti GNU/Linux e quindi **NON** compileranno su ambienti MS Windows. Per quanto riguarda ambienti Mac OS X non ho la possibilità di verificare anche se la presenza di GCC 4.2.0 potrebbe causare problemi in fase di compilazione.
+* GNU/Linux	: i software sono stati sviluppati su ambienti GNU/Linux e quindi **NON** compileranno su ambienti MS Windows e, molto probabilmente, **NON** compileranno nemmeno su MAC OS X.
 
 Compilazione
 ------------
@@ -30,7 +30,7 @@ Come usare client e server
 --------------------------
 Attualmente il server è solo iterativo (1 connessione alla volta) ma è in sviluppo anche il server parallelo che userà la chiamata "fork"
 `./ftpserver <numporta>`<br>
-`./ftpclient <host> <numporta> <username> <password>`
+`./ftpclient <host> <numporta>`
 
 Licenza
 -------

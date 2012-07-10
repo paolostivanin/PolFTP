@@ -37,8 +37,9 @@ int main(int argc, char *argv[]){
 	struct stat fileStat; /* struttura contenente informazioni sul file scelto */
 	struct hostent *local_ip; /* struttura contenente ip server */
 	static char buffer[256], saved_user[256]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
-	char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL, *other = NULL, *cd_path = NULL, *path = NULL, *filename = NULL; 
-	uint32_t fsize, count, i; /* grandezza file */
+	char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL, *other = NULL, *cd_path = NULL, *path = NULL;
+  char *sysname = NULL, *filename = NULL;
+	uint32_t fsize, count, i;
   char **files;
   FILE *fp_list;
 	
@@ -134,8 +135,22 @@ int main(int argc, char *argv[]){
 		/************************* FINE CONFERMA LOG IN *************************/
     /************************* FINE PARTE LOGIN *************************/
 
+    /************************* RICHIESTA SYST *************************/
+    if(recv(newsockd, buffer, 5, 0) < 0){
+      perror("Errore ricezione comando SYST");
+      onexit(newsockd, sockd, 0, 2);
+    }
+    get_syst(&sysname);
+    sprintf(buffer, "%s\n", sysname);
+    if(send(newsockd, buffer, strlen(buffer), 0) < 0){
+      perror("Errore durante l'invio risposta SYST");
+      onexit(newsockd, sockd, 0, 2);
+    }
+    memset(buffer, 0, sizeof(buffer));
+    /************************* FINE SYST *************************/
+
     /************************* RICEZIONE RICHIESTA LIST E INVIO LISTA *************************/
-    if(recv(newsockd, buffer, 6, 0) < 0){
+    if(recv(newsockd, buffer, 5, 0) < 0){
     	perror("Errore nella ricezione comando LIST");
     	onexit(newsockd, sockd, 0, 2);
     }
@@ -168,7 +183,6 @@ int main(int argc, char *argv[]){
       onexit(newsockd, sockd, fpl, 3);
     }
     fsize = fileStat.st_size;
-    printf("File size: %"PRIu32"\n", fsize);
     if(send(newsockd, &fsize, sizeof(fsize), 0) < 0){
       perror("Errore durante l'invio grande file list");
       onexit(newsockd, sockd, fpl, 3);
@@ -182,7 +196,6 @@ int main(int argc, char *argv[]){
       fprintf(stderr, "Trasferimento incompleto: %d di %d bytes inviati\n", rc_list, (int)fileStat.st_size);
       onexit(newsockd, sockd, fpl, 3);
     }
-    printf("File inviato\n");
     close(fpl);
     if(remove( "listfiles.txt" ) == -1 ){
       perror("errore cancellazione file");
@@ -192,7 +205,7 @@ int main(int argc, char *argv[]){
     /************************* FINE RICEZIONE LIST E INVIO LISTA *************************/
 
     /************************* RICHIESTA PWD *************************/
-    if(recv(newsockd, buffer, 5, 0) < 0){
+    if(recv(newsockd, buffer, 4, 0) < 0){
       perror("Errore nella ricezione comando PWD");
       onexit(newsockd, sockd, 0, 2);
     }
@@ -270,13 +283,13 @@ int main(int argc, char *argv[]){
     }
     memset(buffer, 0, sizeof(buffer));
     strcpy(buffer, "226 File trasferito con successo\n");
-    if(send(newsockd, buffer, strlen(buffer)+1, 0) < 0){
+    if(send(newsockd, buffer, strlen(buffer), 0) < 0){
       perror("Errore durante l'invio 226");
       onexit(newsockd, sockd, 0, 2);
     }
     memset(buffer, 0, sizeof(buffer));
     strcpy(buffer, "221 Goodbye\n");
-    if(send(newsockd, buffer, strlen(buffer)+1, 0) < 0){
+    if(send(newsockd, buffer, strlen(buffer), 0) < 0){
       perror("Errore durante l'invio 221");
       onexit(newsockd, sockd, 0, 2);
     }

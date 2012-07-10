@@ -1,16 +1,11 @@
-all: ftpclient ftpserver ftpclient_gui
+all: ftpclient ftpserver
 
-ftpclient: bin/ftpclient.c
+ftpclient: ftpclient.c ftpclient.c clear_buf.c
 	@echo "--> Compiling client..."
-	@gcc -Wall -Wextra -Wformat-security -O2 -D_FORTIFY_SOURCE=2 -fstack-protector -o ftpclient bin/ftpclient.c
+	@gcc -Wall -Wextra -g -O2 -D_FORTIFY_SOURCE=2 -fstack-protector -o ftpclient ftpclient.c onexit.c
 	@echo "--> ...done"
 	
-ftpclient: bin/ftpserver.c
+ftpserver: ftpserver.c list-files.c onexit.c clear_buf.c
 	@echo "--> Compiling server..."
-	@gcc -Wall -Wextra -Wformat-security -O2 -D_FORTIFY_SOURCE=2 -fstack-protector -o ftpserver bin/ftpserver.c bin/list-files.c bin/onexit.c
+	@gcc -Wall -Wextra -O2 -D_FORTIFY_SOURCE=2 -fstack-protector -o ftpserver ftpserver.c list-files.c get_syst.c onexit.c
 	@echo "--> ...done"
-	
-ftpclient_gui: bin/gtk3/entry.c
-	@echo "--> Compiling client GUI..."
-	@gcc -Wall -O2 -D_FORTIFY_SOURCE=2 -fstack-protector -o ftpclient_gui bin/gtk3/client_ui.c  `pkg-config --cflags --libs gtk+-3.0`
-	@echo "--> ...done!"
