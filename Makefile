@@ -1,13 +1,21 @@
+CC = gcc
+CFLAGS = -Wall -Wextra -Wformat-security -O2 -D_FORTIFY_SOURCE=2 -fstack-protector
+
+CLANG_OR_GCC := $(shell which clang)
+ifeq "$(CLANG_OR_GCC)" "/usr/bin/clang"
+CC = clang
+endif
+
 all: ftpclient ftpserver
 
-ftpclient: bin/ftpclient.c bin/ftpclient.c bin/clear_buf.c
+ftpclient: bin/ftpclient.c bin/ftpclient.c bin/onexit.c
 	@echo "--> Compiling client..."
-	@gcc -Wall -Wextra -Wformat-security -O2 -D_FORTIFY_SOURCE=2 -fstack-protector -o ftpclient bin/ftpclient.c bin/onexit.c
+	@$(CC) $(CFLAGS) -o ftpclient bin/ftpclient.c bin/onexit.c
 	@echo "--> ...done"
 	
-ftpserver: bin/ftpserver.c bin/list-files.c bin/onexit.c bin/clear_buf.c
+ftpserver: bin/ftpserver.c bin/list-files.c bin/onexit.c bin/get_syst.c
 	@echo "--> Compiling server..."
-	@gcc -Wall -Wextra -Wformat-security -O2 -D_FORTIFY_SOURCE=2 -fstack-protector -o ftpserver bin/ftpserver.c bin/list-files.c bin/get_syst.c bin/onexit.c
+	@$(CC) $(CFLAGS) -o ftpserver bin/ftpserver.c bin/list-files.c bin/get_syst.c bin/onexit.c
 	@echo "--> ...done"
 
 ftpclient_gui: bin/gtk3/entry.c
