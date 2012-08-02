@@ -30,6 +30,7 @@ int main(int argc, char *argv[]){
 	int NumPorta = atoi(argv[2]); /* numero di porta */
 	static struct sockaddr_in serv_addr; /* struttura contenente indirizzo del server */
 	char *user = NULL, *pass = NULL, *filename = NULL, *conferma = NULL, *filebuffer = NULL;
+  char *c1="SYST (1)", *c2 = "LIST (2)", *c3 = " PWD (3)", *c4 = "CWD (4)", *c5 = "RETR (5)", *c6 = "EXIT (6)";
 	static char buffer[256], expected_string[128], dirpath[256]; /*buffer usato per contenere vari dati */
 	static struct hostent *hp; /* la struttura hostent mi servirà per l'indirizzo ip del server */
 	uint32_t fsize, nread = 0, fsize_tmp; /* fsize conterrà la grandezza del file e nread i bytes letti ogni volta del file */
@@ -55,15 +56,15 @@ int main(int argc, char *argv[]){
 	}
 	/************************* MESSAGGIO DI BENVENUTO *************************/
 	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
-    	perror("Errore nella ricezione del messaggio di benvenuto\n");
-    	close(sockd);
-    	exit(1);
-    }
-    printf("%s\n", buffer);
-    memset(buffer, 0, sizeof(buffer));
+   	perror("Errore nella ricezione del messaggio di benvenuto\n");
+   	close(sockd);
+   	exit(1);
+   }
+  printf("%s\n", buffer);
+  memset(buffer, 0, sizeof(buffer));
 	/************************* FINE MESSAGGIO DI BENVENUTO *************************/
 
-    /************************* INIZIO PARTE LOGIN *************************/
+  /************************* INIZIO PARTE LOGIN *************************/
 	/************************* INVIO NOME UTENTE E RICEVO CONFERMA *************************/
 	/* salvo i settaggi attuali di STDIN_FILENO ed assegno a newt i valore di oldt*/
 	tcgetattr( STDIN_FILENO, &oldt);
@@ -85,9 +86,9 @@ int main(int argc, char *argv[]){
 		perror("scanf user");
 		onexit(sockd, 0, 0, 1);
 	}
-    /* resetto con oldt l'attuale STDIN_FILENO*/ 
-    tcsetattr( STDIN_FILENO, TCSANOW, &oldt);
-    printf("\n");
+  /* resetto con oldt l'attuale STDIN_FILENO*/ 
+  tcsetattr( STDIN_FILENO, TCSANOW, &oldt);
+  printf("\n");
 	sprintf(buffer, "USER %s\n", user);
 	if(send(sockd, buffer, strlen(buffer), 0) < 0){
 		perror("Errore durante l'invio di USER");
@@ -96,20 +97,20 @@ int main(int argc, char *argv[]){
 	}
 	memset(buffer, 0, sizeof(buffer));
 	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
-    	perror("Errore nella ricezione della conferma USER");
-    	close(sockd);
-    	exit(1);
-    }
-    conferma = strtok(buffer, "\n");
-    if(strcmp(conferma, "USEROK") != 0){
-    	printf("Nome utente non ricevuto\n");
-    	close(sockd);
-    	exit(1);
-    }
-    memset(buffer, 0, sizeof(buffer));
-    /************************* FINE NOME UTENTE *************************/
+   	perror("Errore nella ricezione della conferma USER");
+   	close(sockd);
+   	exit(1);
+  }
+  conferma = strtok(buffer, "\n");
+  if(strcmp(conferma, "USEROK") != 0){
+   	printf("Nome utente non ricevuto\n");
+   	close(sockd);
+  	exit(1);
+  }
+  memset(buffer, 0, sizeof(buffer));
+  /************************* FINE NOME UTENTE *************************/
 	
-    /************************* INVIO PASSWORD E RICEVO CONFERMA *************************/
+  /************************* INVIO PASSWORD E RICEVO CONFERMA *************************/
 	sprintf(buffer, "PASS %s\n", pass);
 	if(send(sockd, buffer, strlen(buffer), 0) < 0){
 		perror("Errore durante l'invio di PASS");
@@ -118,167 +119,168 @@ int main(int argc, char *argv[]){
 	}
 	memset(buffer, 0, sizeof(buffer));
 	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
-    	perror("Errore nella ricezione della conferma PASS");
-    	close(sockd);
-    	exit(1);
-    }
-    conferma = strtok(buffer, "\n");
-    if(strcmp(conferma, "PASSOK") != 0){
-    	printf("Password non ricevuta\n");
-    	close(sockd);
-    	exit(1);
-    }
-    memset(buffer, 0, sizeof(buffer));
+   	perror("Errore nella ricezione della conferma PASS");
+   	close(sockd);
+   	exit(1);
+  }
+  conferma = strtok(buffer, "\n");
+  if(strcmp(conferma, "PASSOK") != 0){
+   	printf("Password non ricevuta\n");
+   	close(sockd);
+   	exit(1);
+  }
+  memset(buffer, 0, sizeof(buffer));
 	/************************* FINE PASSWORD *************************/
 
 	/************************* RICEZIONE CONFERMA LOG IN *************************/
 	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
-    	perror("Errore nella ricezione dellaa conferma LOG IN");
-    	onexit(sockd, 0, 0, 1);
-    }
-    conferma = strtok(buffer, "\n");
-    sprintf(expected_string, "230 USER %s logged in", user);
-    if(strcmp(conferma, expected_string) != 0){
-    	printf("Login non effettuato\n");
-    	onexit(sockd, 0, 0, 1);
-    } else{
-    	printf("%s\n", conferma);
-    }
-    memset(buffer, 0, sizeof(buffer));
-    free(user);
-    free(pass);
+   	perror("Errore nella ricezione dellaa conferma LOG IN");
+   	onexit(sockd, 0, 0, 1);
+  }
+  conferma = strtok(buffer, "\n");
+  sprintf(expected_string, "230 USER %s logged in", user);
+  if(strcmp(conferma, expected_string) != 0){
+   	printf("Login non effettuato\n");
+   	onexit(sockd, 0, 0, 1);
+  } else{
+   	printf("%s\n", conferma);
+  }
+  memset(buffer, 0, sizeof(buffer));
+  free(user);
+  free(pass);
 	/************************* FINE RICEZIONE CONFERMA LOG IN *************************/
 	/************************* FINE PARTE LOGIN *************************/
 
 	/************************* SCELTA AZIONE, INVIO AZIONE, RICEZIONE CONFERMA, ESECUZIONE AZIONE *************************/
-    exec_switch:
-    printf("Scegliere un'azione da eseguire tra:\nSYST (1)\tLIST (2)\nPWD (3)\tCWD (4)\nRETR (5)\tEXIT (6)\n");
-    if(scanf("%d", &scelta) < 1){
-    	perror("Errore scanf");
-    	onexit(sockd, 0, 0, 1);
-    }
-    switch(scelta){
-    	case 1:
-    		strcpy(buffer, "SYST");
-    		var = strlen(buffer);
-    		if(send(sockd, &var, sizeof(var), 0) < 0){
-    			perror("Errore durante l'invio lunghezza azione");
-    			onexit(sockd, 0, 0, 1);
-    		}
-    	   	if(send(sockd, buffer, var, 0) < 0){
-   				perror("Errore durante l'invio azione");
-   				onexit(sockd, 0, 0, 1);
-   			}
-   		   	if(recv(sockd, &var, sizeof(var), 0) < 0){
-   				perror("Errore durante la ricezione conferma azione");
-   				onexit(sockd, 0, 0, 1);
-   			}
-   			if(var == 1) goto exec_switch;
-    		goto exec_syst;
-    	case 2:
-    		strcpy(buffer, "LIST");
-    		var = strlen(buffer);
-    		if(send(sockd, &var, sizeof(var), 0) < 0){
-    			perror("Errore durante l'invio lunghezza azione");
-    			onexit(sockd, 0, 0, 1);
-    		}
-    	   	if(send(sockd, buffer, var, 0) < 0){
-   				perror("Errore durante l'invio azione");
-   				onexit(sockd, 0, 0, 1);
-   			}
-   		   	if(recv(sockd, &var, sizeof(var), 0) < 0){
-   				perror("Errore durante la ricezione conferma azione");
-   				onexit(sockd, 0, 0, 1);
-   			}
-   			if(var == 1) goto exec_switch;
-   			goto exec_list;
-    	case 3:
-    		strcpy(buffer, "PWD");
-    		var = strlen(buffer);
-    		if(send(sockd, &var, sizeof(var), 0) < 0){
-    			perror("Errore durante l'invio lunghezza azione");
-    			onexit(sockd, 0, 0, 1);
-    		}
-    	   	if(send(sockd, buffer, var, 0) < 0){
-   				perror("Errore durante l'invio azione");
-   				onexit(sockd, 0, 0, 1);
-   			}
-   		   	if(recv(sockd, &var, sizeof(var), 0) < 0){
-   				perror("Errore durante la ricezione conferma azione");
-   				onexit(sockd, 0, 0, 1);
-   			}
-   			if(var == 1) goto exec_switch;
-   			goto exec_pwd;
-    	case 4:
-    		strcpy(buffer, "CWD");
-    		var = strlen(buffer);
-    		if(send(sockd, &var, sizeof(var), 0) < 0){
-    			perror("Errore durante l'invio lunghezza azione");
-    			onexit(sockd, 0, 0, 1);
-    		}
-    	   	if(send(sockd, buffer, var, 0) < 0){
-   				perror("Errore durante l'invio azione");
-   				onexit(sockd, 0, 0, 1);
-   			}
-   		   	if(recv(sockd, &var, sizeof(var), 0) < 0){
-   				perror("Errore durante la ricezione conferma azione");
-   				onexit(sockd, 0, 0, 1);
-   			}
-   			if(var == 1) goto exec_switch;
-   			goto exec_cwd;
-    	case 5:
-    		strcpy(buffer, "RETR");
-    		var = strlen(buffer);
-    		if(send(sockd, &var, sizeof(var), 0) < 0){
-    			perror("Errore durante l'invio lunghezza azione");
-    			onexit(sockd, 0, 0, 1);
-    		}
-    	   	if(send(sockd, buffer, var, 0) < 0){
-   				perror("Errore durante l'invio azione");
-   				onexit(sockd, 0, 0, 1);
-   			}
-   		   	if(recv(sockd, &var, sizeof(var), 0) < 0){
-   				perror("Errore durante la ricezione conferma azione");
-   				onexit(sockd, 0, 0, 1);
-   			}
-   			if(var == 1) goto exec_switch;
-   			goto exec_retr;
-    	case 6:
-    		strcpy(buffer, "EXIT");
-    		var = strlen(buffer);
-    		if(send(sockd, &var, sizeof(var), 0) < 0){
-    			perror("Errore durante l'invio lunghezza azione");
-    			onexit(sockd, 0, 0, 1);
-    		}
-    	   	if(send(sockd, buffer, var, 0) < 0){
-   				perror("Errore durante l'invio azione");
-   				onexit(sockd, 0, 0, 1);
-   			}
-   		   	if(recv(sockd, &var, sizeof(var), 0) < 0){
-   				perror("Errore durante la ricezione conferma azione");
-   				onexit(sockd, 0, 0, 1);
-   			}
-   			if(var == 1) goto exec_switch;
-   			goto exec_exit;
-    	default: printf("Istruzione errata\n"); goto exec_switch;
-    }
-   	/************************* FINE PARTE AZIONE UTENTE *************************/
+  exec_switch:
+  printf("\nScegliere un'azione da eseguire tra:\n%s%10s\n%s%10s\n%s%10s\n--> ", c1, c2, c3, c4, c5, c6);
+  if(scanf("%d%*c", &scelta) < 1){
+   	perror("Errore scanf");
+   	onexit(sockd, 0, 0, 1);
+  }
+  printf("\n");
+  switch(scelta){
+   	case 1:
+   		strcpy(buffer, "SYST");
+   		var = strlen(buffer);
+   		if(send(sockd, &var, sizeof(var), 0) < 0){
+   			perror("Errore durante l'invio lunghezza azione");
+   			onexit(sockd, 0, 0, 1);
+   		}
+   	 	if(send(sockd, buffer, var, 0) < 0){
+    		perror("Errore durante l'invio azione");
+   			onexit(sockd, 0, 0, 1);
+   		}
+   	 	if(recv(sockd, &var, sizeof(var), 0) < 0){
+   			perror("Errore durante la ricezione conferma azione");
+   			onexit(sockd, 0, 0, 1);
+   		}
+   		if(var == 1) goto exec_switch;
+    	goto exec_syst;
+    case 2:
+    	strcpy(buffer, "LIST");
+    	var = strlen(buffer);
+    	if(send(sockd, &var, sizeof(var), 0) < 0){
+    		perror("Errore durante l'invio lunghezza azione");
+    		onexit(sockd, 0, 0, 1);
+    	}
+     	if(send(sockd, buffer, var, 0) < 0){
+   			perror("Errore durante l'invio azione");
+   			onexit(sockd, 0, 0, 1);
+   		}
+   	 	if(recv(sockd, &var, sizeof(var), 0) < 0){
+   			perror("Errore durante la ricezione conferma azione");
+   			onexit(sockd, 0, 0, 1);
+   		}
+   		if(var == 1) goto exec_switch;
+   		goto exec_list;
+    case 3:
+    	strcpy(buffer, "PWD");
+    	var = strlen(buffer);
+    	if(send(sockd, &var, sizeof(var), 0) < 0){
+    		perror("Errore durante l'invio lunghezza azione");
+    		onexit(sockd, 0, 0, 1);
+    	}
+     	if(send(sockd, buffer, var, 0) < 0){
+   			perror("Errore durante l'invio azione");
+   			onexit(sockd, 0, 0, 1);
+   		}
+   	 	if(recv(sockd, &var, sizeof(var), 0) < 0){
+   			perror("Errore durante la ricezione conferma azione");
+   			onexit(sockd, 0, 0, 1);
+   		}
+   		if(var == 1) goto exec_switch;
+   		goto exec_pwd;
+    case 4:
+    	strcpy(buffer, "CWD");
+    	var = strlen(buffer);
+    	if(send(sockd, &var, sizeof(var), 0) < 0){
+    		perror("Errore durante l'invio lunghezza azione");
+    		onexit(sockd, 0, 0, 1);
+    	}
+     	if(send(sockd, buffer, var, 0) < 0){
+   			perror("Errore durante l'invio azione");
+   			onexit(sockd, 0, 0, 1);
+   		}
+   	 	if(recv(sockd, &var, sizeof(var), 0) < 0){
+   			perror("Errore durante la ricezione conferma azione");
+   			onexit(sockd, 0, 0, 1);
+   		}
+   		if(var == 1) goto exec_switch;
+   		goto exec_cwd;
+    case 5:
+    	strcpy(buffer, "RETR");
+    	var = strlen(buffer);
+    	if(send(sockd, &var, sizeof(var), 0) < 0){
+    		perror("Errore durante l'invio lunghezza azione");
+    		onexit(sockd, 0, 0, 1);
+    	}
+     	if(send(sockd, buffer, var, 0) < 0){
+   			perror("Errore durante l'invio azione");
+   			onexit(sockd, 0, 0, 1);
+   		}
+   	 	if(recv(sockd, &var, sizeof(var), 0) < 0){
+   			perror("Errore durante la ricezione conferma azione");
+   			onexit(sockd, 0, 0, 1);
+   		}
+   		if(var == 1) goto exec_switch;
+   		goto exec_retr;
+    case 6:
+    	strcpy(buffer, "EXIT");
+    	var = strlen(buffer);
+    	if(send(sockd, &var, sizeof(var), 0) < 0){
+    		perror("Errore durante l'invio lunghezza azione");
+    		onexit(sockd, 0, 0, 1);
+    	}
+     	if(send(sockd, buffer, var, 0) < 0){
+   			perror("Errore durante l'invio azione");
+   			onexit(sockd, 0, 0, 1);
+   		}
+   	 	if(recv(sockd, &var, sizeof(var), 0) < 0){
+   			perror("Errore durante la ricezione conferma azione");
+   			onexit(sockd, 0, 0, 1);
+   		}
+   		if(var == 1) goto exec_switch;
+   		goto exec_exit;
+    default: printf("Istruzione errata\n"); goto exec_switch;
+  }
+  /************************* FINE PARTE AZIONE UTENTE *************************/
 
 	/************************* RICHIESTA SYST *************************/
 	exec_syst:
-    strcpy(buffer, "SYST\n");
-   	if(send(sockd, buffer, strlen(buffer), 0) < 0){
-   		perror("Errore durante l'invio richiesta SYST");
-   		onexit(sockd, 0, 0, 1);
-   	}
-   	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
-   		perror("Errore durante la ricezione risposta SYST");
-   		onexit(sockd, 0, 0, 1);
-   	}
-   	conferma = strtok(buffer, "\n");
-   	printf("SYST type: %s\n", conferma);
-   	memset(buffer, 0, sizeof(buffer));
-   	goto exec_switch;
+  strcpy(buffer, "SYST\n");
+  if(send(sockd, buffer, strlen(buffer), 0) < 0){
+  	perror("Errore durante l'invio richiesta SYST");
+  	onexit(sockd, 0, 0, 1);
+  }
+  if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
+  	perror("Errore durante la ricezione risposta SYST");
+  	onexit(sockd, 0, 0, 1);
+  }
+  conferma = strtok(buffer, "\n");
+  printf("SYST type: %s\n", conferma);
+  memset(buffer, 0, sizeof(buffer));
+  goto exec_switch;
 	/************************* FINE SYST *************************/
 
 	/************************* INVIO RICHIESTA FILE LISTING *************************/
@@ -289,28 +291,28 @@ int main(int argc, char *argv[]){
 		onexit(sockd, 0, 0, 1);;
 	}
 	if(recv(sockd, &fsize, sizeof(fsize), 0) < 0){
-    	perror("Errore nella ricezione della grandezza del file");
-    	close(sockd);
-    	exit(1);
+   	perror("Errore nella ricezione della grandezza del file");
+   	close(sockd);
+   	exit(1);
+  }
+  if((fd = open("listfiles.txt", O_CREAT | O_WRONLY,0644)) < 0){
+  	perror("open file list");
+   	close(sockd);
+   	exit(1);
+  }
+  fsize_tmp = fsize;
+  filebuffer = malloc(fsize);
+  if(filebuffer == NULL){
+   	perror("malloc");
+   	onexit(sockd, 0, fd, 4);
+  }
+  while(((uint32_t)total_bytes_read != fsize) && ((nread = read(sockd, filebuffer, fsize)) > 0)){
+    if(write(fd, filebuffer, nread) != nread){
+      perror("write");
+		  close(sockd);
+		  exit(1);
     }
-    if((fd = open("listfiles.txt", O_CREAT | O_WRONLY,0644)) < 0){
-    	perror("open file list");
-    	close(sockd);
-    	exit(1);
-    }
-    fsize_tmp = fsize;
-    filebuffer = malloc(fsize);
-    if(filebuffer == NULL){
-    	perror("malloc");
-    	onexit(sockd, 0, fd, 4);
-    }
-    while(((uint32_t)total_bytes_read != fsize) && ((nread = read(sockd, filebuffer, fsize)) > 0)){
-		if(write(fd, filebuffer, nread) != nread){
-			perror("write");
-			close(sockd);
-			exit(1);
-		}
-		total_bytes_read += nread;
+	total_bytes_read += nread;
 	}
 	memset(buffer, 0, sizeof(buffer));
 	close(fd);
@@ -324,13 +326,13 @@ int main(int argc, char *argv[]){
 		putchar(c);
 	}
 	printf("----- END FILE LIST -----\n");
-    if(remove( "listfiles.txt" ) == -1 ){
-      perror("errore cancellazione file");
-      close(sockd);
-      exit(EXIT_FAILURE);
-    }
-    free(filebuffer);
-    goto exec_switch;
+  if(remove( "listfiles.txt" ) == -1 ){
+    perror("errore cancellazione file");
+    close(sockd);
+    exit(EXIT_FAILURE);
+  }
+  free(filebuffer);
+  goto exec_switch;
 	/************************* FINE RICHIESTA FILE LISTING *************************/
 
 	/************************* RICHIESTA PWD *************************/
@@ -343,14 +345,14 @@ int main(int argc, char *argv[]){
 	}
 	memset(buffer, 0, sizeof(buffer));
 	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
-    	perror("Errore ricezione PWD");
-    	close(sockd);
-    	exit(1);
-    }
+   	perror("Errore ricezione PWD");
+   	close(sockd);
+   	exit(1);
+  }
 	conferma = strtok(buffer, "\n");
-   	printf("%s\n", conferma);
-    memset(buffer, 0, sizeof(buffer));
-    goto exec_switch;
+  printf("%s\n", conferma);
+  memset(buffer, 0, sizeof(buffer));
+  goto exec_switch;
 	/************************* FINE RICHIESTA PWD *************************/
 
 	/************************* INVIO RICHIESTA CWD *************************/
@@ -368,15 +370,15 @@ int main(int argc, char *argv[]){
 	}
 	memset(buffer, 0, sizeof(buffer));
 	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
-    	perror("Errore ricezione CWD");
-    	close(sockd);
-    	exit(1);
-    }
+   	perror("Errore ricezione CWD");
+   	close(sockd);
+   	exit(1);
+  }
 	conferma = strtok(buffer, "\0");
-   	printf("%s", conferma);
-    memset(buffer, 0, sizeof(buffer));
-    memset(dirpath, 0, sizeof(dirpath));
-    goto exec_switch;
+  printf("%s", conferma);
+  memset(buffer, 0, sizeof(buffer));
+  memset(dirpath, 0, sizeof(dirpath));
+  goto exec_switch;
 	/************************* FINE RICHIESTA CWD *************************/
 
 	/************************* INVIO NOME FILE E RICEZIONE FILE *************************/
@@ -405,12 +407,12 @@ int main(int argc, char *argv[]){
 	}
 	fsize_tmp = fsize;
 	filebuffer = malloc(fsize);
-    if(filebuffer == NULL){
-    	perror("malloc");
-    	onexit(sockd, 0, fd, 4);
-    }
-    while(((uint32_t)total_bytes_read != fsize) && ((nread = read(sockd, filebuffer, fsize_tmp)) > 0)){
-		if(write(fd, filebuffer, nread) != nread){
+  if(filebuffer == NULL){
+   	perror("malloc");
+   	onexit(sockd, 0, fd, 4);
+  }
+  while(((uint32_t)total_bytes_read != fsize) && ((nread = read(sockd, filebuffer, fsize_tmp)) > 0)){
+    if(write(fd, filebuffer, nread) != nread){
 			perror("write RETR");
 			close(sockd);
 			exit(1);
@@ -420,25 +422,28 @@ int main(int argc, char *argv[]){
 	}
 	memset(buffer, 0, sizeof(buffer));
 	if(recv(sockd, buffer, 33, 0) < 0){
-    	perror("Errore ricezione 226");
-    	close(sockd);
-    	exit(1);
-    }
-    printf("%s", buffer);
-    memset(buffer, 0, sizeof(buffer));
-	if(recv(sockd, buffer, 12, 0) < 0){
-    	perror("Errore ricezione 221");
-    	close(sockd);
-    	exit(1);
-    }
-    printf("%s", buffer);
-    memset(buffer, 0, sizeof(buffer));
-    free(filebuffer);
-    close(fd);
+    perror("Errore ricezione 226");
+    close(sockd);
+    exit(1);
+  }
+  printf("%s", buffer);
+  memset(buffer, 0, sizeof(buffer));
+  free(filebuffer);
+  close(fd);
+  goto exec_switch;
 	/************************* FINE INVIO NOME FILE E RICEZIONE FILE *************************/
-	goto exec_switch;
 
+  /************************* SALUTO FINALE *************************/
 	exec_exit:
+  if(recv(sockd, buffer, 12, 0) < 0){
+    perror("Errore ricezione 221");
+    close(sockd);
+    exit(1);
+  }
+  printf("%s", buffer);
+  close(sockd);
+  /************************* SALUTO FINALE *************************/
+
 	return EXIT_SUCCESS;
 }
 

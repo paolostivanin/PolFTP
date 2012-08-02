@@ -201,7 +201,7 @@ int main(int argc, char *argv[]){
           close(newsockd);
           exit(1);
         };
-        onexit(newsockd, sockd, 0, 2);
+        goto send_goodbye;
       default: printf("Istruzione errata\n"); goto exec_resend;
     }
     exec_resend:
@@ -375,14 +375,19 @@ int main(int argc, char *argv[]){
       onexit(newsockd, sockd, 0, 2);
     }
     memset(buffer, 0, sizeof(buffer));
+    close(fd);
+    goto exec_listen_action;
+    /************************* FINE RICEZIONE NOME FILE ED INVIO FILE *************************/
+
+    /************************* SALUTO FINALE *************************/
+    send_goodbye:
     strcpy(buffer, "221 Goodbye\n");
     if(send(newsockd, buffer, strlen(buffer), 0) < 0){
       perror("Errore durante l'invio 221");
       onexit(newsockd, sockd, 0, 2);
     }
-    close(fd);
-    goto exec_listen_action;
-    /************************* FINE RICEZIONE NOME FILE ED INVIO FILE *************************/
+    onexit(newsockd, sockd, 0, 2);
+    /************************* SALUTO FINALE *************************/
 	}
 	return EXIT_SUCCESS;
 }
