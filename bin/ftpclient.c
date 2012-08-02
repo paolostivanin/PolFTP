@@ -17,23 +17,23 @@
 #include <sys/types.h>
 #include <netdb.h>
 #include <fcntl.h>
+#include <termios.h> /* per nascondere la password */
 #include "prototypes.h"
 
-#define BUFFGETS 256
+#define BUFFGETS 255
 
 int main(int argc, char *argv[]){
 	
 	check_before_start(argc, argv);
 
-	int sockd, fd, total_bytes_read = 0; /* descrittore del socket, file, bytes letti alla ricezione del file in totale */
+	int sockd, fd, total_bytes_read = 0, var = 0, scelta = 0; /* descrittore del socket, file, bytes letti alla ricezione del file in totale */
 	int NumPorta = atoi(argv[2]); /* numero di porta */
-	struct sockaddr_in serv_addr; /* struttura contenente indirizzo del server */
-	char *user = argv[3]; /* contiene nome utente */
-	char *pass = argv[4]; /* contiene password */
-	char *filename = NULL, *conferma = NULL; /* contiene nome del file, contiene la conferma di ricezione */
-	static char filebuffer[1048576], buffer[256], expected_string[128], dirpath[BUFFGETS]; /* buffer usato per contenere vari dati */
-	struct hostent *hp; /* la struttura hostent mi servirà per l'indirizzo ip del server */
+	static struct sockaddr_in serv_addr; /* struttura contenente indirizzo del server */
+	char *user = NULL, *pass = NULL, *filename = NULL, *conferma = NULL, *filebuffer = NULL;
+	static char buffer[256], expected_string[128], dirpath[256]; /*buffer usato per contenere vari dati */
+	static struct hostent *hp; /* la struttura hostent mi servirà per l'indirizzo ip del server */
 	uint32_t fsize, nread = 0, fsize_tmp; /* fsize conterrà la grandezza del file e nread i bytes letti ogni volta del file */
+	static struct termios oldt, newt;
 	FILE *fp; /* file usato per leggere listfiles.txt */
 	char c; /* usato per printare il file list 1 carattere per volta */
 	
@@ -65,6 +65,29 @@ int main(int argc, char *argv[]){
 
     /************************* INIZIO PARTE LOGIN *************************/
 	/************************* INVIO NOME UTENTE E RICEVO CONFERMA *************************/
+	/* salvo i settaggi attuali di STDIN_FILENO ed assegno a newt i valore di oldt*/
+	tcgetattr( STDIN_FILENO, &oldt);
+	newt = oldt;
+
+	printf("User: ");
+	/* Which will read everything up to the newline into the string you pass in, then will consume
+	 * a single character (the newline) without assigning it to anything (that '*' is 'assignment suppression'). */
+	if(scanf("%m[^\n]%*c", &user) == EOF){
+		perror("scanf user");
+		onexit(sockd, 0, 0, 1);
+	}
+	printf("Pass: ");
+    /* imposto il bit appropriato nella struttura newt */
+    newt.c_lflag &= ~(ECHO); 
+    /* imposto il nuovo bit nell'attuale STDIN_FILENO */
+    tcsetattr( STDIN_FILENO, TCSANOW, &newt);
+	if(scanf("%m[^\n]%*c", &pass) == EOF){
+		perror("scanf user");
+		onexit(sockd, 0, 0, 1);
+	}
+    /* resetto con oldt l'attuale STDIN_FILENO*/ 
+    tcsetattr( STDIN_FILENO, TCSANOW, &oldt);
+    printf("\n");
 	sprintf(buffer, "USER %s\n", user);
 	if(send(sockd, buffer, strlen(buffer), 0) < 0){
 		perror("Errore durante l'invio di USER");
@@ -110,29 +133,160 @@ int main(int argc, char *argv[]){
 
 	/************************* RICEZIONE CONFERMA LOG IN *************************/
 	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
-    	perror("Errore nella ricezione della conferma LOG IN");
-    	close(sockd);
-    	exit(1);
+    	perror("Errore nella ricezione dellaa conferma LOG IN");
+    	onexit(sockd, 0, 0, 1);
     }
     conferma = strtok(buffer, "\n");
-    sprintf(expected_string, "230 USER %s logged in", argv[3]);
+    sprintf(expected_string, "230 USER %s logged in", user);
     if(strcmp(conferma, expected_string) != 0){
     	printf("Login non effettuato\n");
-    	close(sockd);
-    	exit(1);
+    	onexit(sockd, 0, 0, 1);
     } else{
     	printf("%s\n", conferma);
     }
     memset(buffer, 0, sizeof(buffer));
+    free(user);
+    free(pass);
 	/************************* FINE RICEZIONE CONFERMA LOG IN *************************/
 	/************************* FINE PARTE LOGIN *************************/
 
+	/************************* SCELTA AZIONE, INVIO AZIONE, RICEZIONE CONFERMA, ESECUZIONE AZIONE *************************/
+    exec_switch:
+    printf("Scegliere un'azione da eseguire tra:\nSYST (1)\tLIST (2)\nPWD (3)\tCWD (4)\nRETR (5)\tEXIT (6)\n");
+    if(scanf("%d", &scelta) < 1){
+    	perror("Errore scanf");
+    	onexit(sockd, 0, 0, 1);
+    }
+    switch(scelta){
+    	case 1:
+    		strcpy(buffer, "SYST");
+    		var = strlen(buffer);
+    		if(send(sockd, &var, sizeof(var), 0) < 0){
+    			perror("Errore durante l'invio lunghezza azione");
+    			onexit(sockd, 0, 0, 1);
+    		}
+    	   	if(send(sockd, buffer, var, 0) < 0){
+   				perror("Errore durante l'invio azione");
+   				onexit(sockd, 0, 0, 1);
+   			}
+   		   	if(recv(sockd, &var, sizeof(var), 0) < 0){
+   				perror("Errore durante la ricezione conferma azione");
+   				onexit(sockd, 0, 0, 1);
+   			}
+   			if(var == 1) goto exec_switch;
+    		goto exec_syst;
+    	case 2:
+    		strcpy(buffer, "LIST");
+    		var = strlen(buffer);
+    		if(send(sockd, &var, sizeof(var), 0) < 0){
+    			perror("Errore durante l'invio lunghezza azione");
+    			onexit(sockd, 0, 0, 1);
+    		}
+    	   	if(send(sockd, buffer, var, 0) < 0){
+   				perror("Errore durante l'invio azione");
+   				onexit(sockd, 0, 0, 1);
+   			}
+   		   	if(recv(sockd, &var, sizeof(var), 0) < 0){
+   				perror("Errore durante la ricezione conferma azione");
+   				onexit(sockd, 0, 0, 1);
+   			}
+   			if(var == 1) goto exec_switch;
+   			goto exec_list;
+    	case 3:
+    		strcpy(buffer, "PWD");
+    		var = strlen(buffer);
+    		if(send(sockd, &var, sizeof(var), 0) < 0){
+    			perror("Errore durante l'invio lunghezza azione");
+    			onexit(sockd, 0, 0, 1);
+    		}
+    	   	if(send(sockd, buffer, var, 0) < 0){
+   				perror("Errore durante l'invio azione");
+   				onexit(sockd, 0, 0, 1);
+   			}
+   		   	if(recv(sockd, &var, sizeof(var), 0) < 0){
+   				perror("Errore durante la ricezione conferma azione");
+   				onexit(sockd, 0, 0, 1);
+   			}
+   			if(var == 1) goto exec_switch;
+   			goto exec_pwd;
+    	case 4:
+    		strcpy(buffer, "CWD");
+    		var = strlen(buffer);
+    		if(send(sockd, &var, sizeof(var), 0) < 0){
+    			perror("Errore durante l'invio lunghezza azione");
+    			onexit(sockd, 0, 0, 1);
+    		}
+    	   	if(send(sockd, buffer, var, 0) < 0){
+   				perror("Errore durante l'invio azione");
+   				onexit(sockd, 0, 0, 1);
+   			}
+   		   	if(recv(sockd, &var, sizeof(var), 0) < 0){
+   				perror("Errore durante la ricezione conferma azione");
+   				onexit(sockd, 0, 0, 1);
+   			}
+   			if(var == 1) goto exec_switch;
+   			goto exec_cwd;
+    	case 5:
+    		strcpy(buffer, "RETR");
+    		var = strlen(buffer);
+    		if(send(sockd, &var, sizeof(var), 0) < 0){
+    			perror("Errore durante l'invio lunghezza azione");
+    			onexit(sockd, 0, 0, 1);
+    		}
+    	   	if(send(sockd, buffer, var, 0) < 0){
+   				perror("Errore durante l'invio azione");
+   				onexit(sockd, 0, 0, 1);
+   			}
+   		   	if(recv(sockd, &var, sizeof(var), 0) < 0){
+   				perror("Errore durante la ricezione conferma azione");
+   				onexit(sockd, 0, 0, 1);
+   			}
+   			if(var == 1) goto exec_switch;
+   			goto exec_retr;
+    	case 6:
+    		strcpy(buffer, "EXIT");
+    		var = strlen(buffer);
+    		if(send(sockd, &var, sizeof(var), 0) < 0){
+    			perror("Errore durante l'invio lunghezza azione");
+    			onexit(sockd, 0, 0, 1);
+    		}
+    	   	if(send(sockd, buffer, var, 0) < 0){
+   				perror("Errore durante l'invio azione");
+   				onexit(sockd, 0, 0, 1);
+   			}
+   		   	if(recv(sockd, &var, sizeof(var), 0) < 0){
+   				perror("Errore durante la ricezione conferma azione");
+   				onexit(sockd, 0, 0, 1);
+   			}
+   			if(var == 1) goto exec_switch;
+   			goto exec_exit;
+    	default: printf("Istruzione errata\n"); goto exec_switch;
+    }
+   	/************************* FINE PARTE AZIONE UTENTE *************************/
+
+	/************************* RICHIESTA SYST *************************/
+	exec_syst:
+    strcpy(buffer, "SYST\n");
+   	if(send(sockd, buffer, strlen(buffer), 0) < 0){
+   		perror("Errore durante l'invio richiesta SYST");
+   		onexit(sockd, 0, 0, 1);
+   	}
+   	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
+   		perror("Errore durante la ricezione risposta SYST");
+   		onexit(sockd, 0, 0, 1);
+   	}
+   	conferma = strtok(buffer, "\n");
+   	printf("SYST type: %s\n", conferma);
+   	memset(buffer, 0, sizeof(buffer));
+   	goto exec_switch;
+	/************************* FINE SYST *************************/
+
 	/************************* INVIO RICHIESTA FILE LISTING *************************/
+	exec_list:
 	strcpy(buffer, "LIST\n");
 	if(send(sockd, buffer, strlen(buffer), 0) < 0){
 		perror("Errore durante l'invio richiesta LIST");
-		close(sockd);
-		exit(1);
+		onexit(sockd, 0, 0, 1);;
 	}
 	if(recv(sockd, &fsize, sizeof(fsize), 0) < 0){
     	perror("Errore nella ricezione della grandezza del file");
@@ -145,8 +299,13 @@ int main(int argc, char *argv[]){
     	exit(1);
     }
     fsize_tmp = fsize;
+    filebuffer = malloc(fsize);
+    if(filebuffer == NULL){
+    	perror("malloc");
+    	onexit(sockd, 0, fd, 4);
+    }
     while(((uint32_t)total_bytes_read != fsize) && ((nread = read(sockd, filebuffer, fsize)) > 0)){
-		if(write(fd, filebuffer, nread) < 0){
+		if(write(fd, filebuffer, nread) != nread){
 			perror("write");
 			close(sockd);
 			exit(1);
@@ -154,7 +313,6 @@ int main(int argc, char *argv[]){
 		total_bytes_read += nread;
 	}
 	memset(buffer, 0, sizeof(buffer));
-	memset(filebuffer, 0, sizeof(filebuffer));
 	close(fd);
 	printf("\n----- FILE LIST -----\n");
 	if((fp=fopen("listfiles.txt", "r+")) == NULL){
@@ -171,9 +329,12 @@ int main(int argc, char *argv[]){
       close(sockd);
       exit(EXIT_FAILURE);
     }
+    free(filebuffer);
+    goto exec_switch;
 	/************************* FINE RICHIESTA FILE LISTING *************************/
 
 	/************************* RICHIESTA PWD *************************/
+	exec_pwd:
 	strcpy(buffer, "PWD\n");
 	if(send(sockd, buffer, strlen(buffer), 0) < 0){
 		perror("Errore durante l'invio richiesta PWD");
@@ -189,9 +350,11 @@ int main(int argc, char *argv[]){
 	conferma = strtok(buffer, "\n");
    	printf("%s\n", conferma);
     memset(buffer, 0, sizeof(buffer));
+    goto exec_switch;
 	/************************* FINE RICHIESTA PWD *************************/
 
 	/************************* INVIO RICHIESTA CWD *************************/
+	exec_cwd:
 	printf("Inserire percorso: ");
 	if(fgets(dirpath, BUFFGETS, stdin) == NULL){
 		perror("fgets dir path");
@@ -213,9 +376,11 @@ int main(int argc, char *argv[]){
    	printf("%s", conferma);
     memset(buffer, 0, sizeof(buffer));
     memset(dirpath, 0, sizeof(dirpath));
+    goto exec_switch;
 	/************************* FINE RICHIESTA CWD *************************/
 
 	/************************* INVIO NOME FILE E RICEZIONE FILE *************************/
+	exec_retr:
 	printf("Inserire il nome del file da scaricare: ");
 	if(fgets(dirpath, BUFFGETS, stdin) == NULL){
 		perror("fgets nome file");
@@ -239,9 +404,14 @@ int main(int argc, char *argv[]){
 		exit(1);
 	}
 	fsize_tmp = fsize;
+	filebuffer = malloc(fsize);
+    if(filebuffer == NULL){
+    	perror("malloc");
+    	onexit(sockd, 0, fd, 4);
+    }
     while(((uint32_t)total_bytes_read != fsize) && ((nread = read(sockd, filebuffer, fsize_tmp)) > 0)){
-		if(write(fd, filebuffer, nread) < 0){
-			perror("write");
+		if(write(fd, filebuffer, nread) != nread){
+			perror("write RETR");
 			close(sockd);
 			exit(1);
 		}
@@ -249,31 +419,33 @@ int main(int argc, char *argv[]){
 		fsize_tmp -= nread;
 	}
 	memset(buffer, 0, sizeof(buffer));
-	if(recv(sockd, buffer, 34, 0) < 0){
+	if(recv(sockd, buffer, 33, 0) < 0){
     	perror("Errore ricezione 226");
     	close(sockd);
     	exit(1);
     }
     printf("%s", buffer);
     memset(buffer, 0, sizeof(buffer));
-	if(recv(sockd, buffer, 13, 0) < 0){
+	if(recv(sockd, buffer, 12, 0) < 0){
     	perror("Errore ricezione 221");
     	close(sockd);
     	exit(1);
     }
     printf("%s", buffer);
     memset(buffer, 0, sizeof(buffer));
+    free(filebuffer);
     close(fd);
 	/************************* FINE INVIO NOME FILE E RICEZIONE FILE *************************/
+	goto exec_switch;
 
-	close(sockd);
+	exec_exit:
 	return EXIT_SUCCESS;
 }
 
 
 void check_before_start(int argc, char *argv[]){
-	if(argc != 5){
-		printf("Uso: %s <hostname> <numero porta> <nomeutente> <password>\n", argv[0]);
+	if(argc != 3){
+		printf("Uso: %s <hostname> <numero porta>\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
 }

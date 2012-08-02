@@ -3,21 +3,22 @@
 	* NEW: basic ftp client completed (USER, PASS, LIST, PWD, CD, RETR)
 	
 	
-xx/07/2012 - v1.0-alpha2
+02/08/2012 - v1.0-alpha2
 	* ADDED: dynamic filebuffer
-	* ADDED: file list when changing directory
+	* ADDED: SYST cmd
 	* ADDED: username and password into the client instead of argv. Password will be "obscured" thanks to termios.h
+	* IMPROVED: goto on client/server + switch case on server
 	
-xx/07/2012 - v1.0-alpha3
+??/08/2012 - v1.0-alpha3
 	* ADDED: server send errors on all possible failure (dir doesn't exits, file doesn't exists, etc)
 
-xx/07/2012 - v1.0-alpha4
+??/08/2012 - v1.0-alpha4
 	* ADDED: server with fork
 	* UPDATED: readme
 
-xx/07/2012 - v1.0-beta
+??/08/2012 - v1.0-beta
 	* FIXED: all possible bugs
 	* ADDED: documentation
 
-xx/07-08/2012 - v1.0
+??/08-09/2012 - v1.0
 	* Newstable release
