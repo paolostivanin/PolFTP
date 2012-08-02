@@ -1,2 +1,0 @@
-TO ADD: server send errors on all possible failure (dir doesn't exits, file doesn't exists, etc)
-TO ADD: fork server
