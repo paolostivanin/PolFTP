@@ -30,7 +30,7 @@ int main(int argc, char *argv[]){
 	
 	check_before_start(argc, argv);
 	
-	int sockd, newsockd, socket_len, rc, rc_list, fd, fpl, n = 1;
+	int sockd, newsockd, socket_len, rc, rc_list, fd, fpl, n = 1, var = 0, number = 0;
 	int NumPorta = atoi(argv[1]);
 	struct sockaddr_in serv_addr, cli_addr; /* strutture contenenti indirizzo del server e del client */
 	off_t offset = 0, offset_list = 0; /* variabile di tipo offset */
@@ -135,7 +135,86 @@ int main(int argc, char *argv[]){
 		/************************* FINE CONFERMA LOG IN *************************/
     /************************* FINE PARTE LOGIN *************************/
 
+    /************************* RESTO IN ASCOLTO DELL'AZIONE DAL CLIENT *************************/
+    exec_listen_action:
+    if(recv(newsockd, &var, sizeof(var), 0) < 0){
+      perror("Errore nella ricezione lunghezza azione\n");
+      close(newsockd);
+      exit(1);
+    }
+    if(recv(newsockd, buffer, var, 0) < 0){
+      perror("Errore nella ricezione azione\n");
+      close(newsockd);
+      exit(1);
+    }
+    if(strcmp(buffer, "SYST") == 0) number = 1;
+    if(strcmp(buffer, "LIST") == 0) number = 2;
+    if(strcmp(buffer, "PWD") == 0) number = 3;
+    if(strcmp(buffer, "CWD") == 0) number = 4;
+    if(strcmp(buffer, "RETR") == 0) number = 5;
+    if(strcmp(buffer, "EXIT") == 0) number = 6;
+    switch(number){
+      case 1:
+        var=0;
+        if(send(newsockd, &var, sizeof(var), 0) < 0){
+          perror("Errore durante l'invio errore ricezione azione");
+          close(newsockd);
+          exit(1);
+        };
+        goto exec_syst;
+      case 2:
+        var=0;
+        if(send(newsockd, &var, sizeof(var), 0) < 0){
+          perror("Errore durante l'invio errore ricezione azione");
+          close(newsockd);
+          exit(1);
+        };
+        goto exec_list;
+      case 3: 
+        var=0;
+        if(send(newsockd, &var, sizeof(var), 0) < 0){
+          perror("Errore durante l'invio errore ricezione azione");
+          close(newsockd);
+          exit(1);
+        };
+        goto exec_pwd;
+      case 4:
+        var=0;
+        if(send(newsockd, &var, sizeof(var), 0) < 0){
+          perror("Errore durante l'invio errore ricezione azione");
+          close(newsockd);
+          exit(1);
+        };
+        goto exec_cwd;
+      case 5:
+        var=0;
+        if(send(newsockd, &var, sizeof(var), 0) < 0){
+          perror("Errore durante l'invio errore ricezione azione");
+          close(newsockd);
+          exit(1);
+        };
+        goto exec_retr;
+      case 6:
+        var=0;
+        if(send(newsockd, &var, sizeof(var), 0) < 0){
+          perror("Errore durante l'invio errore ricezione azione");
+          close(newsockd);
+          exit(1);
+        };
+        onexit(newsockd, sockd, 0, 2);
+      default: printf("Istruzione errata\n"); goto exec_resend;
+    }
+    exec_resend:
+    var=1;
+    if(send(newsockd, &var, sizeof(var), 0) < 0){
+      perror("Errore durante l'invio errore ricezione azione");
+      close(newsockd);
+      exit(1);
+    }
+    /************************* FINE PARTE ASCOLTO *************************/
+
     /************************* RICHIESTA SYST *************************/
+    exec_syst:
     if(recv(newsockd, buffer, 5, 0) < 0){
       perror("Errore ricezione comando SYST");
       onexit(newsockd, sockd, 0, 2);
@@ -147,9 +226,11 @@ int main(int argc, char *argv[]){
       onexit(newsockd, sockd, 0, 2);
     }
     memset(buffer, 0, sizeof(buffer));
+    goto exec_listen_action;
     /************************* FINE SYST *************************/
 
     /************************* RICEZIONE RICHIESTA LIST E INVIO LISTA *************************/
+    exec_list:
     if(recv(newsockd, buffer, 5, 0) < 0){
     	perror("Errore nella ricezione comando LIST");
     	onexit(newsockd, sockd, 0, 2);
@@ -202,9 +283,11 @@ int main(int argc, char *argv[]){
       onexit(newsockd, sockd, 0, 2);
     }
 		memset(buffer, 0, sizeof(buffer));
+    goto exec_listen_action;
     /************************* FINE RICEZIONE LIST E INVIO LISTA *************************/
 
     /************************* RICHIESTA PWD *************************/
+    exec_pwd:
     if(recv(newsockd, buffer, 4, 0) < 0){
       perror("Errore nella ricezione comando PWD");
       onexit(newsockd, sockd, 0, 2);
@@ -220,9 +303,11 @@ int main(int argc, char *argv[]){
       onexit(newsockd, sockd, 0, 2);
     }
     memset(buffer, 0, sizeof(buffer));
+    goto exec_listen_action;
     /************************* FINE RICHIESTA PWD *************************/
 
     /************************* RICHIESTA CWD *************************/
+    exec_cwd:
     if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
       perror("Errore nella ricezione comando CWD");
       onexit(newsockd, sockd, 0, 2);
@@ -243,9 +328,11 @@ int main(int argc, char *argv[]){
       onexit(newsockd, sockd, 0, 2);
     }
     memset(buffer, 0, sizeof(buffer));
+    goto exec_listen_action;
     /************************* FINE RICHIESTA CD *************************/
 
     /************************* RICEZIONE NOME FILE ED INVIO FILE *************************/
+    exec_retr:
     if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
       perror("Errore nella ricezione del nome del file");
       onexit(newsockd, sockd, 0, 2);
@@ -293,11 +380,11 @@ int main(int argc, char *argv[]){
       perror("Errore durante l'invio 221");
       onexit(newsockd, sockd, 0, 2);
     }
+    close(fd);
+    goto exec_listen_action;
     /************************* FINE RICEZIONE NOME FILE ED INVIO FILE *************************/
-    onexit(newsockd, 0, fd, 4);
 	}
-	close(sockd);
-	exit(EXIT_SUCCESS);
+	return EXIT_SUCCESS;
 }
 
 void check_before_start(int argc, char *argv[]){
@@ -310,7 +397,7 @@ void check_before_start(int argc, char *argv[]){
 void sig_handler(int signo, int sockd, int newsockd, int file){
   if (signo == SIGINT){
     printf("Ricevuto SIGINT, esco...\n");
-    close(newsockd);
+    if(newsockd) close(newsockd);
     close(sockd);
     if(file) close(file);
     exit(EXIT_SUCCESS);

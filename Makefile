@@ -3,12 +3,16 @@ CFLAGS = -Wall -Wextra -Wformat-security -O2 -D_FORTIFY_SOURCE=2 -fstack-protect
 
 CLANG_OR_GCC := $(shell which clang)
 ifeq "$(CLANG_OR_GCC)" "/usr/bin/clang"
-CC = clang
+ VER := $(shell clang --version | clang --version | grep -o 3.1 | awk '0; NR == 1 { print $0 } ')
+ ifeq "$(VER)" "3.1"
+  CC = clang
+ endif
 endif
 
 all: ftpclient ftpserver
 
 ftpclient: bin/ftpclient.c bin/ftpclient.c bin/onexit.c
+	@echo "Using ${CC}..."
 	@echo "--> Compiling client..."
 	@$(CC) $(CFLAGS) -o ftpclient bin/ftpclient.c bin/onexit.c
 	@echo "--> ...done"
