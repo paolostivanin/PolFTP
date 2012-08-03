@@ -1,9 +1,9 @@
 			GNU GENERAL PUBLIC LICENSE
 			  Version 3, 29 June 2007
 
-This file is part of FTPClient.
+This file is part of FTPUtils (client side).
 
-Copyright (C) 2012, Paolo Stivanin aka "Polslinux", Filippo Roncari, Stefano Agostini
+Copyright (C) 2012, Paolo Stivanin aka "Polslinux"
 All rights reserved.
 
 FTPClient is free software: you can redistribute it and/or modify
@@ -24,7 +24,7 @@ along with FTPClient. If not, see <http://www.gnu.org/licenses/>.
                     GNU AFFERO GENERAL PUBLIC LICENSE
                        Version 3, 19 November 2007
 
-This file is part of FTPServer.
+This file is part of FTPUtils (server side).
 
 Copyright (C) 2012, Paolo Stivanin aka "Polslinux"
 All rights reserved.
