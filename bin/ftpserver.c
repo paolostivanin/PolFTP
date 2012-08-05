@@ -30,7 +30,7 @@ int main(int argc, char *argv[]){
 	
 	check_before_start(argc, argv);
 	
-	int sockd, newsockd, socket_len, rc, rc_list, fd, fpl, n = 1, var = 0, number = 0;
+	int sockd, newsockd, socket_len, rc, rc_list, fd, fpl, n = 1, var = 0;
 	int NumPorta = atoi(argv[1]);
 	struct sockaddr_in serv_addr, cli_addr; /* strutture contenenti indirizzo del server e del client */
 	off_t offset = 0, offset_list = 0; /* variabile di tipo offset */
@@ -147,70 +147,25 @@ int main(int argc, char *argv[]){
       close(newsockd);
       exit(1);
     }
-    if(strcmp(buffer, "SYST") == 0) number = 1;
-    if(strcmp(buffer, "LIST") == 0) number = 2;
-    if(strcmp(buffer, "PWD") == 0) number = 3;
-    if(strcmp(buffer, "CWD") == 0) number = 4;
-    if(strcmp(buffer, "RETR") == 0) number = 5;
-    if(strcmp(buffer, "EXIT") == 0) number = 6;
-    switch(number){
-      case 1:
-        var=0;
-        if(send(newsockd, &var, sizeof(var), 0) < 0){
-          perror("Errore durante l'invio errore ricezione azione");
-          close(newsockd);
-          exit(1);
-        };
-        goto exec_syst;
-      case 2:
-        var=0;
-        if(send(newsockd, &var, sizeof(var), 0) < 0){
-          perror("Errore durante l'invio errore ricezione azione");
-          close(newsockd);
-          exit(1);
-        };
-        goto exec_list;
-      case 3: 
-        var=0;
-        if(send(newsockd, &var, sizeof(var), 0) < 0){
-          perror("Errore durante l'invio errore ricezione azione");
-          close(newsockd);
-          exit(1);
-        };
-        goto exec_pwd;
-      case 4:
-        var=0;
-        if(send(newsockd, &var, sizeof(var), 0) < 0){
-          perror("Errore durante l'invio errore ricezione azione");
-          close(newsockd);
-          exit(1);
-        };
-        goto exec_cwd;
-      case 5:
-        var=0;
-        if(send(newsockd, &var, sizeof(var), 0) < 0){
-          perror("Errore durante l'invio errore ricezione azione");
-          close(newsockd);
-          exit(1);
-        };
-        goto exec_retr;
-      case 6:
-        var=0;
-        if(send(newsockd, &var, sizeof(var), 0) < 0){
-          perror("Errore durante l'invio errore ricezione azione");
-          close(newsockd);
-          exit(1);
-        };
-        goto send_goodbye;
-      default: printf("Istruzione errata\n"); goto exec_resend;
-    }
-    exec_resend:
-    var=1;
+    if(strcmp(buffer, "SYST") == 0) goto prepara;
+    if(strcmp(buffer, "LIST") == 0) goto prepara;
+    if(strcmp(buffer, "PWD") == 0) goto prepara;
+    if(strcmp(buffer, "CWD") == 0) goto prepara;
+    if(strcmp(buffer, "RETR") == 0) goto prepara;
+    if(strcmp(buffer, "EXIT") == 0) goto prepara;
+
+    prepara:
+    var = 0;
     if(send(newsockd, &var, sizeof(var), 0) < 0){
       perror("Errore durante l'invio errore ricezione azione");
-      close(newsockd);
-      exit(1);
+      onexit(newsockd, 0, 0, 1);
     }
+    if(strcmp(buffer, "SYST") == 0) goto exec_syst;
+    if(strcmp(buffer, "LIST") == 0) goto exec_list;
+    if(strcmp(buffer, "PWD") == 0) goto exec_pwd;
+    if(strcmp(buffer, "CWD") == 0) goto exec_cwd;
+    if(strcmp(buffer, "RETR") == 0) goto exec_retr;
+    if(strcmp(buffer, "EXIT") == 0) goto send_goodbye;
     /************************* FINE PARTE ASCOLTO *************************/
 
     /************************* RICHIESTA SYST *************************/

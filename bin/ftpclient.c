@@ -1,4 +1,4 @@
-/* Descrizione: Semplice client FTP sviluppato per progetto di Reti di Calcolatori
+/* Descrizione: Semplice client FTP sviluppato per il progetto di Reti di Calcolatori
  * Sviluppatore: Paolo Stivanin
  * Copyright: 2012
  * Licenza: GNU GPL v3 <http://www.gnu.org/licenses/gpl-3.0.html>
@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdint.h> /* per usare uint32_t invece di size_t */
@@ -26,11 +27,10 @@ int main(int argc, char *argv[]){
 	
 	check_before_start(argc, argv);
 
-	int sockd, fd, total_bytes_read = 0, var = 0, scelta = 0; /* descrittore del socket, file, bytes letti alla ricezione del file in totale */
+	int sockd, fd, total_bytes_read = 0, var = 0, i = 0; /* descrittore del socket, file, bytes letti alla ricezione del file in totale */
 	int NumPorta = atoi(argv[2]); /* numero di porta */
 	static struct sockaddr_in serv_addr; /* struttura contenente indirizzo del server */
-	char *user = NULL, *pass = NULL, *filename = NULL, *conferma = NULL, *filebuffer = NULL;
-  char *c1="SYST (1)", *c2 = "LIST (2)", *c3 = " PWD (3)", *c4 = "CWD (4)", *c5 = "RETR (5)", *c6 = "EXIT (6)";
+	char *user = NULL, *pass = NULL, *filename = NULL, *conferma = NULL, *filebuffer = NULL, *scelta = NULL;
 	static char buffer[256], expected_string[128], dirpath[256]; /*buffer usato per contenere vari dati */
 	static struct hostent *hp; /* la struttura hostent mi servirà per l'indirizzo ip del server */
 	uint32_t fsize, nread = 0, fsize_tmp; /* fsize conterrà la grandezza del file e nread i bytes letti ogni volta del file */
@@ -153,117 +153,59 @@ int main(int argc, char *argv[]){
 
 	/************************* SCELTA AZIONE, INVIO AZIONE, RICEZIONE CONFERMA, ESECUZIONE AZIONE *************************/
   exec_switch:
-  printf("\nScegliere un'azione da eseguire tra:\n%s%10s\n%s%10s\n%s%10s\n--> ", c1, c2, c3, c4, c5, c6);
-  if(scanf("%d%*c", &scelta) < 1){
-   	perror("Errore scanf");
+  printf("\nFTPUtils:~$ ");
+  if(scanf("%m[^\n]%*c", &scelta) < 1){
+   	perror("Errore scanf scelta");
    	onexit(sockd, 0, 0, 1);
   }
   printf("\n");
-  switch(scelta){
-   	case 1:
-   		strcpy(buffer, "SYST");
-   		var = strlen(buffer);
-   		if(send(sockd, &var, sizeof(var), 0) < 0){
-   			perror("Errore durante l'invio lunghezza azione");
-   			onexit(sockd, 0, 0, 1);
-   		}
-   	 	if(send(sockd, buffer, var, 0) < 0){
-    		perror("Errore durante l'invio azione");
-   			onexit(sockd, 0, 0, 1);
-   		}
-   	 	if(recv(sockd, &var, sizeof(var), 0) < 0){
-   			perror("Errore durante la ricezione conferma azione");
-   			onexit(sockd, 0, 0, 1);
-   		}
-   		if(var == 1) goto exec_switch;
-    	goto exec_syst;
-    case 2:
-    	strcpy(buffer, "LIST");
-    	var = strlen(buffer);
-    	if(send(sockd, &var, sizeof(var), 0) < 0){
-    		perror("Errore durante l'invio lunghezza azione");
-    		onexit(sockd, 0, 0, 1);
-    	}
-     	if(send(sockd, buffer, var, 0) < 0){
-   			perror("Errore durante l'invio azione");
-   			onexit(sockd, 0, 0, 1);
-   		}
-   	 	if(recv(sockd, &var, sizeof(var), 0) < 0){
-   			perror("Errore durante la ricezione conferma azione");
-   			onexit(sockd, 0, 0, 1);
-   		}
-   		if(var == 1) goto exec_switch;
-   		goto exec_list;
-    case 3:
-    	strcpy(buffer, "PWD");
-    	var = strlen(buffer);
-    	if(send(sockd, &var, sizeof(var), 0) < 0){
-    		perror("Errore durante l'invio lunghezza azione");
-    		onexit(sockd, 0, 0, 1);
-    	}
-     	if(send(sockd, buffer, var, 0) < 0){
-   			perror("Errore durante l'invio azione");
-   			onexit(sockd, 0, 0, 1);
-   		}
-   	 	if(recv(sockd, &var, sizeof(var), 0) < 0){
-   			perror("Errore durante la ricezione conferma azione");
-   			onexit(sockd, 0, 0, 1);
-   		}
-   		if(var == 1) goto exec_switch;
-   		goto exec_pwd;
-    case 4:
-    	strcpy(buffer, "CWD");
-    	var = strlen(buffer);
-    	if(send(sockd, &var, sizeof(var), 0) < 0){
-    		perror("Errore durante l'invio lunghezza azione");
-    		onexit(sockd, 0, 0, 1);
-    	}
-     	if(send(sockd, buffer, var, 0) < 0){
-   			perror("Errore durante l'invio azione");
-   			onexit(sockd, 0, 0, 1);
-   		}
-   	 	if(recv(sockd, &var, sizeof(var), 0) < 0){
-   			perror("Errore durante la ricezione conferma azione");
-   			onexit(sockd, 0, 0, 1);
-   		}
-   		if(var == 1) goto exec_switch;
-   		goto exec_cwd;
-    case 5:
-    	strcpy(buffer, "RETR");
-    	var = strlen(buffer);
-    	if(send(sockd, &var, sizeof(var), 0) < 0){
-    		perror("Errore durante l'invio lunghezza azione");
-    		onexit(sockd, 0, 0, 1);
-    	}
-     	if(send(sockd, buffer, var, 0) < 0){
-   			perror("Errore durante l'invio azione");
-   			onexit(sockd, 0, 0, 1);
-   		}
-   	 	if(recv(sockd, &var, sizeof(var), 0) < 0){
-   			perror("Errore durante la ricezione conferma azione");
-   			onexit(sockd, 0, 0, 1);
-   		}
-   		if(var == 1) goto exec_switch;
-   		goto exec_retr;
-    case 6:
-    	strcpy(buffer, "EXIT");
-    	var = strlen(buffer);
-    	if(send(sockd, &var, sizeof(var), 0) < 0){
-    		perror("Errore durante l'invio lunghezza azione");
-    		onexit(sockd, 0, 0, 1);
-    	}
-     	if(send(sockd, buffer, var, 0) < 0){
-   			perror("Errore durante l'invio azione");
-   			onexit(sockd, 0, 0, 1);
-   		}
-   	 	if(recv(sockd, &var, sizeof(var), 0) < 0){
-   			perror("Errore durante la ricezione conferma azione");
-   			onexit(sockd, 0, 0, 1);
-   		}
-   		if(var == 1) goto exec_switch;
-   		goto exec_exit;
-    default: printf("Istruzione errata\n"); goto exec_switch;
+  for(i=0; i<(int)strlen(scelta); i++){
+    if(isalpha((unsigned char)scelta[i])){
+      if(islower((unsigned char)scelta[i])){
+          scelta[i] = toupper((unsigned char)scelta[i]);
+      }
+    }
+    else{
+      printf("%c non è un carattere\n", scelta[i]);
+      goto exec_switch;
+    }
   }
+  if((strcmp("SYST", scelta) == 0)) goto prepara;
+  if((strcmp("LIST", scelta) == 0)) goto prepara;
+  if((strcmp("PWD", scelta) == 0)) goto prepara;
+  if((strcmp("CWD", scelta) == 0)) goto prepara;
+  if((strcmp("RETR", scelta) == 0)) goto prepara;
+  if((strcmp("EXIT", scelta) == 0)) goto prepara;
+  if((strcmp("HELP", scelta) == 0)) goto prepara;
+  printf("Comando errato. Scrivere HELP per l'aiuto.\n"); goto exec_switch;
+
+  prepara:
+  if(strcmp(scelta, "HELP") == 0) goto exec_help;
+  strcpy(buffer, scelta);
+  var = strlen(buffer);
+  if(send(sockd, &var, sizeof(var), 0) < 0){
+    perror("Errore durante l'invio lunghezza azione");
+    onexit(sockd, 0, 0, 1);
+  }
+  if(send(sockd, buffer, var, 0) < 0){
+    perror("Errore durante l'invio azione");
+    onexit(sockd, 0, 0, 1);
+  }
+  if(recv(sockd, &var, sizeof(var), 0) < 0){
+    perror("Errore durante la ricezione conferma azione");
+    onexit(sockd, 0, 0, 1);
+  }
+  
+  if(strcmp(scelta, "SYST") == 0) goto exec_syst;
+  if(strcmp(scelta, "LIST") == 0) goto exec_list;
+  if(strcmp(scelta, "PWD") == 0) goto exec_pwd;
+  if(strcmp(scelta, "CWD") == 0) goto exec_cwd;
+  if(strcmp(scelta, "RETR") == 0) goto exec_retr;
+  if(strcmp(scelta, "EXIT") == 0) goto exec_exit;
+
+  exec_help:
+  printf("I comandi disponibili sono:\nSYST - LIST - PWD - CWD - RETR - EXIT - HELP\n");
+  goto exec_switch;
   /************************* FINE PARTE AZIONE UTENTE *************************/
 
 	/************************* RICHIESTA SYST *************************/
