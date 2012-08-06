@@ -12,7 +12,7 @@ endif
 all: ftpclient ftpserver
 
 ftpclient: bin/ftpclient.c bin/ftpclient.c bin/onexit.c
-	@echo "Using ${CC}..."
+	@echo "--> Using ${CC} to compile... <--"
 	@echo "--> Compiling client..."
 	@$(CC) $(CFLAGS) -o ftpclient bin/ftpclient.c bin/onexit.c
 	@echo "--> ...done"

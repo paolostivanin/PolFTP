@@ -14,7 +14,7 @@ Requisiti
 * GCC/Clang	: per compilare i programmi (per Clang **obbligatoria v3.1**, per GCC consigliata >=v4.4.0)
 * Make          : per lanciare il Makefile
 * GTK+	 	: per l'interfaccia grafica (**obbligatoria versione >=3.4.0**)
-* GNU/Linux	: i software sono stati sviluppati su ambienti GNU/Linux e quindi **NON** compileranno su ambienti MS Windows e, molto probabilmente, **NON** compileranno nemmeno su MAC OS X.
+* GNU/Linux	: i software sono stati sviluppati su ambienti GNU/Linux e quindi **NON** compileranno nè su ambienti MS Windows nè su ambienti MAC OS X.
 
 Compilazione
 ------------
