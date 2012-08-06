@@ -328,24 +328,31 @@ int main(int argc, char *argv[]){
 	printf("Inserire il nome del file da scaricare: ");
 	if(fgets(dirpath, BUFFGETS, stdin) == NULL){
 		perror("fgets nome file");
-		close(sockd);
+		onexit(sockd, 0 ,0 ,1);
 	}
 	filename = strtok(dirpath, "\n");
 	sprintf(buffer, "RETR %s", dirpath);
 	if(send(sockd, buffer, strlen(buffer), 0) < 0){
 		perror("Errore durante l'invio del nome del file");
-		close(sockd);
-		exit(1);
+		onexit(sockd, 0, 0, 1);
 	}
+  if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
+    perror("Errore ricezione conferma file");
+    onexit(sockd, 0 ,0 ,1);
+  }
+  conferma = strtok(buffer, "\0");
+  if(strcmp(conferma, "ERRORE: File non esistente") == 0){
+    printf("ERRORE: il file richiesto non esiste\n");
+    onexit(sockd, 0, 0, 1);
+  }
 	if(read(sockd, &fsize, sizeof(fsize)) < 0){
 		perror("Errore durante ricezione grandezza file\n");
-		close(sockd);
-		exit(1);
+		onexit(sockd, 0 ,0 ,1);
 	}
 	fd = open(filename, O_CREAT | O_WRONLY, 0644);
 	if (fd  < 0) {
 		perror("open");
-		exit(1);
+		onexit(sockd, 0 ,0 ,1);
 	}
 	fsize_tmp = fsize;
 	filebuffer = malloc(fsize);

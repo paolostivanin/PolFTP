@@ -59,8 +59,8 @@ int main(int argc, char *argv[]){
 	}
 
 	if(listen(sockd, 5) < 0){
-			perror("Errore nella funzione listen");
-    		onexit(0, sockd, 0, 1);
+		perror("Errore nella funzione listen");
+    onexit(0, sockd, 0, 1);
 	}
 	socket_len = sizeof(cli_addr);
 	
@@ -274,6 +274,11 @@ int main(int argc, char *argv[]){
     } else onexit(newsockd, sockd, 0, 2);
     if(chdir(path) < 0){
       perror("chdir");
+      strcpy(buffer, "ERRORE: Percorso non esistente\0");
+      if(send(newsockd, buffer, strlen(buffer), 0) < 0){
+        perror("Errore durante l'invio");
+        onexit(newsockd, sockd, 0, 2);
+      }
       onexit(newsockd, sockd, 0, 2);
     }
     memset(buffer, 0, sizeof(buffer));
@@ -299,10 +304,21 @@ int main(int argc, char *argv[]){
     } else onexit(newsockd, sockd, 0, 2);
     
     fd = open(filename, O_RDONLY);
-   		if (fd < 0) {
+   	if(fd < 0){
     	fprintf(stderr, "Impossibile aprire '%s': %s\n", filename, strerror(errno));
+      strcpy(buffer, "ERRORE: File non esistente\0");
+      if(send(newsockd, buffer, strlen(buffer), 0) < 0){
+        perror("Errore durante invio");
+        onexit(newsockd, sockd, 0 ,2);
+      }
     	onexit(newsockd, sockd, 0, 2);
     }
+    strcpy(buffer, "OK\0");
+    if(send(newsockd, buffer, strlen(buffer), 0) < 0){
+      perror("Errore durante invio");
+      onexit(newsockd, sockd, 0 ,2);
+    }
+    memset(buffer, 0, sizeof(buffer));
 
     if(fstat(fd, &fileStat) < 0){
     	perror("Errore fstat");
