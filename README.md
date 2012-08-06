@@ -11,9 +11,9 @@ Lo studente sviluppatore del progetto è:
 Requisiti
 ---------
 
-* GCC/Clang	: per compilare i programmi (per Clang **obbligatoria v3.1**, per GCC consigliata >=v4.4.0)
+* GCC/Clang	: per compilare i programmi (per Clang **obbligatoria v3.1**, per GCC consigliata v4.4.0 e maggiori)
 * Make          : per lanciare il Makefile
-* GTK+	 	: per l'interfaccia grafica (**obbligatoria versione >=3.4.0**)
+* GTK+	 	: (facoltativo) per l'interfaccia grafica (**obbligatoria versione >=3.4.0**)
 * GNU/Linux	: i software sono stati sviluppati su ambienti GNU/Linux e quindi **NON** compileranno nè su ambienti MS Windows nè su ambienti MAC OS X.
 
 Compilazione
