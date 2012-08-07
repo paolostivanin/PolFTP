@@ -267,7 +267,7 @@ int main(int argc, char *argv[]){
 	while((c=getc(fp)) != EOF){
 		putchar(c);
 	}
-	printf("----- END FILE LIST -----\n");
+	printf("\n----- END FILE LIST -----\n");
   if(remove( "listfiles.txt" ) == -1 ){
     perror("errore cancellazione file");
     close(sockd);

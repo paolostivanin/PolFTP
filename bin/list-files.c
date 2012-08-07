@@ -12,6 +12,7 @@
 
 uint32_t file_list(char *path, char ***ls){
 	DIR *dp;
+  uint32_t i;
   struct stat fileStat;
   struct dirent *ep = NULL;
   uint32_t len, count = 0;
@@ -49,13 +50,16 @@ uint32_t file_list(char *path, char ***ls){
       len = strlen(ep->d_name);
       (*ls)[count] = malloc(len+5); /* lunghezza stringa + "DIR \n" */
       strcpy((*ls)[count], "DIR "); /* copio DIR */
-      strcat((*ls)[count], ep->d_name);
-      free((*ls)[count++]);
+      strcat((*ls)[count++], ep->d_name); /* concateno la stringa DIR con il nome della dir */
       ep = readdir(dp);
-    } else{
+    }
+    else{
       (*ls)[count++] = strdup(ep->d_name);
       ep = readdir(dp);
     }
+  }
+  for(i=0; i<count; i++){
+    free((*ls)[count]);
   }
   (void)closedir(dp);
   return count;
