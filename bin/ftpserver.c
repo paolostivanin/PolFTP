@@ -30,7 +30,7 @@ int main(int argc, char *argv[]){
 	
 	check_before_start(argc, argv);
 	
-	int sockd, newsockd, socket_len, rc, rc_list, fd, fpl, n = 1, var = 0;
+	int sockd, newsockd, socket_len, rc, rc_list, fd, fpl, var = 0;
 	int NumPorta = atoi(argv[1]);
 	struct sockaddr_in serv_addr, cli_addr; /* strutture contenenti indirizzo del server e del client */
 	off_t offset = 0, offset_list = 0; /* variabile di tipo offset */
@@ -203,9 +203,7 @@ int main(int argc, char *argv[]){
     for(i=0; i < count; i++){
       if(strcmp(files[i], "DIR ..") == 0 || strcmp(files[i], "DIR .") == 0) continue;
       else{
-        if(n%2 == 0) fprintf(fp_list, "%s\n", files[i]);
-        else fprintf(fp_list, "%20s\t", files[i]);
-        n++;
+        fprintf(fp_list, "%s\n", files[i]);
       }
     }
     fclose(fp_list);
