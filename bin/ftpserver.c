@@ -194,7 +194,7 @@ int main(int argc, char *argv[]){
     if(strcmp(other, "LIST") == 0){
     	printf("Ricevuta richiesta LIST\n");
     } else onexit(newsockd, sockd, 0, 2);
-    
+
     count = file_list("./", &files);
     if((fp_list = fopen("listfiles.txt", "w")) == NULL){
       perror("Impossibile aprire il file per la scrittura LIST");
@@ -221,6 +221,7 @@ int main(int argc, char *argv[]){
       perror("Errore durante l'invio grande file list");
       onexit(newsockd, sockd, fpl, 3);
     }
+    offset_list = 0;
     rc_list = sendfile(newsockd, fpl, &offset_list, fileStat.st_size);
     if(rc_list == -1){
       perror("Invio file list non riuscito");
@@ -287,7 +288,7 @@ int main(int argc, char *argv[]){
     }
     memset(buffer, 0, sizeof(buffer));
     goto exec_listen_action;
-    /************************* FINE RICHIESTA CD *************************/
+    /************************* FINE RICHIESTA CWD *************************/
 
     /************************* RICEZIONE NOME FILE ED INVIO FILE *************************/
     exec_retr:
@@ -327,7 +328,7 @@ int main(int argc, char *argv[]){
     	perror("Errore durante l'invio della grandezza del file\n");
     	onexit(newsockd, sockd, fd, 3);
     }
-
+    offset = 0;
    	rc = sendfile(newsockd, fd, &offset, fileStat.st_size);
     if(rc == -1) {
      		fprintf(stderr, "Errore durante l'invio di: '%s'\n", strerror(errno));

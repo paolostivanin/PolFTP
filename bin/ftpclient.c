@@ -167,6 +167,7 @@ int main(int argc, char *argv[]){
     }
     else{
       printf("%c non è un carattere\n", scelta[i]);
+      free(scelta);
       goto exec_switch;
     }
   }
@@ -196,15 +197,16 @@ int main(int argc, char *argv[]){
     onexit(sockd, 0, 0, 1);
   }
   
-  if(strcmp(scelta, "SYST") == 0) goto exec_syst;
-  if(strcmp(scelta, "LIST") == 0) goto exec_list;
-  if(strcmp(scelta, "PWD") == 0) goto exec_pwd;
-  if(strcmp(scelta, "CWD") == 0) goto exec_cwd;
-  if(strcmp(scelta, "RETR") == 0) goto exec_retr;
-  if(strcmp(scelta, "EXIT") == 0) goto exec_exit;
+  if(strcmp(scelta, "SYST") == 0){ free(scelta); goto exec_syst; }
+  if(strcmp(scelta, "LIST") == 0){ free(scelta); goto exec_list; }
+  if(strcmp(scelta, "PWD") == 0){ free(scelta); goto exec_pwd; }
+  if(strcmp(scelta, "CWD") == 0){ free(scelta); goto exec_cwd; }
+  if(strcmp(scelta, "RETR") == 0){ free(scelta); goto exec_retr; }
+  if(strcmp(scelta, "EXIT") == 0){ free(scelta); goto exec_exit; }
 
   exec_help:
   printf("I comandi disponibili sono:\nSYST - LIST - PWD - CWD - RETR - EXIT - HELP\n");
+  free(scelta);
   goto exec_switch;
   /************************* FINE PARTE AZIONE UTENTE *************************/
 
@@ -248,31 +250,30 @@ int main(int argc, char *argv[]){
    	perror("malloc");
    	onexit(sockd, 0, fd, 4);
   }
-  while(((uint32_t)total_bytes_read != fsize) && ((nread = read(sockd, filebuffer, fsize)) > 0)){
+  while(((uint32_t)total_bytes_read != fsize) && ((nread = read(sockd, filebuffer, fsize_tmp)) > 0)){
     if(write(fd, filebuffer, nread) != nread){
-      perror("write");
-		  close(sockd);
-		  exit(1);
+      perror("write list file");
+		  onexit(sockd, 0, 0, 1);
     }
-	total_bytes_read += nread;
+    total_bytes_read += nread;
+    fsize_tmp -= nread;
 	}
-	memset(buffer, 0, sizeof(buffer));
 	close(fd);
 	printf("\n----- FILE LIST -----\n");
 	if((fp=fopen("listfiles.txt", "r+")) == NULL){
 		perror("open file for read");
-		close(sockd);
-		exit(EXIT_FAILURE);
+		onexit(sockd, 0, 0, 1);
 	}
 	while((c=getc(fp)) != EOF){
 		putchar(c);
 	}
 	printf("\n----- END FILE LIST -----\n");
+  fclose(fp);
   if(remove( "listfiles.txt" ) == -1 ){
     perror("errore cancellazione file");
-    close(sockd);
-    exit(EXIT_FAILURE);
+    onexit(sockd, 0, 0, 1);
   }
+  memset(buffer, 0, sizeof(buffer));
   free(filebuffer);
   goto exec_switch;
 	/************************* FINE RICHIESTA FILE LISTING *************************/
@@ -318,6 +319,9 @@ int main(int argc, char *argv[]){
   }
 	conferma = strtok(buffer, "\0");
   printf("%s", conferma);
+  if(strcmp(conferma, "ERRORE: Percorso non esistente\n") == 0){
+    onexit(sockd, 0, 0, 1);
+  }
   memset(buffer, 0, sizeof(buffer));
   memset(dirpath, 0, sizeof(dirpath));
   goto exec_switch;
@@ -363,8 +367,7 @@ int main(int argc, char *argv[]){
   while(((uint32_t)total_bytes_read != fsize) && ((nread = read(sockd, filebuffer, fsize_tmp)) > 0)){
     if(write(fd, filebuffer, nread) != nread){
 			perror("write RETR");
-			close(sockd);
-			exit(1);
+			onexit(sockd, 0, 0, 1);
 		}
 		total_bytes_read += nread;
 		fsize_tmp -= nread;
@@ -372,8 +375,7 @@ int main(int argc, char *argv[]){
 	memset(buffer, 0, sizeof(buffer));
 	if(recv(sockd, buffer, 33, 0) < 0){
     perror("Errore ricezione 226");
-    close(sockd);
-    exit(1);
+    onexit(sockd, 0, 0, 1);
   }
   printf("%s", buffer);
   memset(buffer, 0, sizeof(buffer));
@@ -386,8 +388,7 @@ int main(int argc, char *argv[]){
 	exec_exit:
   if(recv(sockd, buffer, 12, 0) < 0){
     perror("Errore ricezione 221");
-    close(sockd);
-    exit(1);
+    onexit(sockd, 0, 0, 1);
   }
   printf("%s", buffer);
   close(sockd);

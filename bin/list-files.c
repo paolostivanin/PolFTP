@@ -12,7 +12,7 @@
 
 uint32_t file_list(char *path, char ***ls){
 	DIR *dp;
-  uint32_t i;
+  //uint32_t i;
   struct stat fileStat;
   struct dirent *ep = NULL;
   uint32_t len, count = 0;
@@ -58,9 +58,9 @@ uint32_t file_list(char *path, char ***ls){
       ep = readdir(dp);
     }
   }
-  for(i=0; i<count; i++){
+  /*for(i=0; i<count; i++){
     free((*ls)[count]);
-  }
+  }*/
   (void)closedir(dp);
   return count;
 }
