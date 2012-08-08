@@ -2,11 +2,11 @@ FTPUtils
 ========
 
 FTPUtils è sviluppato come progetto per corso di Reti di Calcolatori tenutosi presso il DTI di Crema durante l'anno scolastico 2011/2012.
-Esso è composto da un server e un client FTP che supportano solo le funzioni base quali USER, PASS, LIST, SYST, PWD, CD, RETR. 
+Esso è composto da un server e un client FTP che supportano solo le funzioni base quali USER, PASS, SYST, PWD, CD, LIST, RETR, DELETE, MKDIR, RMDIR. 
 L'interfaccia del client (se sarà sviluppata completamente) è sviluppata con il toolkit GTK+.<br>
 Lo studente sviluppatore del progetto è:
 
-* Paolo Stivanin
+* Paolo Stivanin (SSRI in presenza, DM270)
 
 Requisiti
 ---------
@@ -14,7 +14,7 @@ Requisiti
 * GCC/Clang	: per compilare i programmi (per Clang **obbligatoria v3.1**, per GCC consigliata v4.4.0 e maggiori)
 * Make          : per lanciare il Makefile
 * GTK+	 	: (facoltativo) per l'interfaccia grafica (**obbligatoria versione >=3.4.0**)
-* GNU/Linux	: i software sono stati sviluppati su ambienti GNU/Linux e quindi **NON** compileranno nè su ambienti MS Windows nè su ambienti MAC OS X.
+* GNU/Linux	: i software sono stati sviluppati su ambienti GNU/Linux e quindi **NON** compileranno nè su ambienti MS Windows nè su ambienti MAC OSX.
 
 Compilazione
 ------------
@@ -45,4 +45,4 @@ Sito web
 --------
 
 Sito web dello sviluppatore:	<http://www.polslinux.it><br>
-Sito web del progetto:		 	<https://github.com/polslinux/FTPUtils>
+Sito web del progetto:		<https://github.com/polslinux/FTPUtils>
