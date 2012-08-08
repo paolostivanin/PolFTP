@@ -206,8 +206,8 @@ int main(int argc, char *argv[]){
   if(strcmp(scelta, "CWD") == 0){ free(scelta); goto exec_cwd; }
   if(strcmp(scelta, "RETR") == 0){ free(scelta); goto exec_retr; }
   if(strcmp(scelta, "DELETE") == 0){ free(scelta); goto exec_delete; }
-  //if(strcmp(scelta, "MKDIR") == 0){ free(scelta); goto exec_mkdir; }
-  //if(strcmp(scelta, "RMDIR") == 0){ free(scelta); goto exec_rmdir; }
+  if(strcmp(scelta, "MKDIR") == 0){ free(scelta); goto exec_mkdir; }
+  if(strcmp(scelta, "RMDIR") == 0){ free(scelta); goto exec_rmdir; }
   if(strcmp(scelta, "EXIT") == 0){ free(scelta); goto exec_exit; }
 
   exec_help:
@@ -433,6 +433,68 @@ int main(int argc, char *argv[]){
   memset(buffer, 0, sizeof(buffer));
   goto exec_switch;
   /************************* FINE INVIO RICHIESTA DELETE FILE *************************/
+
+  /************************* INIZIO PARTE RICHIESTA MKDIR *************************/
+  exec_mkdir:
+  memset(dirpath, 0, sizeof(dirpath));
+  memset(buffer, 0, sizeof(buffer));
+  printf("Inserire il nome della cartella da creare: ");
+  if(fgets(dirpath, BUFFGETS, stdin) == NULL){
+    perror("fgets nome file");
+    onexit(sockd, 0 ,0 ,1);
+  }
+  filename = NULL;
+  conferma = NULL;
+  filename = strtok(dirpath, "\n");
+  sprintf(buffer, "MKDIR %s", dirpath);
+  if(send(sockd, buffer, strlen(buffer), 0) < 0){
+    perror("Errore durante l'invio del nome della cartella");
+    onexit(sockd, 0, 0, 1);
+  }
+  if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
+    perror("Errore ricezione conferma cartella");
+    onexit(sockd, 0 ,0 ,1);
+  }
+  conferma = strtok(buffer, "\0");
+  if(strcmp(conferma, "ERRORE: Cartella non creata") == 0){
+    printf("ERRORE: la cartella non può essere creata\n");
+    onexit(sockd, 0, 0, 1);
+  } else printf("La cartella è stata creata correttamente\n");
+  memset(dirpath, 0, sizeof(dirpath));
+  memset(buffer, 0, sizeof(buffer));
+  goto exec_switch;
+  /************************* FINE PARTE RICHIESTA MKDIR *************************/
+
+  /************************* INIZIO PARTE RICHIESTA RMDIR *************************/
+  exec_rmdir:
+  memset(dirpath, 0, sizeof(dirpath));
+  memset(buffer, 0, sizeof(buffer));
+  printf("Inserire il nome della cartella da creare: ");
+  if(fgets(dirpath, BUFFGETS, stdin) == NULL){
+    perror("fgets nome file");
+    onexit(sockd, 0 ,0 ,1);
+  }
+  filename = NULL;
+  conferma = NULL;
+  filename = strtok(dirpath, "\n");
+  sprintf(buffer, "MKDIR %s", dirpath);
+  if(send(sockd, buffer, strlen(buffer), 0) < 0){
+    perror("Errore durante l'invio del nome della cartella");
+    onexit(sockd, 0, 0, 1);
+  }
+  if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
+    perror("Errore ricezione conferma cartella");
+    onexit(sockd, 0 ,0 ,1);
+  }
+  conferma = strtok(buffer, "\0");
+  if(strcmp(conferma, "ERRORE: Cartella non eliminata") == 0){
+    printf("ERRORE: impossibile eliminare la cartella\n");
+    onexit(sockd, 0, 0, 1);
+  } else printf("La cartella è stata eliminata correttamente\n");
+  memset(dirpath, 0, sizeof(dirpath));
+  memset(buffer, 0, sizeof(buffer));
+  goto exec_switch;
+  /************************* FINE PARTE RICHIESTA RMDIR *************************/
 
   /************************* SALUTO FINALE *************************/
 	exec_exit:

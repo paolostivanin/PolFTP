@@ -81,7 +81,7 @@ int main(int argc, char *argv[]){
     fprintf(stdout, "Ricevuta richiesta di connessione dall' indirizzo %s\n", inet_ntoa(cli_addr.sin_addr));
 
     /************************* MESSAGGIO DI BENVENUTO *************************/
-    sprintf(buffer, "220 FTPUtils SERVER [%s]", inet_ntoa(*(struct in_addr*)(local_ip->h_addr_list[i])));
+    sprintf(buffer, "220 FTPUtils SERVER [%s]", inet_ntoa(*(struct in_addr*)(local_ip->h_addr_list[i]))); /* converto hostname in ip decimale */
     if(send(newsockd, buffer, strlen(buffer), 0) < 0){
       perror("Errore durante l'invio");
 			onexit(newsockd, sockd, 0, 2);
@@ -170,8 +170,8 @@ int main(int argc, char *argv[]){
     if(strcmp(buffer, "CWD") == 0) goto exec_cwd;
     if(strcmp(buffer, "RETR") == 0) goto exec_retr;
     if(strcmp(buffer, "DELETE") == 0) goto exec_delete;
-    //if(strcmp(buffer, "MKDIR") == 0) goto exec_mkdir;
-    //if(strcmp(buffer, "RMDIR") == 0) goto exec_rmdir;
+    if(strcmp(buffer, "MKDIR") == 0) goto exec_mkdir;
+    if(strcmp(buffer, "RMDIR") == 0) goto exec_rmdir;
     if(strcmp(buffer, "EXIT") == 0) goto send_goodbye;
     /************************* FINE PARTE ASCOLTO *************************/
 
@@ -412,6 +412,72 @@ int main(int argc, char *argv[]){
     goto exec_listen_action;
     /************************* RICHIESTA DELETE FILE *************************/
 
+    /************************* RICHIESTA MKDIR *************************/
+    exec_mkdir:
+    memset(buffer, 0, sizeof(buffer));
+    if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
+      perror("Errore nella ricezione del nome della cartella");
+      onexit(newsockd, sockd, 0, 2);
+    }
+    other = NULL;
+    filename = NULL;
+    other = strtok(buffer, " ");
+    filename = strtok(NULL, "\n");
+    if(strcmp(other, "MKDIR") == 0){
+      printf("Ricevuta richiesta MKDIR\n");
+    } else onexit(newsockd, sockd, 0, 2);
+    
+    if(mkdir(filename, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) != 0){
+      fprintf(stderr, "Impossibile creare la cartella '%s'\n", filename);
+      strcpy(buffer, "ERRORE: Cartella non creata\0");
+      if(send(newsockd, buffer, strlen(buffer), 0) < 0){
+        perror("Errore durante invio");
+        onexit(newsockd, sockd, 0, 2);
+      }
+      onexit(newsockd, sockd, 0, 2);
+    }
+    strcpy(buffer, "OK\0");
+    if(send(newsockd, buffer, strlen(buffer), 0) < 0){
+      perror("Errore durante invio");
+      onexit(newsockd, sockd, 0 ,2);
+    }
+    memset(buffer, 0, sizeof(buffer));
+    goto exec_listen_action;
+    /************************* FINE RICHIESTA MKDIR *************************/
+
+    /************************* RICHIESTA RMDIR *************************/
+    exec_rmdir:
+    memset(buffer, 0, sizeof(buffer));
+    if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
+      perror("Errore nella ricezione del nome della cartella");
+      onexit(newsockd, sockd, 0, 2);
+    }
+    other = NULL;
+    filename = NULL;
+    other = strtok(buffer, " ");
+    filename = strtok(NULL, "\n");
+    if(strcmp(other, "MKDIR") == 0){
+      printf("Ricevuta richiesta RMDIR\n");
+    } else onexit(newsockd, sockd, 0, 2);
+    
+    if(rmdir(filename) != 0){
+      fprintf(stderr, "Impossibile eliminare la cartella '%s'\n", filename);
+      strcpy(buffer, "ERRORE: Cartella non eliminata\0");
+      if(send(newsockd, buffer, strlen(buffer), 0) < 0){
+        perror("Errore durante invio");
+        onexit(newsockd, sockd, 0, 2);
+      }
+      onexit(newsockd, sockd, 0, 2);
+    }
+    strcpy(buffer, "OK\0");
+    if(send(newsockd, buffer, strlen(buffer), 0) < 0){
+      perror("Errore durante invio");
+      onexit(newsockd, sockd, 0 ,2);
+    }
+    memset(buffer, 0, sizeof(buffer));
+    goto exec_listen_action;
+    /************************* FINE RICHIESTA RMDIR *************************/
+
     /************************* SALUTO FINALE *************************/
     send_goodbye:
     strcpy(buffer, "221 Goodbye\n");
@@ -420,7 +486,7 @@ int main(int argc, char *argv[]){
       onexit(newsockd, sockd, 0, 2);
     }
     onexit(newsockd, sockd, 0, 2);
-    /************************* SALUTO FINALE *************************/
+    /************************* FINE SALUTO FINALE *************************/
 	}
 	return EXIT_SUCCESS;
 }
