@@ -81,7 +81,7 @@ int main(int argc, char *argv[]){
     fprintf(stdout, "Ricevuta richiesta di connessione dall' indirizzo %s\n", inet_ntoa(cli_addr.sin_addr));
 
     /************************* MESSAGGIO DI BENVENUTO *************************/
-    sprintf(buffer, "220 FTPUtils SERVER [%s]", local_ip->h_name);
+    sprintf(buffer, "220 FTPUtils SERVER [%s]", inet_ntoa(*(struct in_addr*)(local_ip->h_addr_list[i])));
     if(send(newsockd, buffer, strlen(buffer), 0) < 0){
       perror("Errore durante l'invio");
 			onexit(newsockd, sockd, 0, 2);
@@ -316,11 +316,11 @@ int main(int argc, char *argv[]){
     filename = NULL;
     other = strtok(buffer, " ");
     filename = strtok(NULL, "\n");
+
     if(strcmp(other, "RETR") == 0){
       printf("Ricevuta richiesta RETR\n");
     } else onexit(newsockd, sockd, 0, 2);
-    
-    memset(buffer, 0, sizeof(buffer));
+
     fd = open(filename, O_RDONLY);
    	if(fd < 0){
     	fprintf(stderr, "Impossibile aprire '%s': %s\n", filename, strerror(errno));
