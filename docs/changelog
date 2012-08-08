@@ -9,10 +9,9 @@
 	* ADDED: username and password into the client instead of argv. Password will be "obscured" thanks to termios.h
 	* IMPROVED: goto on client/server + switch case on server
 	
-09-11/08/2012 - v1.0-alpha3
+08/08/2012 - v1.0-alpha3
 	* FIXED: some bugs
 	* ADDED: DELETE, MKDIR, RMDIR cmds
-	* ADDED: server send errors on all possible failure (dir doesn't exits, file doesn't exists, etc)
 
 ??/08/2012 - v1.0-alpha4
 	* ADDED: server with fork

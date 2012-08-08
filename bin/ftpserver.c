@@ -1,5 +1,6 @@
 /* Descrizione: Semplice server FTP iterativo sviluppato per il progetto di Reti di Calcolatori
  * Sviluppatore: Paolo Stivanin
+ * Versione: 1.0-alpha3
  * Copyright: 2012
  * Licenza: GNU AGPL v3 <http://www.gnu.org/licenses/agpl-3.0.html>
  * Sito web: <https://github.com/polslinux/FTPUtils>
@@ -485,7 +486,7 @@ int main(int argc, char *argv[]){
       perror("Errore durante l'invio 221");
       onexit(newsockd, sockd, 0, 2);
     }
-    onexit(newsockd, sockd, 0, 2);
+    close(newsockd);
     /************************* FINE SALUTO FINALE *************************/
 	}
 	return EXIT_SUCCESS;
