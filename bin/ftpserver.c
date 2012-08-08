@@ -30,7 +30,7 @@ int main(int argc, char *argv[]){
 	
 	check_before_start(argc, argv);
 	
-	int sockd, newsockd, socket_len, rc, rc_list, fd, fpl, var = 0;
+	int sockd, newsockd, socket_len, rc, rc_list, fd, fpl, var = 0, retval;
 	int NumPorta = atoi(argv[1]);
 	struct sockaddr_in serv_addr, cli_addr; /* strutture contenenti indirizzo del server e del client */
 	off_t offset, offset_list; /* variabile di tipo offset */
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]){
 
 		/************************* INIZIO PARTE LOGIN *************************/
     /************************* RICEVIAMO NOME UTENTE E MANDIAMO CONFERMA *************************/
-		 if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
+		if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
     	perror("Errore nella ricezione del nome utente");
     	onexit(newsockd, sockd, 0, 2);
     }    	
@@ -137,6 +137,7 @@ int main(int argc, char *argv[]){
 
     /************************* RESTO IN ASCOLTO DELL'AZIONE DAL CLIENT *************************/
     exec_listen_action:
+    memset(buffer, 0, sizeof(buffer));
     if(recv(newsockd, &var, sizeof(var), 0) < 0){
       perror("Errore nella ricezione lunghezza azione\n");
       close(newsockd);
@@ -152,6 +153,9 @@ int main(int argc, char *argv[]){
     if(strcmp(buffer, "PWD") == 0) goto prepara;
     if(strcmp(buffer, "CWD") == 0) goto prepara;
     if(strcmp(buffer, "RETR") == 0) goto prepara;
+    if(strcmp(buffer, "DELETE") == 0) goto prepara;
+    if(strcmp(buffer, "MKDIR") == 0) goto prepara;
+    if(strcmp(buffer, "RMDIR") == 0) goto prepara;
     if(strcmp(buffer, "EXIT") == 0) goto prepara;
 
     prepara:
@@ -165,11 +169,15 @@ int main(int argc, char *argv[]){
     if(strcmp(buffer, "PWD") == 0) goto exec_pwd;
     if(strcmp(buffer, "CWD") == 0) goto exec_cwd;
     if(strcmp(buffer, "RETR") == 0) goto exec_retr;
+    if(strcmp(buffer, "DELETE") == 0) goto exec_delete;
+    //if(strcmp(buffer, "MKDIR") == 0) goto exec_mkdir;
+    //if(strcmp(buffer, "RMDIR") == 0) goto exec_rmdir;
     if(strcmp(buffer, "EXIT") == 0) goto send_goodbye;
     /************************* FINE PARTE ASCOLTO *************************/
 
     /************************* RICHIESTA SYST *************************/
     exec_syst:
+    memset(buffer, 0, sizeof(buffer));
     if(recv(newsockd, buffer, 5, 0) < 0){
       perror("Errore ricezione comando SYST");
       onexit(newsockd, sockd, 0, 2);
@@ -186,10 +194,12 @@ int main(int argc, char *argv[]){
 
     /************************* RICEZIONE RICHIESTA LIST E INVIO LISTA *************************/
     exec_list:
+    memset(buffer, 0, sizeof(buffer));
     if(recv(newsockd, buffer, 5, 0) < 0){
     	perror("Errore nella ricezione comando LIST");
     	onexit(newsockd, sockd, 0, 2);
     }
+    other = NULL;
     other = strtok(buffer, "\n");
     if(strcmp(other, "LIST") == 0){
     	printf("Ricevuta richiesta LIST\n");
@@ -242,10 +252,12 @@ int main(int argc, char *argv[]){
 
     /************************* RICHIESTA PWD *************************/
     exec_pwd:
+    memset(buffer, 0, sizeof(buffer));
     if(recv(newsockd, buffer, 4, 0) < 0){
       perror("Errore nella ricezione comando PWD");
       onexit(newsockd, sockd, 0, 2);
     }
+    other = NULL;
     other = strtok(buffer, "\n");
     if(strcmp(other, "PWD") == 0){
       printf("Ricevuta richiesta PWD\n");
@@ -262,10 +274,13 @@ int main(int argc, char *argv[]){
 
     /************************* RICHIESTA CWD *************************/
     exec_cwd:
+    memset(buffer, 0, sizeof(buffer));
     if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
       perror("Errore nella ricezione comando CWD");
       onexit(newsockd, sockd, 0, 2);
     }
+    cd_path = NULL;
+    path = NULL;
     cd_path = strtok(buffer, " ");
     path = strtok(NULL, "\n");
     if(strcmp(cd_path, "CWD") == 0){
@@ -292,16 +307,20 @@ int main(int argc, char *argv[]){
 
     /************************* RICEZIONE NOME FILE ED INVIO FILE *************************/
     exec_retr:
+    memset(buffer, 0, sizeof(buffer));
     if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
       perror("Errore nella ricezione del nome del file");
       onexit(newsockd, sockd, 0, 2);
     }
+    other = NULL;
+    filename = NULL;
     other = strtok(buffer, " ");
     filename = strtok(NULL, "\n");
     if(strcmp(other, "RETR") == 0){
       printf("Ricevuta richiesta RETR\n");
     } else onexit(newsockd, sockd, 0, 2);
     
+    memset(buffer, 0, sizeof(buffer));
     fd = open(filename, O_RDONLY);
    	if(fd < 0){
     	fprintf(stderr, "Impossibile aprire '%s': %s\n", filename, strerror(errno));
@@ -348,6 +367,50 @@ int main(int argc, char *argv[]){
     close(fd);
     goto exec_listen_action;
     /************************* FINE RICEZIONE NOME FILE ED INVIO FILE *************************/
+
+    /************************* RICHIESTA DELETE FILE *************************/
+    exec_delete:
+    memset(buffer, 0, sizeof(buffer));
+    if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
+      perror("Errore nella ricezione del nome del file");
+      onexit(newsockd, sockd, 0, 2);
+    }
+    other = NULL;
+    filename = NULL;
+    other = strtok(buffer, " ");
+    filename = strtok(NULL, "\n");
+    if(strcmp(other, "DELETE") == 0){
+      printf("Ricevuta richiesta DELETE\n");
+    } else onexit(newsockd, sockd, 0, 2);
+    
+    fd = open(filename, O_WRONLY);
+    if(fd < 0){
+      fprintf(stderr, "Impossibile aprire '%s': %s\n", filename, strerror(errno));
+      strcpy(buffer, "ERRORE: File non esistente\0");
+      if(send(newsockd, buffer, strlen(buffer), 0) < 0){
+        perror("Errore durante invio");
+        onexit(newsockd, sockd, 0, 2);
+      }
+      onexit(newsockd, sockd, 0, 2);
+    }
+    retval = remove(filename);
+    if(retval != 0){
+      perror("File non cancellato");
+      strcpy(buffer, "NONOK\0");
+      if(send(newsockd, buffer, strlen(buffer), 0) < 0){
+        perror("Errore durante invio");
+        onexit(newsockd, sockd, fd, 3);
+      }
+      onexit(newsockd, sockd, fd, 3);
+    }
+    strcpy(buffer, "OK\0");
+    if(send(newsockd, buffer, strlen(buffer), 0) < 0){
+      perror("Errore durante invio");
+      onexit(newsockd, sockd, 0 ,2);
+    }
+    memset(buffer, 0, sizeof(buffer));
+    goto exec_listen_action;
+    /************************* RICHIESTA DELETE FILE *************************/
 
     /************************* SALUTO FINALE *************************/
     send_goodbye:

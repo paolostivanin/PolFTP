@@ -176,6 +176,9 @@ int main(int argc, char *argv[]){
   if((strcmp("PWD", scelta) == 0)) goto prepara;
   if((strcmp("CWD", scelta) == 0)) goto prepara;
   if((strcmp("RETR", scelta) == 0)) goto prepara;
+  if((strcmp("DELETE", scelta) == 0)) goto prepara;
+  if((strcmp("MKDIR", scelta) == 0)) goto prepara;
+  if((strcmp("RMDIR", scelta) == 0)) goto prepara;
   if((strcmp("EXIT", scelta) == 0)) goto prepara;
   if((strcmp("HELP", scelta) == 0)) goto prepara;
   printf("Comando errato. Scrivere HELP per l'aiuto.\n"); goto exec_switch;
@@ -202,16 +205,20 @@ int main(int argc, char *argv[]){
   if(strcmp(scelta, "PWD") == 0){ free(scelta); goto exec_pwd; }
   if(strcmp(scelta, "CWD") == 0){ free(scelta); goto exec_cwd; }
   if(strcmp(scelta, "RETR") == 0){ free(scelta); goto exec_retr; }
+  if(strcmp(scelta, "DELETE") == 0){ free(scelta); goto exec_delete; }
+  //if(strcmp(scelta, "MKDIR") == 0){ free(scelta); goto exec_mkdir; }
+  //if(strcmp(scelta, "RMDIR") == 0){ free(scelta); goto exec_rmdir; }
   if(strcmp(scelta, "EXIT") == 0){ free(scelta); goto exec_exit; }
 
   exec_help:
-  printf("I comandi disponibili sono:\nSYST - LIST - PWD - CWD - RETR - EXIT - HELP\n");
+  printf("I comandi disponibili sono:\nSYST - LIST - PWD - CWD - RETR - DELETE - MKDIR - RMDIR - EXIT - HELP\n");
   free(scelta);
   goto exec_switch;
   /************************* FINE PARTE AZIONE UTENTE *************************/
 
 	/************************* RICHIESTA SYST *************************/
 	exec_syst:
+  memset(buffer, 0, sizeof(buffer));
   strcpy(buffer, "SYST\n");
   if(send(sockd, buffer, strlen(buffer), 0) < 0){
   	perror("Errore durante l'invio richiesta SYST");
@@ -223,12 +230,14 @@ int main(int argc, char *argv[]){
   }
   conferma = strtok(buffer, "\n");
   printf("SYST type: %s\n", conferma);
+  conferma = NULL;
   memset(buffer, 0, sizeof(buffer));
   goto exec_switch;
 	/************************* FINE SYST *************************/
 
 	/************************* INVIO RICHIESTA FILE LISTING *************************/
 	exec_list:
+  memset(buffer, 0, sizeof(buffer));
 	strcpy(buffer, "LIST\n");
 	if(send(sockd, buffer, strlen(buffer), 0) < 0){
 		perror("Errore durante l'invio richiesta LIST");
@@ -259,7 +268,7 @@ int main(int argc, char *argv[]){
     fsize_tmp -= nread;
 	}
 	close(fd);
-	printf("\n----- FILE LIST -----\n");
+	printf("----- FILE LIST -----\n");
 	if((fp=fopen("listfiles.txt", "r+")) == NULL){
 		perror("open file for read");
 		onexit(sockd, 0, 0, 1);
@@ -267,7 +276,7 @@ int main(int argc, char *argv[]){
 	while((c=getc(fp)) != EOF){
 		putchar(c);
 	}
-	printf("\n----- END FILE LIST -----\n");
+	printf("----- END FILE LIST -----\n");
   fclose(fp);
   if(remove( "listfiles.txt" ) == -1 ){
     perror("errore cancellazione file");
@@ -280,6 +289,7 @@ int main(int argc, char *argv[]){
 
 	/************************* RICHIESTA PWD *************************/
 	exec_pwd:
+  memset(buffer, 0, sizeof(buffer));
 	strcpy(buffer, "PWD\n");
 	if(send(sockd, buffer, strlen(buffer), 0) < 0){
 		perror("Errore durante l'invio richiesta PWD");
@@ -294,12 +304,15 @@ int main(int argc, char *argv[]){
   }
 	conferma = strtok(buffer, "\n");
   printf("%s\n", conferma);
+  conferma = NULL;
   memset(buffer, 0, sizeof(buffer));
   goto exec_switch;
 	/************************* FINE RICHIESTA PWD *************************/
 
 	/************************* INVIO RICHIESTA CWD *************************/
 	exec_cwd:
+  memset(dirpath, 0, sizeof(dirpath));
+  memset(buffer, 0, sizeof(buffer));
 	printf("Inserire percorso: ");
 	if(fgets(dirpath, BUFFGETS, stdin) == NULL){
 		perror("fgets dir path");
@@ -317,6 +330,7 @@ int main(int argc, char *argv[]){
    	close(sockd);
    	exit(1);
   }
+  conferma = NULL;
 	conferma = strtok(buffer, "\0");
   printf("%s", conferma);
   if(strcmp(conferma, "ERRORE: Percorso non esistente\n") == 0){
@@ -329,11 +343,14 @@ int main(int argc, char *argv[]){
 
 	/************************* INVIO NOME FILE E RICEZIONE FILE *************************/
 	exec_retr:
+  memset(dirpath, 0, sizeof(dirpath));
+  memset(buffer, 0, sizeof(buffer));
 	printf("Inserire il nome del file da scaricare: ");
 	if(fgets(dirpath, BUFFGETS, stdin) == NULL){
 		perror("fgets nome file");
 		onexit(sockd, 0 ,0 ,1);
 	}
+  filename = NULL;
 	filename = strtok(dirpath, "\n");
 	sprintf(buffer, "RETR %s", dirpath);
 	if(send(sockd, buffer, strlen(buffer), 0) < 0){
@@ -344,6 +361,7 @@ int main(int argc, char *argv[]){
     perror("Errore ricezione conferma file");
     onexit(sockd, 0 ,0 ,1);
   }
+  conferma = NULL;
   conferma = strtok(buffer, "\0");
   if(strcmp(conferma, "ERRORE: File non esistente") == 0){
     printf("ERRORE: il file richiesto non esiste\n");
@@ -379,13 +397,46 @@ int main(int argc, char *argv[]){
   }
   printf("%s", buffer);
   memset(buffer, 0, sizeof(buffer));
+  memset(dirpath, 0, sizeof(dirpath));
   free(filebuffer);
   close(fd);
   goto exec_switch;
 	/************************* FINE INVIO NOME FILE E RICEZIONE FILE *************************/
 
+  /************************* INVIO RICHIESTA DELETE FILE *************************/
+  exec_delete:
+  memset(dirpath, 0, sizeof(dirpath));
+  memset(buffer, 0, sizeof(buffer));
+  printf("Inserire il nome del file da scaricare: ");
+  if(fgets(dirpath, BUFFGETS, stdin) == NULL){
+    perror("fgets nome file");
+    onexit(sockd, 0 ,0 ,1);
+  }
+  filename = NULL;
+  conferma = NULL;
+  filename = strtok(dirpath, "\n");
+  sprintf(buffer, "DELETE %s", dirpath);
+  if(send(sockd, buffer, strlen(buffer), 0) < 0){
+    perror("Errore durante l'invio del nome del file");
+    onexit(sockd, 0, 0, 1);
+  }
+  if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
+    perror("Errore ricezione conferma file");
+    onexit(sockd, 0 ,0 ,1);
+  }
+  conferma = strtok(buffer, "\0");
+  if((strcmp(conferma, "ERRORE: File non esistente") == 0) || (strcmp(conferma, "NONOK") == 0)){
+    printf("ERRORE: il file richiesto non esiste o non si può cancellare\n");
+    onexit(sockd, 0, 0, 1);
+  } else printf("Il file '%s' è stato cancellato correttamente\n", filename);
+  memset(dirpath, 0, sizeof(dirpath));
+  memset(buffer, 0, sizeof(buffer));
+  goto exec_switch;
+  /************************* FINE INVIO RICHIESTA DELETE FILE *************************/
+
   /************************* SALUTO FINALE *************************/
 	exec_exit:
+  memset(buffer, 0, sizeof(buffer));
   if(recv(sockd, buffer, 12, 0) < 0){
     perror("Errore ricezione 221");
     onexit(sockd, 0, 0, 1);
