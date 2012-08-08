@@ -33,13 +33,13 @@ int main(int argc, char *argv[]){
 	int sockd, newsockd, socket_len, rc, rc_list, fd, fpl, var = 0;
 	int NumPorta = atoi(argv[1]);
 	struct sockaddr_in serv_addr, cli_addr; /* strutture contenenti indirizzo del server e del client */
-	off_t offset = 0, offset_list = 0; /* variabile di tipo offset */
+	off_t offset, offset_list; /* variabile di tipo offset */
 	struct stat fileStat; /* struttura contenente informazioni sul file scelto */
 	struct hostent *local_ip; /* struttura contenente ip server */
 	static char buffer[256], saved_user[256]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
 	char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL, *other = NULL, *cd_path = NULL, *path = NULL;
   char *sysname = NULL, *filename = NULL;
-	uint32_t fsize, count, i;
+	uint32_t fsize, count, i, size_to_send;
   char **files;
   FILE *fp_list;
 	
@@ -222,14 +222,14 @@ int main(int argc, char *argv[]){
       onexit(newsockd, sockd, fpl, 3);
     }
     offset_list = 0;
-    rc_list = sendfile(newsockd, fpl, &offset_list, fileStat.st_size);
-    if(rc_list == -1){
-      perror("Invio file list non riuscito");
-      onexit(newsockd, sockd, fpl, 3);
-    }
-    if((uint32_t)rc_list != fsize){
-      fprintf(stderr, "Trasferimento incompleto: %d di %d bytes inviati\n", rc_list, (int)fileStat.st_size);
-      onexit(newsockd, sockd, fpl, 3);
+    for (size_to_send = fsize; size_to_send > 0; ){
+      rc_list = sendfile(newsockd, fpl, &offset_list, size_to_send);
+      if (rc_list <= 0){
+        perror("sendfile");
+        onexit(newsockd, sockd, fpl, 3);
+      }
+      offset_list += rc_list;
+      size_to_send -= rc_list;
     }
     close(fpl);
     if(remove( "listfiles.txt" ) == -1 ){
@@ -317,7 +317,6 @@ int main(int argc, char *argv[]){
       perror("Errore durante invio");
       onexit(newsockd, sockd, 0 ,2);
     }
-    memset(buffer, 0, sizeof(buffer));
 
     if(fstat(fd, &fileStat) < 0){
     	perror("Errore fstat");
@@ -329,15 +328,16 @@ int main(int argc, char *argv[]){
     	onexit(newsockd, sockd, fd, 3);
     }
     offset = 0;
-   	rc = sendfile(newsockd, fd, &offset, fileStat.st_size);
-    if(rc == -1) {
-     		fprintf(stderr, "Errore durante l'invio di: '%s'\n", strerror(errno));
-     		onexit(newsockd, sockd, fd, 3);
+    for (size_to_send = fsize; size_to_send > 0; ){
+      rc = sendfile(newsockd, fd, &offset, size_to_send);
+      if (rc <= 0){
+        perror("sendfile");
+        onexit(newsockd, sockd, fd, 3);
+      }
+      offset += rc;
+      size_to_send -= rc;
     }
-    if((uint32_t)rc != fsize) {
-    	fprintf(stderr, "Trasferimento incompleto: %d di %d bytes inviati\n", rc, (int)fileStat.st_size);
-    	onexit(newsockd, sockd, fd, 3);
-    }
+
     memset(buffer, 0, sizeof(buffer));
     strcpy(buffer, "226 File trasferito con successo\n");
     if(send(newsockd, buffer, strlen(buffer), 0) < 0){
