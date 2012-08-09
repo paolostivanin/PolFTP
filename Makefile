@@ -17,9 +17,9 @@ ftpclient: bin/ftpclient.c bin/ftpclient.c bin/onexit.c
 	@$(CC) $(CFLAGS) -o ftpclient bin/ftpclient.c bin/onexit.c
 	@echo "--> ...done"
 	
-ftpserver: bin/ftpserver.c bin/list-files.c bin/onexit.c bin/get_syst.c
+ftpserver: bin/ftpserver.c bin/list-files.c bin/free-file-list.c bin/onexit.c bin/get_syst.c
 	@echo "--> Compiling server..."
-	@$(CC) $(CFLAGS) -o ftpserver bin/ftpserver.c bin/list-files.c bin/get_syst.c bin/onexit.c
+	@$(CC) $(CFLAGS) -o ftpserver bin/ftpserver.c bin/list-files.c bin/get_syst.c bin/free-file-list.c bin/onexit.c
 	@echo "--> ...done"
 
 ftpclient_gui: bin/gtk3/entry.c

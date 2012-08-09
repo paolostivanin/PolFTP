@@ -41,6 +41,7 @@ int main(int argc, char *argv[]){
 	char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL, *other = NULL, *cd_path = NULL, *path = NULL;
   char *sysname = NULL, *filename = NULL;
 	uint32_t fsize, count, i, size_to_send;
+  char *serverdir = (char *)(intptr_t)get_current_dir_name();
   char **files;
   FILE *fp_list;
 	
@@ -64,20 +65,18 @@ int main(int argc, char *argv[]){
     onexit(0, sockd, 0, 1);
 	}
 	socket_len = sizeof(cli_addr);
-	
-	if((local_ip = gethostbyname("localhost")) == NULL){
-		perror("gethostbyname()");
-		exit(1);
-	}	
-	
+
 	signal (SIGINT, ( void *)sig_handler); /* se premuto CTRL+C il server termina */
 	
 	while(1){
+    if((local_ip = gethostbyname("localhost")) == NULL){
+      perror("gethostbyname()");
+      exit(1);
+    }
 		if((newsockd = accept(sockd, (struct sockaddr *) &cli_addr, (socklen_t *) &socket_len)) < 0){
 			perror("Errore nella connessione\n");
 			onexit(newsockd, sockd, 0, 2);
 		}
-
     /* inet_ntoa converte un hostname in un ip decimale puntato */
     fprintf(stdout, "Ricevuta richiesta di connessione dall' indirizzo %s\n", inet_ntoa(cli_addr.sin_addr));
 
@@ -88,6 +87,7 @@ int main(int argc, char *argv[]){
 			onexit(newsockd, sockd, 0, 2);
 		}
 		memset(buffer, 0, sizeof(buffer));
+    memset(&local_ip, 0, sizeof(local_ip)); /* pulire la struttura altrimenti alla seconda connessione si ha un segfault */
     /************************* FINE MESSAGGIO DI BENVENUTO *************************/
 
 		/************************* INIZIO PARTE LOGIN *************************/
@@ -218,10 +218,10 @@ int main(int argc, char *argv[]){
       }
     }
     fclose(fp_list);
+    free_file_list(&files, count);
     if((fpl = open("listfiles.txt", O_RDONLY)) < 0){
       perror("open file with open");
       onexit(newsockd, sockd, 0, 2);
-      exit(1);
     }
     if(fstat(fpl, &fileStat) < 0){
       perror("Errore fstat");
@@ -229,7 +229,7 @@ int main(int argc, char *argv[]){
     }
     fsize = fileStat.st_size;
     if(send(newsockd, &fsize, sizeof(fsize), 0) < 0){
-      perror("Errore durante l'invio grande file list");
+      perror("Errore durante l'invio grandezza file list");
       onexit(newsockd, sockd, fpl, 3);
     }
     offset_list = 0;
@@ -357,7 +357,7 @@ int main(int argc, char *argv[]){
       offset += rc;
       size_to_send -= rc;
     }
-
+    close(fd); /* la chiusura del file va qui altrimenti rischio loop infinito e scrittura all'interno del file */
     memset(buffer, 0, sizeof(buffer));
     strcpy(buffer, "226 File trasferito con successo\n");
     if(send(newsockd, buffer, strlen(buffer), 0) < 0){
@@ -365,7 +365,6 @@ int main(int argc, char *argv[]){
       onexit(newsockd, sockd, 0, 2);
     }
     memset(buffer, 0, sizeof(buffer));
-    close(fd);
     goto exec_listen_action;
     /************************* FINE RICEZIONE NOME FILE ED INVIO FILE *************************/
 
@@ -481,11 +480,17 @@ int main(int argc, char *argv[]){
 
     /************************* SALUTO FINALE *************************/
     send_goodbye:
+    memset(buffer, 0, sizeof(buffer));
     strcpy(buffer, "221 Goodbye\n");
     if(send(newsockd, buffer, strlen(buffer), 0) < 0){
       perror("Errore durante l'invio 221");
       onexit(newsockd, sockd, 0, 2);
     }
+    if(chdir(serverdir) < 0){
+      perror("chdir on default dir");
+    }
+    memset(buffer, 0, sizeof(buffer));
+    printf("Ricevuta richiesta EXIT\n");
     close(newsockd);
     /************************* FINE SALUTO FINALE *************************/
 	}

@@ -5,5 +5,6 @@ void check_before_start(int, char **);
 void sig_handler(int, int, int, int);
 void get_syst(char **);
 uint32_t file_list(char *, char ***);
+void free_file_list(char ***, uint32_t);
 void onexit(int, int, int, int);
 #endif

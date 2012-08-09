@@ -56,6 +56,7 @@ int main(int argc, char *argv[]){
 		exit(1);
 	}
 	/************************* MESSAGGIO DI BENVENUTO *************************/
+  memset(buffer, 0, sizeof(buffer));
 	if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
    	perror("Errore nella ricezione del messaggio di benvenuto\n");
    	close(sockd);
@@ -277,8 +278,8 @@ int main(int argc, char *argv[]){
 	while((c=getc(fp)) != EOF){
 		putchar(c);
 	}
-	printf("----- END FILE LIST -----\n");
   fclose(fp);
+	printf("----- END FILE LIST -----\n");
   if(remove( "listfiles.txt" ) == -1 ){
     perror("errore cancellazione file");
     onexit(sockd, 0, 0, 1);
@@ -391,6 +392,7 @@ int main(int argc, char *argv[]){
 		total_bytes_read += nread;
 		fsize_tmp -= nread;
 	}
+  close(fd); /* la chiusura del file va qui altrimenti client entra in loop infinito e si scrive all'interno del file */
 	memset(buffer, 0, sizeof(buffer));
 	if(recv(sockd, buffer, 33, 0) < 0){
     perror("Errore ricezione 226");
@@ -400,7 +402,6 @@ int main(int argc, char *argv[]){
   memset(buffer, 0, sizeof(buffer));
   memset(dirpath, 0, sizeof(dirpath));
   free(filebuffer);
-  close(fd);
   goto exec_switch;
 	/************************* FINE INVIO NOME FILE E RICEZIONE FILE *************************/
 
