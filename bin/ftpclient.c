@@ -195,19 +195,10 @@ int main(int argc, char *argv[]){
   if(strcmp(sInfo.scelta, "HELP") == 0) goto exec_help;
   strcpy(buffer, sInfo.scelta);
   var = strlen(buffer);
-  /*snprintf(tmp_buf, BUFSIZ-1, "%" PRIu32, var);
-  if(send(sockd, tmp_buf, sizeof(tmp_buf), 0) < 0){
-    perror("Errore durante l'invio lunghezza azione");
-    onexit(sockd, 0, 0, 1);
-  }*/
   if(send(sockd, buffer, var, 0) < 0){
     perror("Errore durante l'invio azione");
     onexit(sockd, 0, 0, 1);
   }
-  /*if(recv(sockd, tmp_buf, sizeof(tmp_buf), 0) < 0){
-    perror("Errore durante la ricezione conferma azione");
-    onexit(sockd, 0, 0, 1);
-  }*/
   
   if(strcmp(sInfo.scelta, "SYST") == 0){ free(sInfo.scelta); goto exec_syst; }
   if(strcmp(sInfo.scelta, "LIST") == 0){ free(sInfo.scelta); goto exec_list; }

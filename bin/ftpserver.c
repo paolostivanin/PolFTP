@@ -37,6 +37,7 @@ int main(int argc, char *argv[]){
 	off_t offset, offset_list; /* variabile di tipo offset */
 	struct stat fileStat; /* struttura contenente informazioni sul file scelto */
 	struct hostent *local_ip; /* struttura contenente ip server */
+  struct in_addr **pptr;
 	static char buffer[512], saved_user[512], tmp_buf[BUFSIZ]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
 	char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL, *other = NULL, *cd_path = NULL, *path = NULL;
   char *sysname = NULL, *filename = NULL, **files;
@@ -70,10 +71,16 @@ int main(int argc, char *argv[]){
 	while(1){
     memset(&cli_addr, 0, sizeof(cli_addr));
     memset(buffer, 0, sizeof(buffer));
+    memset(&local_ip, 0, sizeof(local_ip));
     if((local_ip = gethostbyname("localhost")) == NULL){
       perror("gethostbyname()");
       exit(1);
     }
+    /* La lista puntata da h_addr_list è un array di puntatori. Pertanto è necessario dereferenziare ogni indice due volte,
+     * una per avere il puntatore alla lista e l'altra per prendere l'in_addr struct a cui esso punta. 
+     * Fatto ciò bisogna convertire l'unsigned int a 32 bit in un indirizzo ip decimale */
+    pptr = (struct in_addr **)local_ip->h_addr_list;
+    
 		if((newsockd = accept(sockd, (struct sockaddr *) &cli_addr, (socklen_t *) &socket_len)) < 0){
 			perror("Errore nella connessione\n");
 			onexit(newsockd, sockd, 0, 2);
@@ -82,7 +89,8 @@ int main(int argc, char *argv[]){
     fprintf(stdout, "Ricevuta richiesta di connessione dall' indirizzo %s\n", inet_ntoa(cli_addr.sin_addr));
 
     /************************* MESSAGGIO DI BENVENUTO *************************/
-    sprintf(buffer, "220 FTPUtils SERVER [%s]", inet_ntoa(*(struct in_addr*)(local_ip->h_addr_list[i]))); /* converto hostname in ip decimale */
+    //sprintf(buffer, "220 FTPUtils SERVER [%s]", inet_ntoa(*(struct in_addr*)(local_ip->h_addr_list[i]))); /* converto hostname in ip decimale */
+    sprintf(buffer, "220 FTPUtils Server [%s]", inet_ntoa(**(pptr)));
     if(send(newsockd, buffer, strlen(buffer), 0) < 0){
       perror("Errore durante l'invio");
 			onexit(newsockd, sockd, 0, 2);
@@ -140,11 +148,6 @@ int main(int argc, char *argv[]){
     /************************* RESTO IN ASCOLTO DELL'AZIONE DAL CLIENT *************************/
     exec_listen_action:
     memset(buffer, 0, sizeof(buffer));
-    /*if(recv(newsockd, tmp_buf, sizeof(tmp_buf), 0) < 0){
-      perror("Errore nella ricezione lunghezza azione\n");
-      close(newsockd);
-      exit(1);
-    }*/
     if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
       perror("Errore nella ricezione azione\n");
       close(newsockd);
@@ -161,11 +164,6 @@ int main(int argc, char *argv[]){
     if(strcmp(buffer, "EXIT") == 0) goto prepara;
 
     prepara:
-    /*strcpy(tmp_buf, "1212");
-    if(send(newsockd, tmp_buf, sizeof(tmp_buf), 0) < 0){
-      perror("Errore durante l'invio errore ricezione azione");
-      onexit(newsockd, 0, 0, 1);
-    }*/
     if(strcmp(buffer, "SYST") == 0) goto exec_syst;
     if(strcmp(buffer, "LIST") == 0) goto exec_list;
     if(strcmp(buffer, "PWD") == 0) goto exec_pwd;
@@ -198,7 +196,7 @@ int main(int argc, char *argv[]){
     exec_list:
     memset(buffer, 0, sizeof(buffer));
     memset(tmp_buf, 0, sizeof(tmp_buf));
-    if(recv(newsockd, buffer, 5, 0) < 0){ /* i 6 caratteri sono dati da L I S T \n \0 */
+    if(recv(newsockd, buffer, 6, 0) < 0){ /* i 6 caratteri sono dati da L I S T \n \0 */
     	perror("Errore nella ricezione comando LIST");
     	onexit(newsockd, sockd, 0, 2);
     }
@@ -243,7 +241,6 @@ int main(int argc, char *argv[]){
         perror("sendfile");
         onexit(newsockd, sockd, fpl, 3);
       }
-      //offset_list += rc_list;
       size_to_send -= rc_list;
     }
     close(fpl);
@@ -350,7 +347,6 @@ int main(int argc, char *argv[]){
     }
     fsize = fileStat.st_size;
     snprintf(tmp_buf, BUFSIZ-1, "%" PRIu32, fsize);
-    //printf("%" PRIu32 "\n", fsize);
     if(send(newsockd, tmp_buf, sizeof(tmp_buf), 0) < 0){
     	perror("Errore durante l'invio della grandezza del file\n");
     	onexit(newsockd, sockd, fd, 3);
@@ -362,7 +358,6 @@ int main(int argc, char *argv[]){
         perror("sendfile");
         onexit(newsockd, sockd, fd, 3);
       }
-      //offset += rc;
       size_to_send -= rc;
     }
     close(fd); /* la chiusura del file va qui altrimenti rischio loop infinito e scrittura all'interno del file */
