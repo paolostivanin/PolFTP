@@ -31,18 +31,17 @@ int main(int argc, char *argv[]){
 	
 	check_before_start(argc, argv);
 	
-	int sockd, newsockd, socket_len, rc, rc_list, fd, fpl, var = 0, retval;
+	int sockd, newsockd, socket_len, rc, rc_list, fd, fpl, /*var = 0,*/ retval;
 	int NumPorta = atoi(argv[1]);
 	struct sockaddr_in serv_addr, cli_addr; /* strutture contenenti indirizzo del server e del client */
 	off_t offset, offset_list; /* variabile di tipo offset */
 	struct stat fileStat; /* struttura contenente informazioni sul file scelto */
 	struct hostent *local_ip; /* struttura contenente ip server */
-	static char buffer[256], saved_user[256]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
+	static char buffer[512], saved_user[512], tmp_buf[BUFSIZ]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
 	char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL, *other = NULL, *cd_path = NULL, *path = NULL;
-  char *sysname = NULL, *filename = NULL;
+  char *sysname = NULL, *filename = NULL, **files;
 	uint32_t fsize, count, i, size_to_send;
   char *serverdir = (char *)(intptr_t)get_current_dir_name();
-  char **files;
   FILE *fp_list;
 	
 	if((sockd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
@@ -69,6 +68,8 @@ int main(int argc, char *argv[]){
 	signal (SIGINT, ( void *)sig_handler); /* se premuto CTRL+C il server termina */
 	
 	while(1){
+    memset(&cli_addr, 0, sizeof(cli_addr));
+    memset(buffer, 0, sizeof(buffer));
     if((local_ip = gethostbyname("localhost")) == NULL){
       perror("gethostbyname()");
       exit(1);
@@ -139,12 +140,12 @@ int main(int argc, char *argv[]){
     /************************* RESTO IN ASCOLTO DELL'AZIONE DAL CLIENT *************************/
     exec_listen_action:
     memset(buffer, 0, sizeof(buffer));
-    if(recv(newsockd, &var, sizeof(var), 0) < 0){
+    /*if(recv(newsockd, tmp_buf, sizeof(tmp_buf), 0) < 0){
       perror("Errore nella ricezione lunghezza azione\n");
       close(newsockd);
       exit(1);
-    }
-    if(recv(newsockd, buffer, var, 0) < 0){
+    }*/
+    if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
       perror("Errore nella ricezione azione\n");
       close(newsockd);
       exit(1);
@@ -160,11 +161,11 @@ int main(int argc, char *argv[]){
     if(strcmp(buffer, "EXIT") == 0) goto prepara;
 
     prepara:
-    var = 0;
-    if(send(newsockd, &var, sizeof(var), 0) < 0){
+    /*strcpy(tmp_buf, "1212");
+    if(send(newsockd, tmp_buf, sizeof(tmp_buf), 0) < 0){
       perror("Errore durante l'invio errore ricezione azione");
       onexit(newsockd, 0, 0, 1);
-    }
+    }*/
     if(strcmp(buffer, "SYST") == 0) goto exec_syst;
     if(strcmp(buffer, "LIST") == 0) goto exec_list;
     if(strcmp(buffer, "PWD") == 0) goto exec_pwd;
@@ -196,7 +197,8 @@ int main(int argc, char *argv[]){
     /************************* RICEZIONE RICHIESTA LIST E INVIO LISTA *************************/
     exec_list:
     memset(buffer, 0, sizeof(buffer));
-    if(recv(newsockd, buffer, 5, 0) < 0){
+    memset(tmp_buf, 0, sizeof(tmp_buf));
+    if(recv(newsockd, buffer, 5, 0) < 0){ /* i 6 caratteri sono dati da L I S T \n \0 */
     	perror("Errore nella ricezione comando LIST");
     	onexit(newsockd, sockd, 0, 2);
     }
@@ -211,6 +213,7 @@ int main(int argc, char *argv[]){
       perror("Impossibile aprire il file per la scrittura LIST");
       onexit(newsockd, sockd, 0, 2);
     }
+
     for(i=0; i < count; i++){
       if(strcmp(files[i], "DIR ..") == 0 || strcmp(files[i], "DIR .") == 0) continue;
       else{
@@ -228,8 +231,9 @@ int main(int argc, char *argv[]){
       onexit(newsockd, sockd, fpl, 3);
     }
     fsize = fileStat.st_size;
-    if(send(newsockd, &fsize, sizeof(fsize), 0) < 0){
-      perror("Errore durante l'invio grandezza file list");
+    snprintf(tmp_buf, BUFSIZ-1, "%" PRIu32, fsize);
+    if(send(newsockd, tmp_buf, sizeof(tmp_buf), 0) < 0){
+      perror("Errore durante l'invio della grandezza del file\n");
       onexit(newsockd, sockd, fpl, 3);
     }
     offset_list = 0;
@@ -239,7 +243,7 @@ int main(int argc, char *argv[]){
         perror("sendfile");
         onexit(newsockd, sockd, fpl, 3);
       }
-      offset_list += rc_list;
+      //offset_list += rc_list;
       size_to_send -= rc_list;
     }
     close(fpl);
@@ -248,6 +252,7 @@ int main(int argc, char *argv[]){
       onexit(newsockd, sockd, 0, 2);
     }
 		memset(buffer, 0, sizeof(buffer));
+    memset(tmp_buf, 0, sizeof(tmp_buf));
     goto exec_listen_action;
     /************************* FINE RICEZIONE LIST E INVIO LISTA *************************/
 
@@ -309,6 +314,7 @@ int main(int argc, char *argv[]){
     /************************* RICEZIONE NOME FILE ED INVIO FILE *************************/
     exec_retr:
     memset(buffer, 0, sizeof(buffer));
+    memset(tmp_buf, 0, sizeof(tmp_buf));
     if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
       perror("Errore nella ricezione del nome del file");
       onexit(newsockd, sockd, 0, 2);
@@ -333,7 +339,7 @@ int main(int argc, char *argv[]){
     	onexit(newsockd, sockd, 0, 2);
     }
     strcpy(buffer, "OK\0");
-    if(send(newsockd, buffer, strlen(buffer), 0) < 0){
+    if(send(newsockd, buffer, 3, 0) < 0){
       perror("Errore durante invio");
       onexit(newsockd, sockd, 0 ,2);
     }
@@ -343,7 +349,9 @@ int main(int argc, char *argv[]){
     	onexit(newsockd, sockd, fd, 3);
     }
     fsize = fileStat.st_size;
-    if(send(newsockd, &fsize, sizeof(fsize), 0) < 0){
+    snprintf(tmp_buf, BUFSIZ-1, "%" PRIu32, fsize);
+    //printf("%" PRIu32 "\n", fsize);
+    if(send(newsockd, tmp_buf, sizeof(tmp_buf), 0) < 0){
     	perror("Errore durante l'invio della grandezza del file\n");
     	onexit(newsockd, sockd, fd, 3);
     }
@@ -354,10 +362,11 @@ int main(int argc, char *argv[]){
         perror("sendfile");
         onexit(newsockd, sockd, fd, 3);
       }
-      offset += rc;
+      //offset += rc;
       size_to_send -= rc;
     }
     close(fd); /* la chiusura del file va qui altrimenti rischio loop infinito e scrittura all'interno del file */
+
     memset(buffer, 0, sizeof(buffer));
     strcpy(buffer, "226 File trasferito con successo\n");
     if(send(newsockd, buffer, strlen(buffer), 0) < 0){
@@ -365,6 +374,7 @@ int main(int argc, char *argv[]){
       onexit(newsockd, sockd, 0, 2);
     }
     memset(buffer, 0, sizeof(buffer));
+    memset(tmp_buf, 0, sizeof(tmp_buf));
     goto exec_listen_action;
     /************************* FINE RICEZIONE NOME FILE ED INVIO FILE *************************/
 

@@ -15,6 +15,6 @@ void get_syst(char **sysn){
   	}
 	len=strlen(uts.sysname)+1;
 	tmp = (char *)malloc(len);
-  	strcpy(tmp, uts.sysname);
+  strcpy(tmp, uts.sysname);
  	*sysn = tmp;
 }
