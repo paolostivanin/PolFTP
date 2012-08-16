@@ -89,7 +89,6 @@ int main(int argc, char *argv[]){
     fprintf(stdout, "Ricevuta richiesta di connessione dall' indirizzo %s\n", inet_ntoa(cli_addr.sin_addr));
 
     /************************* MESSAGGIO DI BENVENUTO *************************/
-    //sprintf(buffer, "220 FTPUtils SERVER [%s]", inet_ntoa(*(struct in_addr*)(local_ip->h_addr_list[i]))); /* converto hostname in ip decimale */
     sprintf(buffer, "220 FTPUtils Server [%s]", inet_ntoa(**(pptr)));
     if(send(newsockd, buffer, strlen(buffer), 0) < 0){
       perror("Errore durante l'invio");
