@@ -1,6 +1,6 @@
 /* Descrizione: Semplice server FTP iterativo sviluppato per il progetto di Reti di Calcolatori
  * Sviluppatore: Paolo Stivanin
- * Versione: 1.0-alpha3
+ * Versione: 1.0-alpha5
  * Copyright: 2012
  * Licenza: GNU AGPL v3 <http://www.gnu.org/licenses/agpl-3.0.html>
  * Sito web: <https://github.com/polslinux/FTPUtils>
@@ -383,7 +383,7 @@ int main(int argc, char *argv[]){
     filename = NULL;
     other = strtok(buffer, " ");
     filename = strtok(NULL, "\n");
-    if(strcmp(other, "DELETE") == 0){
+    if(strcmp(other, "DELE") == 0){
       printf("Ricevuta richiesta DELETE\n");
     } else onexit(newsockd, sockd, 0, 2);
     
@@ -427,7 +427,7 @@ int main(int argc, char *argv[]){
     filename = NULL;
     other = strtok(buffer, " ");
     filename = strtok(NULL, "\n");
-    if(strcmp(other, "MKDIR") == 0){
+    if(strcmp(other, "MKD") == 0){
       printf("Ricevuta richiesta MKDIR\n");
     } else onexit(newsockd, sockd, 0, 2);
     
@@ -460,7 +460,7 @@ int main(int argc, char *argv[]){
     filename = NULL;
     other = strtok(buffer, " ");
     filename = strtok(NULL, "\n");
-    if(strcmp(other, "MKDIR") == 0){
+    if(strcmp(other, "RND") == 0){
       printf("Ricevuta richiesta RMDIR\n");
     } else onexit(newsockd, sockd, 0, 2);
     

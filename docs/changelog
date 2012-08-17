@@ -13,17 +13,17 @@
 	* FIXED: some bugs
 	* ADDED: DELETE, MKDIR, RMDIR cmds
 	
-??/08/2012 - v1.0-alpha4
-	* FIXED: some bugs (see git commits for more info)
-	* FIXED: cmd renamed: RMDIR to RND, DELETE to DELE, MKDIR to MKD
+27/08/2012 - v1.0-alpha4
+	* FIXED: some bugs (see git commits for more info) 				 -- done
+	* FIXED: cmd renamed: RMDIR to RND, DELETE to DELE, MKDIR to MKD -- done
 	* ADDED: RNFR, RNTO, STOR
 
-??/08/2012 - v1.0-alpha5
+??/09/2012 - v1.0-alpha5
 	* ADDED: server with fork
 
 ??/09/2012 - v1.0-beta
 	* FIXED: bugs if any
 	* ADDED: documentation
 
-??/09/2012 - v1.0
+30/09/2012 - v1.0
 	* Newstable release

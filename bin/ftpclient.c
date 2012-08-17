@@ -1,6 +1,6 @@
 /* Descrizione: Semplice client FTP sviluppato per il progetto di Reti di Calcolatori
  * Sviluppatore: Paolo Stivanin
- * Versione: 1.0-alpha3
+ * Versione: 1.0-alpha5
  * Copyright: 2012
  * Licenza: GNU GPL v3 <http://www.gnu.org/licenses/gpl-3.0.html>
  * Sito web: <https://github.com/polslinux/FTPUtils>
@@ -28,8 +28,6 @@ struct info{
   char *user, *pass, *filename, *conferma, *filebuffer, *scelta;
 };
 
-/* ricordarsi malloc e free per i membri della struttura a cui accedo direttamente con sInfo.user, sInfo.pass, ecc */
-
 int main(int argc, char *argv[]){
 	
 	check_before_start(argc, argv);
@@ -39,7 +37,7 @@ int main(int argc, char *argv[]){
 	static struct sockaddr_in serv_addr; /* struttura contenente indirizzo del server */
   static struct termios oldt, newt; /* struttura contenente i paramentri della shell */
   static struct hostent *hp; /* la struttura hostent mi servirà per l'indirizzo ip del server */
-  static struct info sInfo;
+  static struct info sInfo; /* struttura che contiene alcuni dati utili al programma */
 	static char buffer[256], expected_string[128], dirpath[256], tmp_buf[BUFSIZ]; /*buffer usato per contenere vari dati */
 	uint32_t fsize, nread = 0, fsize_tmp; /* fsize conterrà la grandezza del file e nread i bytes letti ogni volta del file */
 	FILE *fp; /* file usato per leggere listfiles.txt */
@@ -211,7 +209,9 @@ int main(int argc, char *argv[]){
   if(strcmp(sInfo.scelta, "EXIT") == 0){ free(sInfo.scelta); goto exec_exit; }
 
   exec_help:
-  printf("I comandi disponibili sono:\nSYST - LIST - PWD - CWD - RETR - DELETE - MKDIR - RMDIR - EXIT - HELP\n");
+  printf("FTPUtils (Client) v1.0-alpha5 developed by Paolo Stivanin\n");
+  printf("\nI comandi disponibili sono:\nSYST - LIST - PWD - CWD - RETR - DELE - MKD - RND - RNFR - RNTO - STOR - EXIT - HELP\n");
+  memset(&sVersion, 0, sizeo  f(sVersion));
   free(sInfo.scelta);
   goto exec_switch;
   /************************* FINE PARTE AZIONE UTENTE *************************/
@@ -425,7 +425,7 @@ int main(int argc, char *argv[]){
   sInfo.filename = NULL;
   sInfo.conferma = NULL;
   sInfo.filename = strtok(dirpath, "\n");
-  sprintf(buffer, "DELETE %s", dirpath);
+  sprintf(buffer, "DELE %s", dirpath);
   if(send(sockd, buffer, strlen(buffer), 0) < 0){
     perror("Errore durante l'invio del nome del file");
     onexit(sockd, 0, 0, 1);
@@ -456,7 +456,7 @@ int main(int argc, char *argv[]){
   sInfo.filename = NULL;
   sInfo.conferma = NULL;
   sInfo.filename = strtok(dirpath, "\n");
-  sprintf(buffer, "MKDIR %s", dirpath);
+  sprintf(buffer, "MKD %s", dirpath);
   if(send(sockd, buffer, strlen(buffer), 0) < 0){
     perror("Errore durante l'invio del nome della cartella");
     onexit(sockd, 0, 0, 1);
@@ -487,7 +487,7 @@ int main(int argc, char *argv[]){
   sInfo.filename = NULL;
   sInfo.conferma = NULL;
   sInfo.filename = strtok(dirpath, "\n");
-  sprintf(buffer, "MKDIR %s", dirpath);
+  sprintf(buffer, "RND %s", dirpath);
   if(send(sockd, buffer, strlen(buffer), 0) < 0){
     perror("Errore durante l'invio del nome della cartella");
     onexit(sockd, 0, 0, 1);
