@@ -2,7 +2,7 @@ FTPUtils
 ========
 
 FTPUtils è sviluppato come progetto per corso di Reti di Calcolatori tenutosi presso il DTI di Crema durante l'anno scolastico 2011/2012.
-Esso è composto da un server e un client FTP che supportano le funzioni: SYST - LIST - PWD - CWD - RETR - STOR - DELE - MKD - RMD - RNM - STOR.<br>
+Esso è composto da un server e un client FTP che supportano le funzioni: SYST - LIST - PWD - CWD - RETR - STOR - DELE - MKD - RMD - RNM.<br>
 Lo studente sviluppatore del progetto è:
 
 * Paolo Stivanin (SSRI in presenza, DM270)
