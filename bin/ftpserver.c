@@ -1,6 +1,6 @@
 /* Descrizione: Semplice server FTP iterativo sviluppato per il progetto di Reti di Calcolatori
  * Sviluppatore: Paolo Stivanin
- * Versione: 1.0-alpha5
+ * Versione: 1.0-alpha4
  * Copyright: 2012
  * Licenza: GNU AGPL v3 <http://www.gnu.org/licenses/agpl-3.0.html>
  * Sito web: <https://github.com/polslinux/FTPUtils>
@@ -31,19 +31,20 @@ int main(int argc, char *argv[]){
 	
 	check_before_start(argc, argv);
 	
-	int sockd, newsockd, socket_len, rc, rc_list, fd, fpl, /*var = 0,*/ retval;
+	int sockd, newsockd, socket_len, rc, rc_list, fd, fpl, retval, total_bytes_read = 0, renameFile = 0;
 	int NumPorta = atoi(argv[1]);
 	struct sockaddr_in serv_addr, cli_addr; /* strutture contenenti indirizzo del server e del client */
 	off_t offset, offset_list; /* variabile di tipo offset */
 	struct stat fileStat; /* struttura contenente informazioni sul file scelto */
 	struct hostent *local_ip; /* struttura contenente ip server */
   struct in_addr **pptr;
-	static char buffer[512], saved_user[512], tmp_buf[BUFSIZ]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
+	static char buffer[512], saved_user[512], tmp_name[256], tmp_buf[BUFSIZ]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
 	char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL, *other = NULL, *cd_path = NULL, *path = NULL;
-  char *sysname = NULL, *filename = NULL, **files;
-	uint32_t fsize, count, i, size_to_send;
+  char *sysname = NULL, *filename = NULL, **files, *filebuffer = NULL;
+	uint32_t fsize, fsize_tmp, count, i, nread = 0, size_to_send;
   char *serverdir = (char *)(intptr_t)get_current_dir_name();
   FILE *fp_list;
+  static char rnbuf[255];
 	
 	if((sockd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
 		perror("Errore creazione socket\n");
@@ -157,9 +158,11 @@ int main(int argc, char *argv[]){
     if(strcmp(buffer, "PWD") == 0) goto prepara;
     if(strcmp(buffer, "CWD") == 0) goto prepara;
     if(strcmp(buffer, "RETR") == 0) goto prepara;
-    if(strcmp(buffer, "DELETE") == 0) goto prepara;
-    if(strcmp(buffer, "MKDIR") == 0) goto prepara;
-    if(strcmp(buffer, "RMDIR") == 0) goto prepara;
+    if(strcmp(buffer, "STOR") == 0) goto prepara;
+    if(strcmp(buffer, "DELE") == 0) goto prepara;
+    if(strcmp(buffer, "MKD") == 0) goto prepara;
+    if(strcmp(buffer, "RMD") == 0) goto prepara;
+    if(strcmp(buffer, "RNM") == 0) goto prepara;
     if(strcmp(buffer, "EXIT") == 0) goto prepara;
 
     prepara:
@@ -168,13 +171,15 @@ int main(int argc, char *argv[]){
     if(strcmp(buffer, "PWD") == 0) goto exec_pwd;
     if(strcmp(buffer, "CWD") == 0) goto exec_cwd;
     if(strcmp(buffer, "RETR") == 0) goto exec_retr;
-    if(strcmp(buffer, "DELETE") == 0) goto exec_delete;
-    if(strcmp(buffer, "MKDIR") == 0) goto exec_mkdir;
-    if(strcmp(buffer, "RMDIR") == 0) goto exec_rmdir;
+    if(strcmp(buffer, "STOR") == 0) goto exec_stor;
+    if(strcmp(buffer, "DELE") == 0) goto exec_delete;
+    if(strcmp(buffer, "MKD") == 0) goto exec_mkdir;
+    if(strcmp(buffer, "RMD") == 0) goto exec_rmdir;
+    if(strcmp(buffer, "RNM") == 0) goto exec_rename;
     if(strcmp(buffer, "EXIT") == 0) goto send_goodbye;
     /************************* FINE PARTE ASCOLTO *************************/
 
-    /************************* RICHIESTA SYST *************************/
+    /************************* INIZIO AZIONE SYST *************************/
     exec_syst:
     memset(buffer, 0, sizeof(buffer));
     if(recv(newsockd, buffer, 5, 0) < 0){
@@ -189,9 +194,9 @@ int main(int argc, char *argv[]){
     }
     memset(buffer, 0, sizeof(buffer));
     goto exec_listen_action;
-    /************************* FINE SYST *************************/
+    /************************* FINE AZIONE SYST *************************/
 
-    /************************* RICEZIONE RICHIESTA LIST E INVIO LISTA *************************/
+    /************************* INIZIO AZIONE LIST *************************/
     exec_list:
     memset(buffer, 0, sizeof(buffer));
     memset(tmp_buf, 0, sizeof(tmp_buf));
@@ -250,9 +255,9 @@ int main(int argc, char *argv[]){
 		memset(buffer, 0, sizeof(buffer));
     memset(tmp_buf, 0, sizeof(tmp_buf));
     goto exec_listen_action;
-    /************************* FINE RICEZIONE LIST E INVIO LISTA *************************/
+    /************************* FINE AZIONE LIST *************************/
 
-    /************************* RICHIESTA PWD *************************/
+    /************************* INIZIO AZIONE PWD *************************/
     exec_pwd:
     memset(buffer, 0, sizeof(buffer));
     if(recv(newsockd, buffer, 4, 0) < 0){
@@ -272,9 +277,9 @@ int main(int argc, char *argv[]){
     }
     memset(buffer, 0, sizeof(buffer));
     goto exec_listen_action;
-    /************************* FINE RICHIESTA PWD *************************/
+    /************************* FINE AZIONE PWD *************************/
 
-    /************************* RICHIESTA CWD *************************/
+    /************************* INIZIO AZIONE CWD *************************/
     exec_cwd:
     memset(buffer, 0, sizeof(buffer));
     if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
@@ -305,9 +310,9 @@ int main(int argc, char *argv[]){
     }
     memset(buffer, 0, sizeof(buffer));
     goto exec_listen_action;
-    /************************* FINE RICHIESTA CWD *************************/
+    /************************* FINE AZIONE CWD *************************/
 
-    /************************* RICEZIONE NOME FILE ED INVIO FILE *************************/
+    /************************* INIZIO AZIONE RETR *************************/
     exec_retr:
     memset(buffer, 0, sizeof(buffer));
     memset(tmp_buf, 0, sizeof(tmp_buf));
@@ -370,9 +375,83 @@ int main(int argc, char *argv[]){
     memset(buffer, 0, sizeof(buffer));
     memset(tmp_buf, 0, sizeof(tmp_buf));
     goto exec_listen_action;
-    /************************* FINE RICEZIONE NOME FILE ED INVIO FILE *************************/
+    /************************* FINE AZIONE RETR *************************/
 
-    /************************* RICHIESTA DELETE FILE *************************/
+    /************************* INIZIO AZIONE STOR *************************/
+    exec_stor:
+    memset(buffer, 0, sizeof(buffer));
+    memset(tmp_buf, 0, sizeof(tmp_buf));
+    memset(tmp_name, 0, sizeof(tmp_name));
+    if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
+      perror("Errore ricezione nome file");
+      onexit(newsockd, sockd,0 ,2);
+    }
+    other = NULL;
+    filename = NULL;
+    other = strtok(buffer, " ");
+    filename = strtok(NULL, "\n");
+    strcpy(tmp_name, filename);
+
+    if(strcmp(other, "STOR") == 0){
+      printf("Ricevuta richiesta STOR\n");
+    } else onexit(newsockd, sockd,0 ,2);
+    
+    memset(buffer, 0, sizeof(buffer));
+    if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
+      perror("Errore ricezione nome file");
+      onexit(newsockd, sockd,0 ,2);
+    }
+    fsize = 0;
+    other = NULL;
+    other = strtok(buffer, "\0");
+    if(strcmp(other, "ERRORE: File non esistente") == 0){
+      printf("ERRORE: il file richiesto non esiste\n");
+      onexit(newsockd, sockd,0 ,2);
+    }
+
+    if(recv(newsockd, tmp_buf, sizeof(tmp_buf), 0) < 0){
+      perror("Errore nella ricezione della grandezza del file");
+      onexit(newsockd, sockd,0 ,2);
+    }
+    fsize = atoi(tmp_buf);
+    fflush(stdout);
+    fd = open(tmp_name, O_CREAT | O_WRONLY, 0644);
+    if (fd  < 0) {
+      perror("open");
+      onexit(newsockd, sockd,0 ,2);
+    }
+    fsize_tmp = fsize;
+    filebuffer = malloc(fsize);
+    if(filebuffer == NULL){
+      perror("malloc");
+      onexit(newsockd, sockd, fd, 3);
+    }
+    total_bytes_read = 0;
+    nread = 0;
+    while(((uint32_t)total_bytes_read != fsize) && ((nread = read(newsockd, filebuffer, fsize_tmp)) > 0)){
+      if(write(fd, filebuffer, nread) != nread){
+        perror("write RETR");
+        onexit(newsockd, sockd, 0, 2);
+      }
+      total_bytes_read += nread;
+      fsize_tmp -= nread;
+    }
+    close(fd); /* la chiusura del file va qui altrimenti client entra in loop infinito e si scrive all'interno del file */
+
+    memset(buffer, 0, sizeof(buffer));
+    strcpy(buffer, "226 File trasferito correttamente");
+    if(send(newsockd, buffer, 33, 0) < 0){
+      perror("Errore invio conferma upload");
+      onexit(sockd, 0, 0, 1);
+    }
+    memset(buffer, 0, sizeof(buffer));
+    memset(tmp_buf, 0, sizeof(tmp_buf));
+    memset(tmp_name, 0, sizeof(tmp_name));
+    free(filebuffer);
+    goto exec_listen_action;
+    /************************* FINE AZIONE RETR *************************/
+
+    /************************* INIZIO AZIONE DELE *************************/
     exec_delete:
     memset(buffer, 0, sizeof(buffer));
     if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
@@ -414,9 +493,9 @@ int main(int argc, char *argv[]){
     }
     memset(buffer, 0, sizeof(buffer));
     goto exec_listen_action;
-    /************************* RICHIESTA DELETE FILE *************************/
+    /************************* FINE AZIONE DELE *************************/
 
-    /************************* RICHIESTA MKDIR *************************/
+    /************************* INIZIO AZIONE MKD *************************/
     exec_mkdir:
     memset(buffer, 0, sizeof(buffer));
     if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
@@ -447,9 +526,9 @@ int main(int argc, char *argv[]){
     }
     memset(buffer, 0, sizeof(buffer));
     goto exec_listen_action;
-    /************************* FINE RICHIESTA MKDIR *************************/
+    /************************* FINE AZIONE MKD *************************/
 
-    /************************* RICHIESTA RMDIR *************************/
+    /************************* INIZIO AZIONE RMD *************************/
     exec_rmdir:
     memset(buffer, 0, sizeof(buffer));
     if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
@@ -460,7 +539,7 @@ int main(int argc, char *argv[]){
     filename = NULL;
     other = strtok(buffer, " ");
     filename = strtok(NULL, "\n");
-    if(strcmp(other, "RND") == 0){
+    if(strcmp(other, "RMD") == 0){
       printf("Ricevuta richiesta RMDIR\n");
     } else onexit(newsockd, sockd, 0, 2);
     
@@ -480,9 +559,50 @@ int main(int argc, char *argv[]){
     }
     memset(buffer, 0, sizeof(buffer));
     goto exec_listen_action;
-    /************************* FINE RICHIESTA RMDIR *************************/
+    /************************* FINE AZIONE RMD *************************/
 
-    /************************* SALUTO FINALE *************************/
+    /************************* INIZIO AZIONE RNM *************************/
+    exec_rename:
+    memset(buffer, 0, sizeof(buffer));
+    if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
+      perror("Errore nella ricezione RNFR");
+      onexit(newsockd, sockd, 0, 2);
+    }
+    other = NULL;
+    filename = NULL;
+    other = strtok(buffer, " ");
+    filename = strtok(NULL, "\n");
+    strcpy(rnbuf, filename);
+
+    if(strcmp(other, "RNFR") == 0){
+      printf("Ricevuta richiesta RNFR\n");
+    } else onexit(newsockd, sockd, 0, 2);
+
+    memset(buffer, 0, sizeof(buffer));
+    if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
+      perror("Errore nella ricezione RNTO");
+      onexit(newsockd, sockd, 0, 2);
+    }
+    other = NULL;
+    filename = NULL;
+    other = strtok(buffer, " ");
+    filename = strtok(NULL, "\n");
+    if(strcmp(other, "RNTO") == 0){
+      printf("Ricevuta richiesta RNTO\n");
+    } else onexit(newsockd, sockd, 0, 2);
+    renameFile = rename(rnbuf, filename);
+    if(renameFile == 0){
+      strcpy(buffer, "isokrnm\0");
+    } else { strcpy(buffer, "failrnm\0"); }
+    if(send(newsockd, buffer, 8, 0) < 0){
+      perror("Errore durante invio rnm conferma");
+      onexit(newsockd, sockd, 0, 2);
+    }
+    memset(buffer, 0, sizeof(buffer));
+    goto exec_listen_action;
+    /************************* FINE AZIONE RNM *************************/
+
+    /************************* INIZIO SALUTO FINALE *************************/
     send_goodbye:
     memset(buffer, 0, sizeof(buffer));
     strcpy(buffer, "221 Goodbye\n");

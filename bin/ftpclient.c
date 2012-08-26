@@ -1,6 +1,6 @@
 /* Descrizione: Semplice client FTP sviluppato per il progetto di Reti di Calcolatori
  * Sviluppatore: Paolo Stivanin
- * Versione: 1.0-alpha5
+ * Versione: 1.0-alpha4
  * Copyright: 2012
  * Licenza: GNU GPL v3 <http://www.gnu.org/licenses/gpl-3.0.html>
  * Sito web: <https://github.com/polslinux/FTPUtils>
@@ -17,6 +17,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
+#include <sys/sendfile.h>
+#include <sys/stat.h>
+#include <errno.h>
 #include <netdb.h>
 #include <fcntl.h>
 #include <termios.h> /* per nascondere la password */
@@ -32,16 +35,18 @@ int main(int argc, char *argv[]){
 	
 	check_before_start(argc, argv);
 
-	int sockd, fd, total_bytes_read = 0, var = 0, i = 0; /* descrittore del socket, file, bytes letti alla ricezione del file in totale */
+	int sockd, fd, total_bytes_read = 0, var = 0, i = 0, rc; /* descrittore del socket, file, bytes letti alla ricezione del file in totale */
 	int NumPorta = atoi(argv[2]); /* numero di porta */
 	static struct sockaddr_in serv_addr; /* struttura contenente indirizzo del server */
   static struct termios oldt, newt; /* struttura contenente i paramentri della shell */
   static struct hostent *hp; /* la struttura hostent mi servirà per l'indirizzo ip del server */
   static struct info sInfo; /* struttura che contiene alcuni dati utili al programma */
+  static struct stat fileStat;
 	static char buffer[256], expected_string[128], dirpath[256], tmp_buf[BUFSIZ]; /*buffer usato per contenere vari dati */
-	uint32_t fsize, nread = 0, fsize_tmp; /* fsize conterrà la grandezza del file e nread i bytes letti ogni volta del file */
+	uint32_t fsize, nread = 0, fsize_tmp, size_to_send; /* fsize conterrà la grandezza del file e nread i bytes letti ogni volta del file */
 	FILE *fp; /* file usato per leggere listfiles.txt */
 	char c; /* usato per printare il file list 1 carattere per volta */
+  off_t offset;
 	
 	hp = gethostbyname(argv[1]); /* inseriamo nella struttura hp le informazione sull'host "argv[1]" */
 	bzero((char *) &serv_addr, sizeof(serv_addr)); /* bzero scrive dei null bytes dove specificato per la lunghezza specificata */
@@ -182,9 +187,11 @@ int main(int argc, char *argv[]){
   if((strcmp("PWD", sInfo.scelta) == 0)) goto prepara;
   if((strcmp("CWD", sInfo.scelta) == 0)) goto prepara;
   if((strcmp("RETR", sInfo.scelta) == 0)) goto prepara;
-  if((strcmp("DELETE", sInfo.scelta) == 0)) goto prepara;
-  if((strcmp("MKDIR", sInfo.scelta) == 0)) goto prepara;
-  if((strcmp("RMDIR", sInfo.scelta) == 0)) goto prepara;
+  if((strcmp("STOR", sInfo.scelta) == 0)) goto prepara;
+  if((strcmp("DELE", sInfo.scelta) == 0)) goto prepara;
+  if((strcmp("MKD", sInfo.scelta) == 0)) goto prepara;
+  if((strcmp("RMD", sInfo.scelta) == 0)) goto prepara;
+  if((strcmp("RNM", sInfo.scelta) == 0)) goto prepara;
   if((strcmp("EXIT", sInfo.scelta) == 0)) goto prepara;
   if((strcmp("HELP", sInfo.scelta) == 0)) goto prepara;
   printf("Comando errato. Scrivere HELP per l'aiuto.\n"); goto exec_switch;
@@ -203,20 +210,21 @@ int main(int argc, char *argv[]){
   if(strcmp(sInfo.scelta, "PWD") == 0){ free(sInfo.scelta); goto exec_pwd; }
   if(strcmp(sInfo.scelta, "CWD") == 0){ free(sInfo.scelta); goto exec_cwd; }
   if(strcmp(sInfo.scelta, "RETR") == 0){ free(sInfo.scelta); goto exec_retr; }
-  if(strcmp(sInfo.scelta, "DELETE") == 0){ free(sInfo.scelta); goto exec_delete; }
-  if(strcmp(sInfo.scelta, "MKDIR") == 0){ free(sInfo.scelta); goto exec_mkdir; }
-  if(strcmp(sInfo.scelta, "RMDIR") == 0){ free(sInfo.scelta); goto exec_rmdir; }
+  if(strcmp(sInfo.scelta, "STOR") == 0){ free(sInfo.scelta); goto exec_stor; }
+  if(strcmp(sInfo.scelta, "DELE") == 0){ free(sInfo.scelta); goto exec_delete; }
+  if(strcmp(sInfo.scelta, "MKD") == 0){ free(sInfo.scelta); goto exec_mkdir; }
+  if(strcmp(sInfo.scelta, "RMD") == 0){ free(sInfo.scelta); goto exec_rmdir; }
+  if(strcmp(sInfo.scelta, "RNM") == 0){ free(sInfo.scelta); goto exec_rename; }
   if(strcmp(sInfo.scelta, "EXIT") == 0){ free(sInfo.scelta); goto exec_exit; }
 
   exec_help:
-  printf("FTPUtils (Client) v1.0-alpha5 developed by Paolo Stivanin\n");
-  printf("\nI comandi disponibili sono:\nSYST - LIST - PWD - CWD - RETR - DELE - MKD - RND - RNFR - RNTO - STOR - EXIT - HELP\n");
-  memset(&sVersion, 0, sizeo  f(sVersion));
+  printf("FTPUtils (Client) v1.0-alpha4 developed by Paolo Stivanin\n");
+  printf("\nI comandi disponibili sono:\nSYST - LIST - PWD - CWD - RETR - STOR - DELE - MKD - RMD - RNM - STOR - EXIT - HELP\n");
   free(sInfo.scelta);
   goto exec_switch;
   /************************* FINE PARTE AZIONE UTENTE *************************/
 
-	/************************* RICHIESTA SYST *************************/
+	/************************* INIZIO AZIONE SYST *************************/
 	exec_syst:
   memset(buffer, 0, sizeof(buffer));
   strcpy(buffer, "SYST\n");
@@ -233,9 +241,9 @@ int main(int argc, char *argv[]){
   sInfo.conferma = NULL;
   memset(buffer, 0, sizeof(buffer));
   goto exec_switch;
-	/************************* FINE SYST *************************/
+	/************************* FINE AZIONE SYST *************************/
 
-	/************************* INVIO RICHIESTA FILE LISTING *************************/
+	/************************* INIZIO RICHIESTA LIST *************************/
 	exec_list:
   memset(buffer, 0, sizeof(buffer));
   memset(tmp_buf, 0, sizeof(tmp_buf));
@@ -287,9 +295,9 @@ int main(int argc, char *argv[]){
   free(sInfo.filebuffer);
   fflush(stdout);
   goto exec_switch;
-	/************************* FINE RICHIESTA FILE LISTING *************************/
+	/************************* FINE AZIONE LIST *************************/
 
-	/************************* RICHIESTA PWD *************************/
+	/************************* INIZIO AZIONE PWD *************************/
 	exec_pwd:
   memset(buffer, 0, sizeof(buffer));
 	strcpy(buffer, "PWD\n");
@@ -309,9 +317,9 @@ int main(int argc, char *argv[]){
   sInfo.conferma = NULL;
   memset(buffer, 0, sizeof(buffer));
   goto exec_switch;
-	/************************* FINE RICHIESTA PWD *************************/
+	/************************* FINE AZIONE PWD *************************/
 
-	/************************* INVIO RICHIESTA CWD *************************/
+	/************************* INIZIO AZIONE CWD *************************/
 	exec_cwd:
   memset(dirpath, 0, sizeof(dirpath));
   memset(buffer, 0, sizeof(buffer));
@@ -341,9 +349,9 @@ int main(int argc, char *argv[]){
   memset(buffer, 0, sizeof(buffer));
   memset(dirpath, 0, sizeof(dirpath));
   goto exec_switch;
-	/************************* FINE RICHIESTA CWD *************************/
+	/************************* FINE AZIONE CWD *************************/
 
-	/************************* INVIO NOME FILE E RICEZIONE FILE *************************/
+	/************************* INIZIO AZIONE RETR *************************/
 	exec_retr:
   memset(dirpath, 0, sizeof(dirpath));
   memset(buffer, 0, sizeof(buffer));
@@ -411,9 +419,74 @@ int main(int argc, char *argv[]){
   memset(dirpath, 0, sizeof(dirpath));
   free(sInfo.filebuffer);
   goto exec_switch;
-	/************************* FINE INVIO NOME FILE E RICEZIONE FILE *************************/
+	/************************* FINE AZIONE RETR *************************/
 
-  /************************* INVIO RICHIESTA DELETE FILE *************************/
+  /************************* INIZIO AZIONE STOR *************************/
+  exec_stor:
+  memset(buffer, 0, sizeof(buffer));
+  memset(tmp_buf, 0, sizeof(tmp_buf));
+  printf("Inserire il nome del file da inviare: ");
+  if(fgets(dirpath, BUFFGETS, stdin) == NULL){
+    perror("fgets nome file");
+    onexit(sockd, 0 ,0 ,1);
+  }
+  sInfo.filename = NULL;
+  sInfo.filename = strtok(dirpath, "\n");
+  sprintf(buffer, "STOR %s", sInfo.filename);
+  if(send(sockd, buffer, sizeof(buffer), 0) < 0){
+    perror("Errore invio nome file");
+    onexit(sockd, 0, 0, 1);
+  }
+
+  fd = open(sInfo.filename, O_RDONLY);
+  if(fd < 0){
+    fprintf(stderr, "Impossibile aprire '%s': %s\n", sInfo.filename, strerror(errno));
+    strcpy(buffer, "ERRORE: File non esistente\0");
+    if(send(sockd, buffer, strlen(buffer), 0) < 0){
+      perror("Errore durante invio");
+      onexit(sockd, 0, 0, 1);
+    }
+    onexit(sockd, 0, 0, 1);
+  }
+  strcpy(buffer, "OK\0");
+  if(send(sockd, buffer, 3, 0) < 0){
+    perror("Errore durante invio");
+    onexit(sockd, 0, 0, 1);
+  }
+
+  if(fstat(fd, &fileStat) < 0){
+    perror("Errore fstat");
+    onexit(sockd, 0, fd, 4);
+  }
+  fsize = fileStat.st_size;
+  snprintf(tmp_buf, BUFSIZ-1, "%" PRIu32, fsize);
+  if(send(sockd, tmp_buf, sizeof(tmp_buf), 0) < 0){
+    perror("Errore durante l'invio della grandezza del file\n");
+    onexit(sockd, 0, fd, 4);
+  }
+  offset = 0;
+  for (size_to_send = fsize; size_to_send > 0; ){
+    rc = sendfile(sockd, fd, &offset, size_to_send);
+    if (rc <= 0){
+      perror("sendfile");
+      onexit(sockd, 0, fd, 4);
+    }
+    size_to_send -= rc;
+  }
+  close(fd); /* la chiusura del file va qui altrimenti rischio loop infinito e scrittura all'interno del file */
+
+  memset(buffer, 0, sizeof(buffer));
+  if(recv(sockd, buffer, 33, 0) < 0){
+    perror("Errore ricezione conferma file");
+    onexit(sockd, 0, 0, 1);
+  }
+  printf("%s\n", buffer);
+  memset(buffer, 0, sizeof(buffer));
+  memset(tmp_buf, 0, sizeof(tmp_buf));
+  goto exec_switch;
+  /************************* FINE AZIONE STOR *************************/
+
+  /************************* INIZIO AZIONE DELE *************************/
   exec_delete:
   memset(dirpath, 0, sizeof(dirpath));
   memset(buffer, 0, sizeof(buffer));
@@ -438,13 +511,13 @@ int main(int argc, char *argv[]){
   if((strcmp(sInfo.conferma, "ERRORE: File non esistente") == 0) || (strcmp(sInfo.conferma, "NONOK") == 0)){
     printf("ERRORE: il file richiesto non esiste o non si può cancellare\n");
     onexit(sockd, 0, 0, 1);
-  } else printf("Il file '%s' è stato cancellato correttamente\n", sInfo.filename);
+  } else printf("250 DELE '%s' OK\n", sInfo.filename);
   memset(dirpath, 0, sizeof(dirpath));
   memset(buffer, 0, sizeof(buffer));
   goto exec_switch;
-  /************************* FINE INVIO RICHIESTA DELETE FILE *************************/
+  /************************* FINE AZIONE DELE *************************/
 
-  /************************* INIZIO PARTE RICHIESTA MKDIR *************************/
+  /************************* INIZIO AZIONE MKD *************************/
   exec_mkdir:
   memset(dirpath, 0, sizeof(dirpath));
   memset(buffer, 0, sizeof(buffer));
@@ -473,9 +546,9 @@ int main(int argc, char *argv[]){
   memset(dirpath, 0, sizeof(dirpath));
   memset(buffer, 0, sizeof(buffer));
   goto exec_switch;
-  /************************* FINE PARTE RICHIESTA MKDIR *************************/
+  /************************* FINE AZIONE MKD *************************/
 
-  /************************* INIZIO PARTE RICHIESTA RMDIR *************************/
+  /************************* INIZIO RICHIESTA RMD *************************/
   exec_rmdir:
   memset(dirpath, 0, sizeof(dirpath));
   memset(buffer, 0, sizeof(buffer));
@@ -487,7 +560,7 @@ int main(int argc, char *argv[]){
   sInfo.filename = NULL;
   sInfo.conferma = NULL;
   sInfo.filename = strtok(dirpath, "\n");
-  sprintf(buffer, "RND %s", dirpath);
+  sprintf(buffer, "RMD %s", dirpath);
   if(send(sockd, buffer, strlen(buffer), 0) < 0){
     perror("Errore durante l'invio del nome della cartella");
     onexit(sockd, 0, 0, 1);
@@ -504,9 +577,54 @@ int main(int argc, char *argv[]){
   memset(dirpath, 0, sizeof(dirpath));
   memset(buffer, 0, sizeof(buffer));
   goto exec_switch;
-  /************************* FINE PARTE RICHIESTA RMDIR *************************/
+  /************************* FINE AZIONE RMD *************************/
 
-  /************************* SALUTO FINALE *************************/
+  /************************* INIZIO AZIONE RNM *************************/
+  exec_rename:
+  memset(dirpath, 0, sizeof(dirpath));
+  memset(buffer, 0, sizeof(buffer));
+  printf("Inserire il nome del file da rinominare: ");
+  if(fgets(dirpath, BUFFGETS, stdin) == NULL){
+    perror("fgets nome file");
+    onexit(sockd, 0 ,0 ,1);
+  }
+  printf("\n");
+  sInfo.filename = NULL;
+  sInfo.filename = strtok(dirpath, "\n");
+  sprintf(buffer, "RNFR %s", dirpath);
+  if(send(sockd, buffer, strlen(buffer), 0) < 0){
+    perror("Errore durante l'invio del nome del file");
+    onexit(sockd, 0, 0, 1);
+  }  
+  memset(dirpath, 0, sizeof(dirpath));
+  memset(buffer, 0, sizeof(buffer));
+  printf("Inserire il nuovo nome del file: ");
+  if(fgets(dirpath, BUFFGETS, stdin) == NULL){
+    perror("fgets nome file");
+    onexit(sockd, 0 ,0 ,1);
+  }
+  printf("\n");
+  sInfo.filename = NULL;
+  sInfo.filename = strtok(dirpath, "\n");
+  sprintf(buffer, "RNTO %s", dirpath);
+  if(send(sockd, buffer, strlen(buffer), 0) < 0){
+    perror("Errore durante l'invio del nome del file");
+    onexit(sockd, 0, 0, 1);
+  }
+  if(recv(sockd, buffer, 8, 0) < 0){
+    perror("Errore ricezione conferma RNM");
+    onexit(sockd, 0 ,0 ,1);
+  }
+  sInfo.conferma = NULL;
+  sInfo.conferma = strtok(buffer, "\0");
+  if(strcmp(sInfo.conferma, "failrnm") == 0){
+    printf("550 RNM FAILED\n");
+    /* non serve uscire per questo errore */
+  } else { printf("250 RNM OK\n"); }
+  goto exec_switch;
+  /************************* FINE AZIONE RNM *************************/
+
+  /************************* INIZIO SALUTO FINALE *************************/
 	exec_exit:
   memset(buffer, 0, sizeof(buffer));
   if(recv(sockd, buffer, 12, 0) < 0){
@@ -515,7 +633,7 @@ int main(int argc, char *argv[]){
   }
   printf("%s", buffer);
   close(sockd);
-  /************************* SALUTO FINALE *************************/
+  /************************* FINE SALUTO FINALE *************************/
 
 	return EXIT_SUCCESS;
 }
