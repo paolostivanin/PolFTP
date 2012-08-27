@@ -62,7 +62,7 @@ void do_stor_cmd(int f_sockd){
     onexit(f_sockd, 0, fd, 4);
   }
   fsize = fileStat.st_size;
-  snprintf(t_buf, BUFSIZ-1, "%" PRIu32, fsize);
+  snprintf(t_buf, 255, "%" PRIu32, fsize);
   if(send(f_sockd, t_buf, sizeof(t_buf), 0) < 0){
     perror("Errore durante l'invio della grandezza del file\n");
     onexit(f_sockd, 0, fd, 4);

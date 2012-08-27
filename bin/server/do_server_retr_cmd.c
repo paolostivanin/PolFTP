@@ -20,10 +20,10 @@
 #include "prototypes.h"
 
 void do_server_retr_cmd(f_sockd, m_sockd){
-  int fd;
-  uint32_t fsize, size_to_send, rc;
+  int fd, rc;
+  uint32_t fsize, size_to_send;
   char *filename = NULL, *other = NULL;
-  char buf[256], t_buf[256];
+  char buf[512], t_buf[256];
   off_t offset;
   struct stat fileStat;
 
@@ -62,7 +62,7 @@ void do_server_retr_cmd(f_sockd, m_sockd){
     onexit(f_sockd, m_sockd, fd, 3);
   }
   fsize = fileStat.st_size;
-  snprintf(t_buf, BUFSIZ-1, "%" PRIu32, fsize);
+  snprintf(t_buf, 255, "%" PRIu32, fsize);
   if(send(f_sockd, t_buf, sizeof(t_buf), 0) < 0){
     perror("Errore durante l'invio della grandezza del file\n");
     onexit(f_sockd, m_sockd, fd, 3);

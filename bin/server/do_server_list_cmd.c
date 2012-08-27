@@ -19,13 +19,11 @@
 #include <inttypes.h> /* per printare il tipo di dato uint32_t */
 #include "prototypes.h"
 
-#define BUFFGETS 255
-
 void do_server_list_cmd(f_sockd, m_sockd){
-  int fpl;
-  uint32_t fsize, rc_list, size_to_send, count, i;
+  int fpl, rc_list;
+  uint32_t fsize, size_to_send, count, i;
   char *other = NULL, **files;
-  char buf[256], t_buf[256];
+  char buf[512], t_buf[256];
   FILE *fp_list;
   off_t offset_list;
   struct stat fileStat;
@@ -65,7 +63,7 @@ void do_server_list_cmd(f_sockd, m_sockd){
     onexit(f_sockd, m_sockd, fpl, 3);
   }
   fsize = fileStat.st_size;
-  snprintf(t_buf, BUFSIZ-1, "%" PRIu32, fsize);
+  snprintf(t_buf, 255, "%" PRIu32, fsize);
   if(send(f_sockd, t_buf, sizeof(t_buf), 0) < 0){
     perror("Errore durante l'invio della grandezza del file\n");
     onexit(f_sockd, m_sockd, fpl, 3);

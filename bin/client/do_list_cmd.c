@@ -56,6 +56,8 @@ void do_list_cmd(int f_sockd){
     fsize_tmp -= nread;
   }
   close(fd);
+  fflush(stdin);
+  fflush(stdout);
   printf("----- FILE LIST -----\n");
   if((fp = fopen("listfiles.txt", "r+")) == NULL){
     perror("open file for read");
