@@ -11,10 +11,10 @@ endif
 
 all: ftpclient ftpserver
 
-ftpclient: bin/ftpclient.c bin/ftpclient.c bin/onexit.c
+ftpclient: bin/ftpclient.c bin/onexit.c bin/do_syst_cmd.c bin/do_cwd_cmd.c bin/do_pwd_cmd.c bin/do_dele_cmd.c bin/do_mkd_cmd.c bin/do_rmd_cmd.c bin/do_rnm_cmd.c bin/do_retr_cmd.c bin/do_stor_cmd.c bin/do_list_cmd.c
 	@echo "--> Using ${CC} to compile... <--"
 	@echo "--> Compiling client..."
-	@$(CC) $(CFLAGS) -o ftpclient bin/ftpclient.c bin/onexit.c
+	@$(CC) $(CFLAGS) -o ftpclient bin/ftpclient.c bin/onexit.c bin/do_syst_cmd.c bin/do_cwd_cmd.c bin/do_pwd_cmd.c bin/do_dele_cmd.c bin/do_mkd_cmd.c bin/do_rmd_cmd.c bin/do_rnm_cmd.c bin/do_retr_cmd.c bin/do_stor_cmd.c bin/do_list_cmd.c
 	@echo "--> ...done"
 	
 ftpserver: bin/ftpserver.c bin/list-files.c bin/free-file-list.c bin/onexit.c bin/get_syst.c

@@ -186,6 +186,7 @@ int main(int argc, char *argv[]){
       perror("Errore ricezione comando SYST");
       onexit(newsockd, sockd, 0, 2);
     }
+    printf("Ricevuta richiesta SYST\n");
     get_syst(&sysname);
     sprintf(buffer, "%s\n", sysname);
     if(send(newsockd, buffer, strlen(buffer), 0) < 0){
