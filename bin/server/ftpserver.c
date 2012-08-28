@@ -34,11 +34,10 @@ int main(int argc, char *argv[]){
 	int sockd, newsockd, socket_len;
 	int NumPorta = atoi(argv[1]);
 	struct sockaddr_in serv_addr, cli_addr; /* strutture contenenti indirizzo del server e del client */
-	struct hostent *local_ip; /* struttura contenente ip server */
-    struct in_addr **pptr;
 	static char buffer[512], saved_user[512]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
 	char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL;
     char *serverdir = (char *)(intptr_t)get_current_dir_name();
+    char *tmpip = NULL, *pubip = NULL;
 	
 	if((sockd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
 		perror("Errore creazione socket\n");
@@ -57,7 +56,7 @@ int main(int argc, char *argv[]){
 
 	if(listen(sockd, 5) < 0){
 		perror("Errore nella funzione listen");
-    onexit(0, sockd, 0, 1);
+        onexit(0, sockd, 0, 1);
 	}
 	socket_len = sizeof(cli_addr);
 
@@ -66,36 +65,30 @@ int main(int argc, char *argv[]){
 	while(1){
     memset(&cli_addr, 0, sizeof(cli_addr));
     memset(buffer, 0, sizeof(buffer));
-    memset(&local_ip, 0, sizeof(local_ip));
-    if((local_ip = gethostbyname("localhost")) == NULL){
-      perror("gethostbyname()");
-      exit(1);
-    }
-    /* La lista puntata da h_addr_list è un array di puntatori. Pertanto è necessario dereferenziare ogni indice due volte,
-     * una per avere il puntatore alla lista e l'altra per prendere l'in_addr struct a cui esso punta. 
-     * Fatto ciò bisogna convertire l'unsigned int a 32 bit in un indirizzo ip decimale */
-    pptr = (struct in_addr **)local_ip->h_addr_list;
-    
-		if((newsockd = accept(sockd, (struct sockaddr *) &cli_addr, (socklen_t *) &socket_len)) < 0){
-			perror("Errore nella connessione\n");
-			onexit(newsockd, sockd, 0, 2);
-		}
+
+	if((newsockd = accept(sockd, (struct sockaddr *) &cli_addr, (socklen_t *) &socket_len)) < 0){
+		perror("Errore nella connessione\n");
+		onexit(newsockd, sockd, 0, 2);
+	}
     /* inet_ntoa converte un hostname in un ip decimale puntato */
     fprintf(stdout, "Ricevuta richiesta di connessione dall' indirizzo %s\n", inet_ntoa(cli_addr.sin_addr));
 
     /************************* MESSAGGIO DI BENVENUTO *************************/
-    sprintf(buffer, "220 FTPUtils Server [%s]", inet_ntoa(**(pptr)));
+    tmpip = get_public_ip();
+    pubip = strtok(tmpip, "\n");
+    sprintf(buffer, "220 FTPUtils Server [%s]", pubip);
     if(send(newsockd, buffer, strlen(buffer), 0) < 0){
-      perror("Errore durante l'invio");
-			onexit(newsockd, sockd, 0, 2);
-		}
-		memset(buffer, 0, sizeof(buffer));
-    memset(&local_ip, 0, sizeof(local_ip)); /* pulire la struttura altrimenti alla seconda connessione si ha un segfault */
+        perror("Errore durante l'invio");
+		onexit(newsockd, sockd, 0, 2);
+	}
+    pubip = NULL;
+    free(tmpip);
+	memset(buffer, 0, sizeof(buffer));
     /************************* FINE MESSAGGIO DI BENVENUTO *************************/
 
 		/************************* INIZIO PARTE LOGIN *************************/
     /************************* RICEVIAMO NOME UTENTE E MANDIAMO CONFERMA *************************/
-		if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
+	if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
     	perror("Errore nella ricezione del nome utente");
     	onexit(newsockd, sockd, 0, 2);
     }    	
@@ -106,10 +99,10 @@ int main(int argc, char *argv[]){
     memset(buffer, 0, sizeof(buffer));
     strcpy(buffer, "USEROK\n");
     if(send(newsockd, buffer, strlen(buffer), 0) < 0){
-      perror("Errore durante l'invio");
-		  onexit(newsockd, sockd, 0, 2);
-		}
-		memset(buffer, 0, sizeof(buffer));
+        perror("Errore durante l'invio");
+		onexit(newsockd, sockd, 0, 2);
+	}
+	memset(buffer, 0, sizeof(buffer));
     /************************* FINE NOME UTENTE *************************/
 
     /************************* RICEVIAMO PASSWORD E MANDIAMO CONFERMA *************************/

@@ -19,8 +19,8 @@
 #define BUFFGETS 255
 
 void do_retr_cmd(int f_sockd){
-  int fd, total_bytes_read;
-  uint32_t fsize, nread = 0, fsize_tmp;
+  int fd;
+  uint32_t fsize, fsize_tmp, nread = 0, total_bytes_read;
   char *filename = NULL, *conferma = NULL, *filebuffer = NULL;
   char buf[256], dirp[256], t_buf[256];
   memset(dirp, 0, sizeof(dirp));
@@ -68,7 +68,7 @@ void do_retr_cmd(int f_sockd){
   }
   total_bytes_read = 0;
   nread = 0;
-  while(((uint32_t)total_bytes_read != fsize) && ((nread = read(f_sockd, filebuffer, fsize_tmp)) > 0)){
+  while((total_bytes_read != fsize) && ((nread = read(f_sockd, filebuffer, fsize_tmp)) > 0)){
     if(write(fd, filebuffer, nread) != nread){
       perror("write RETR");
       onexit(f_sockd, 0, 0, 1);
@@ -77,7 +77,6 @@ void do_retr_cmd(int f_sockd){
     fsize_tmp -= nread;
   }
   close(fd); /* la chiusura del file va qui altrimenti client entra in loop infinito e si scrive all'interno del file */
-  fflush(stdin);
   fflush(stdout);
   memset(buf, 0, sizeof(buf));
   if(recv(f_sockd, buf, 34, 0) < 0){

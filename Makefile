@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Wformat-security -O2 -D_FORTIFY_SOURCE=2 -fstack-protector
+CFLAGS = -Wall -Wextra -Wformat-security -O2 -D_FORTIFY_SOURCE=2 -fstack-protector -lcurl
 
 CLANG_OR_GCC := $(shell which clang)
 ifeq "$(CLANG_OR_GCC)" "/usr/bin/clang"
@@ -17,9 +17,9 @@ ftpclient: bin/client/ftpclient.c bin/onexit.c bin/client/do_syst_cmd.c bin/clie
 	@$(CC) $(CFLAGS) -o ftpclient bin/client/ftpclient.c bin/onexit.c bin/client/do_syst_cmd.c bin/client/do_cwd_cmd.c bin/client/do_pwd_cmd.c bin/client/do_dele_cmd.c bin/client/do_mkd_cmd.c bin/client/do_rmd_cmd.c bin/client/do_rnm_cmd.c bin/client/do_retr_cmd.c bin/client/do_stor_cmd.c bin/client/do_list_cmd.c
 	@echo "--> ...done"
 	
-ftpserver: bin/server/ftpserver.c bin/onexit.c bin/server/do_server_syst_cmd.c bin/server/do_server_cwd_cmd.c bin/server/do_server_pwd_cmd.c bin/server/do_server_dele_cmd.c bin/server/do_server_mkd_cmd.c bin/server/do_server_rmd_cmd.c bin/server/do_server_rnm_cmd.c bin/server/do_server_retr_cmd.c bin/server/do_server_stor_cmd.c bin/server/do_server_list_cmd.c bin/server/list-files.c bin/server/free-file-list.c bin/server/get_syst.c
+ftpserver: bin/server/ftpserver.c bin/onexit.c bin/server/do_server_syst_cmd.c bin/server/do_server_cwd_cmd.c bin/server/do_server_pwd_cmd.c bin/server/do_server_dele_cmd.c bin/server/do_server_mkd_cmd.c bin/server/do_server_rmd_cmd.c bin/server/do_server_rnm_cmd.c bin/server/do_server_retr_cmd.c bin/server/do_server_stor_cmd.c bin/server/do_server_list_cmd.c bin/server/list-files.c bin/server/free-file-list.c bin/server/get_syst.c bin/server/get_server_public_ip.c
 	@echo "--> Compiling server..."
-	@$(CC) $(CFLAGS) -o ftpserver bin/server/ftpserver.c bin/onexit.c bin/server/do_server_syst_cmd.c bin/server/do_server_cwd_cmd.c bin/server/do_server_pwd_cmd.c bin/server/do_server_dele_cmd.c bin/server/do_server_mkd_cmd.c bin/server/do_server_rmd_cmd.c bin/server/do_server_rnm_cmd.c bin/server/do_server_retr_cmd.c bin/server/do_server_stor_cmd.c bin/server/do_server_list_cmd.c bin/server/list-files.c bin/server/free-file-list.c bin/server/get_syst.c
+	@$(CC) $(CFLAGS) -o ftpserver bin/server/ftpserver.c bin/onexit.c bin/server/do_server_syst_cmd.c bin/server/do_server_cwd_cmd.c bin/server/do_server_pwd_cmd.c bin/server/do_server_dele_cmd.c bin/server/do_server_mkd_cmd.c bin/server/do_server_rmd_cmd.c bin/server/do_server_rnm_cmd.c bin/server/do_server_retr_cmd.c bin/server/do_server_stor_cmd.c bin/server/do_server_list_cmd.c bin/server/list-files.c bin/server/free-file-list.c bin/server/get_syst.c bin/server/get_server_public_ip.c
 	@echo "--> ...done"
 
 ftpclient_gui: bin/gtk3/entry.c
