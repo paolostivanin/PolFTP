@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdint.h> /* per usare uint32_t invece di size_t */
@@ -9,61 +8,67 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
-#include <sys/sendfile.h>
 #include <sys/stat.h>
-#include <errno.h>
+#include <sys/sendfile.h>
 #include <netdb.h>
 #include <fcntl.h>
-#include "prototypes.h"
+#include "../prototypes.h"
 
 #define BUFFGETS 255
 
-void do_stor_cmd(int f_sockd){
+void do_stor_cmd(const int f_sockd){
   int fd;
   struct stat fileStat;
-  uint32_t rc, fsize, size_to_send;
-  char *filename = NULL;
-  char buf[256], dirp[256], t_buf[256];
+  ssize_t rc;
+  uint32_t fsize, size_to_send, fn_size = 0;
+  char *client_stor_filename = NULL;
+  char buf[256], dirp[256];
   off_t offset;
 
   memset(buf, 0, sizeof(buf));
-  memset(t_buf, 0, sizeof(t_buf));
+
   printf("Inserire il nome del file da inviare: ");
   if(fgets(dirp, BUFFGETS, stdin) == NULL){
     perror("fgets nome file");
     onexit(f_sockd, 0 ,0 ,1);
   }
-  filename = NULL;
-  filename = strtok(dirp, "\n");
-  sprintf(buf, "STOR %s", filename);
-  if(send(f_sockd, buf, sizeof(buf), 0) < 0){
+  client_stor_filename = NULL;
+  client_stor_filename = strtok(dirp, "\n");
+  fn_size = strlen(client_stor_filename)+1;
+  if(send(f_sockd, &fn_size, sizeof(fn_size), 0) < 0){
+    perror("Errore durante invio lunghezza nome file");
+    onexit(f_sockd, 0, 0, 1);
+  }
+  sprintf(buf, "STOR %s", client_stor_filename);
+  if(send(f_sockd, buf, fn_size+5, 0) < 0){
     perror("Errore invio nome file");
     onexit(f_sockd, 0, 0, 1);
   }
 
-  fd = open(filename, O_RDONLY);
+  fd = open(client_stor_filename, O_RDONLY);
   if(fd < 0){
-    fprintf(stderr, "Impossibile aprire '%s': %s\n", filename, strerror(errno));
-    strcpy(buf, "ERRORE: File non esistente\0");
-    if(send(f_sockd, buf, strlen(buf), 0) < 0){
+    fprintf(stderr, "Impossibile aprire file file '%s'\n", client_stor_filename);
+    strcpy(buf, "NO");
+    if(send(f_sockd, buf, 3, 0) < 0){
       perror("Errore durante invio");
       onexit(f_sockd, 0, 0, 1);
     }
     onexit(f_sockd, 0, 0, 1);
   }
-  strcpy(buf, "OK\0");
+  strcpy(buf, "OK");
   if(send(f_sockd, buf, 3, 0) < 0){
     perror("Errore durante invio");
     onexit(f_sockd, 0, 0, 1);
   }
 
+  fileStat.st_size = 0;
   if(fstat(fd, &fileStat) < 0){
     perror("Errore fstat");
     onexit(f_sockd, 0, fd, 4);
   }
+  fsize = 0;
   fsize = fileStat.st_size;
-  snprintf(t_buf, 255, "%" PRIu32, fsize);
-  if(send(f_sockd, t_buf, sizeof(t_buf), 0) < 0){
+  if(send(f_sockd, &fsize, sizeof(fsize), 0) < 0){
     perror("Errore durante l'invio della grandezza del file\n");
     onexit(f_sockd, 0, fd, 4);
   }
@@ -85,5 +90,4 @@ void do_stor_cmd(int f_sockd){
   }
   printf("%s\n", buf);
   memset(buf, 0, sizeof(buf));
-  memset(t_buf, 0, sizeof(t_buf));
 }

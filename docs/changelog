@@ -18,13 +18,26 @@
 	* FIXED: cmd renamed: RMDIR to RND, DELETE to DELE, MKDIR to MKD
 	* ADDED: RNFR, RNTO, STOR
 
-??/09/2012 - v1.0-alpha5
-	* IMPROVED: general code improvement (using function instead of only gotos)
+02/09/2012 - v1.0-alpha5
+	* IMPROVED: general code improvement (using function instead of only gotos);
+	* FIXED: finally fixed some critical bugs that caused the server and the client failure;
+	* ADDED: basic text file authentication (see README.md);
+	* ADDED: using tmpfile function for list files;
+
+??/09/2012 - v1.0-alpha6
+	* IMPROVED: better errors handling
 	* ADDED: server with fork
 
-??/09/2012 - v1.0-beta
+??/09/2012 - v1.0-beta1
 	* FIXED: bugs if any
 	* ADDED: documentation
 
+??/09/2012 - v1.0-rc
+	* TEST: stress test :)
+
 30/09/2012 - v1.0
 	* Newstable release
+
+??/??/???? - v1.1
+	* ADDED: log file (connections + actions);
+	* ADDED: SQLite3 db OR password hash

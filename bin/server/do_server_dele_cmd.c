@@ -10,54 +10,57 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <netdb.h>
-#include <errno.h>
 #include <fcntl.h>
-#include <sys/sendfile.h>
 #include <sys/stat.h>
-#include <signal.h>
-#include <dirent.h>
 #include <inttypes.h> /* per printare il tipo di dato uint32_t */
-#include "prototypes.h"
+#include "../prototypes.h"
 
-void do_server_dele_cmd(f_sockd, m_sockd){
+void do_server_dele_cmd(const int f_sockd, const int m_sockd){
   int fd, retval;
+  uint32_t s_len;
   char buf[256];
-  char *other = NULL, *filename = NULL;
+  char *other = NULL, *server_dele_filename = NULL;
+
   memset(buf, 0, sizeof(buf));
-  if(recv(f_sockd, buf, sizeof(buf), 0) < 0){
+  s_len = 0;
+  if(recv(f_sockd, &s_len, sizeof(s_len), 0) < 0){
+    perror("Errore durante la ricezione della lunghezza nome del file");
+    onexit(f_sockd, m_sockd, 0, 2);
+  }
+  if(recv(f_sockd, buf, s_len+5, 0) < 0){
     perror("Errore nella ricezione del nome del file");
     onexit(f_sockd, m_sockd, 0, 2);
   }
   other = NULL;
-  filename = NULL;
+  server_dele_filename = NULL;
   other = strtok(buf, " ");
-  filename = strtok(NULL, "\n");
+  server_dele_filename = strtok(NULL, "\n");
   if(strcmp(other, "DELE") == 0){
     printf("Ricevuta richiesta DELETE\n");
   } else onexit(f_sockd, m_sockd, 0, 2);
   
-  fd = open(filename, O_WRONLY);
+  fd = open(server_dele_filename, O_WRONLY);
   if(fd < 0){
-    fprintf(stderr, "Impossibile aprire '%s': %s\n", filename, strerror(errno));
-    strcpy(buf, "ERRORE: File non esistente\0");
-    if(send(f_sockd, buf, strlen(buf), 0) < 0){
+    fprintf(stderr, "Impossibile aprire il file '%s'\n", server_dele_filename);
+    strcpy(buf, "NO");
+    if(send(f_sockd, buf, 3, 0) < 0){
       perror("Errore durante invio");
       onexit(f_sockd, m_sockd, 0, 2);
     }
     onexit(f_sockd, m_sockd, 0, 2);
   }
-  retval = remove(filename);
+  retval = remove(server_dele_filename);
   if(retval != 0){
     perror("File non cancellato");
-    strcpy(buf, "NONOK\0");
-    if(send(f_sockd, buf, strlen(buf), 0) < 0){
+    strcpy(buf, "NO");
+    if(send(f_sockd, buf, 3, 0) < 0){
       perror("Errore durante invio");
       onexit(f_sockd, m_sockd, fd, 3);
     }
     onexit(f_sockd, m_sockd, fd, 3);
   }
-  strcpy(buf, "OK\0");
-  if(send(f_sockd, buf, strlen(buf), 0) < 0){
+  strcpy(buf, "OK");
+  if(send(f_sockd, buf, 3, 0) < 0){
     perror("Errore durante invio");
     onexit(f_sockd, m_sockd, 0 ,2);
   }

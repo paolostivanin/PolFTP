@@ -10,27 +10,33 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <netdb.h>
-#include <errno.h>
 #include <fcntl.h>
-#include <sys/sendfile.h>
-#include <sys/stat.h>
-#include <signal.h>
-#include <dirent.h>
 #include <inttypes.h> /* per printare il tipo di dato uint32_t */
-#include "prototypes.h"
+#include "../prototypes.h"
 
-void do_server_syst_cmd(f_sockd, m_sockd){
+void do_server_syst_cmd(const int f_sockd, const int m_sockd){
   char buf[256];
-  char *sysname = NULL;
+  char *sysname = NULL, *other = NULL;
+  uint32_t buf_len = 0;
+
   memset(buf, 0, sizeof(buf));
   if(recv(f_sockd, buf, 5, 0) < 0){
     perror("Errore ricezione comando SYST");
     onexit(f_sockd, m_sockd, 0, 2);
   }
-  printf("Ricevuta richiesta SYST\n");
+  other = NULL;
+  other = strtok(buf, "\0");
+  if(strcmp(other, "SYST") == 0){
+    printf("Ricevuta richiesta SYST\n");
+  } else onexit(f_sockd, m_sockd, 0, 2); 
   get_syst(&sysname);
-  sprintf(buf, "%s\n", sysname);
-  if(send(f_sockd, buf, strlen(buf), 0) < 0){
+  sprintf(buf, "%s", sysname);
+  buf_len = strlen(buf)+1;
+  if(send(f_sockd, &buf_len, sizeof(buf_len), 0) < 0){
+    perror("Errore durante invio lunghezza buffer");
+    onexit(f_sockd, m_sockd, 0, 2);
+  }
+  if(send(f_sockd, buf, buf_len, 0) < 0){
     perror("Errore durante l'invio risposta SYST");
     onexit(f_sockd, m_sockd, 0, 2);
   }

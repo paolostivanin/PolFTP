@@ -10,42 +10,41 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <netdb.h>
-#include <errno.h>
 #include <fcntl.h>
-#include <sys/sendfile.h>
-#include <sys/stat.h>
-#include <signal.h>
 #include <dirent.h>
 #include <inttypes.h> /* per printare il tipo di dato uint32_t */
-#include "prototypes.h"
+#include "../prototypes.h"
 
-void do_server_rmd_cmd(f_sockd, m_sockd){
-  char *other, *filename;
+void do_server_rmd_cmd(const int f_sockd, const int m_sockd){
+  uint32_t len_server_dirname_todelete;
+  char *other = NULL, *filename = NULL;
   char buf[256];
   memset(buf, 0, sizeof(buf));
-  if(recv(f_sockd, buf, sizeof(buf), 0) < 0){
+  if(recv(f_sockd, &len_server_dirname_todelete, sizeof(len_server_dirname_todelete), MSG_WAITALL) < 0){
+    perror("Errore ricezione lunghezza dirname da eliminare");
+    onexit(f_sockd, m_sockd, 0, 2);
+  }
+  if(recv(f_sockd, buf, len_server_dirname_todelete+4, 0) < 0){
     perror("Errore nella ricezione del nome della cartella");
     onexit(f_sockd, m_sockd, 0, 2);
   }
-  other = NULL;
-  filename = NULL;
   other = strtok(buf, " ");
-  filename = strtok(NULL, "\n");
+  filename = strtok(NULL, "\0");
   if(strcmp(other, "RMD") == 0){
     printf("Ricevuta richiesta RMDIR\n");
   } else onexit(f_sockd, m_sockd, 0, 2);
   
   if(rmdir(filename) != 0){
     fprintf(stderr, "Impossibile eliminare la cartella '%s'\n", filename);
-    strcpy(buf, "ERRORE: Cartella non eliminata\0");
-    if(send(f_sockd, buf, strlen(buf), 0) < 0){
+    strcpy(buf, "NO");
+    if(send(f_sockd, buf, 3, 0) < 0){
       perror("Errore durante invio");
       onexit(f_sockd, m_sockd, 0, 2);
     }
     onexit(f_sockd, m_sockd, 0, 2);
   }
-  strcpy(buf, "OK\0");
-  if(send(f_sockd, buf, strlen(buf), 0) < 0){
+  strcpy(buf, "OK");
+  if(send(f_sockd, buf, 3, 0) < 0){
     perror("Errore durante invio");
     onexit(f_sockd, m_sockd, 0 ,2);
   }

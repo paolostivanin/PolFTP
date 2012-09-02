@@ -17,13 +17,10 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
-#include <sys/sendfile.h>
-#include <sys/stat.h>
-#include <errno.h>
 #include <netdb.h>
 #include <fcntl.h>
 #include <termios.h> /* per nascondere la password */
-#include "prototypes.h"
+#include "../prototypes.h"
 
 #define BUFFGETS 255
 
@@ -36,6 +33,7 @@ int main(int argc, char *argv[]){
   check_before_start(argc, argv);
 
   int sockd, i = 0; /* descrittore del socket, file, bytes letti alla ricezione del file in totale */
+  uint32_t len_string;
   int NumPorta = atoi(argv[2]); /* numero di porta */
   static struct sockaddr_in serv_addr; /* struttura contenente indirizzo del server */
   static struct termios oldt, newt; /* struttura contenente i paramentri della shell */
@@ -61,10 +59,13 @@ int main(int argc, char *argv[]){
   }
   /************************* MESSAGGIO DI BENVENUTO *************************/
   memset(buffer, 0, sizeof(buffer));
-  if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
+  if(recv(sockd, &len_string, sizeof(len_string), MSG_WAITALL) < 0){
+    perror("Errore ricezione len buffer");
+    onexit(sockd, 0, 0, 1);
+  }
+  if(recv(sockd, buffer, len_string, 0) < 0){
     perror("Errore nella ricezione del messaggio di benvenuto\n");
-    close(sockd);
-    exit(1);
+    onexit(sockd, 0, 0, 1);
    }
   printf("%s\n", buffer);
   memset(buffer, 0, sizeof(buffer));
@@ -96,57 +97,45 @@ int main(int argc, char *argv[]){
   tcsetattr( STDIN_FILENO, TCSANOW, &oldt);
   printf("\n");
   sprintf(buffer, "USER %s\n", sInfo.user);
-  if(send(sockd, buffer, strlen(buffer), 0) < 0){
+  len_string = strlen(buffer)+1;
+  if(send(sockd, &len_string, sizeof(len_string), 0) < 0){
+    perror("Errore invio len buffer user");
+    onexit(sockd, 0, 0, 1);
+  }
+  if(send(sockd, buffer, len_string, 0) < 0){
     perror("Errore durante l'invio di USER");
-    close(sockd);
-    exit(1);
-  }
-  memset(buffer, 0, sizeof(buffer));
-  if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
-    perror("Errore nella ricezione della conferma USER");
-    close(sockd);
-    exit(1);
-  }
-  sInfo.conferma = strtok(buffer, "\n");
-  if(strcmp(sInfo.conferma, "USEROK") != 0){
-    printf("Nome utente non ricevuto\n");
-    close(sockd);
-    exit(1);
+    onexit(sockd, 0, 0, 1);
   }
   memset(buffer, 0, sizeof(buffer));
   /************************* FINE NOME UTENTE *************************/
   
   /************************* INVIO PASSWORD E RICEVO CONFERMA *************************/
   sprintf(buffer, "PASS %s\n", sInfo.pass);
-  if(send(sockd, buffer, strlen(buffer), 0) < 0){
-    perror("Errore durante l'invio di PASS");
-    close(sockd);
-    exit(1);
+  len_string = strlen(buffer)+1;
+  if(send(sockd, &len_string, sizeof(len_string), 0) < 0){
+    perror("Errore invio len pass buffer");
+    onexit(sockd, 0, 0, 1);
   }
-  memset(buffer, 0, sizeof(buffer));
-  if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
-    perror("Errore nella ricezione della conferma PASS");
-    close(sockd);
-    exit(1);
-  }
-  sInfo.conferma = strtok(buffer, "\n");
-  if(strcmp(sInfo.conferma, "PASSOK") != 0){
-    printf("Password non ricevuta\n");
-    close(sockd);
-    exit(1);
+  if(send(sockd, buffer, len_string, 0) < 0){
+    perror("Errore invio pass buffer");
+    onexit(sockd, 0, 0, 1);
   }
   memset(buffer, 0, sizeof(buffer));
   /************************* FINE PASSWORD *************************/
 
   /************************* RICEZIONE CONFERMA LOG IN *************************/
-  if(recv(sockd, buffer, sizeof(buffer), 0) < 0){
+  if(recv(sockd, &len_string, sizeof(len_string), MSG_WAITALL) < 0){
+    perror("Errore ricezione len buffer conferma login");
+    onexit(sockd, 0, 0, 1);
+  }
+  if(recv(sockd, buffer, len_string, 0) < 0){
     perror("Errore nella ricezione dellaa conferma LOG IN");
     onexit(sockd, 0, 0, 1);
   }
-  sInfo.conferma = strtok(buffer, "\n");
+  sInfo.conferma = strtok(buffer, "\0");
   sprintf(expected_string, "230 USER %s logged in", sInfo.user);
   if(strcmp(sInfo.conferma, expected_string) != 0){
-    printf("Login non effettuato\n");
+    printf("%s\n", sInfo.conferma);
     onexit(sockd, 0, 0, 1);
   } else{
     printf("%s\n", sInfo.conferma);
@@ -164,7 +153,6 @@ int main(int argc, char *argv[]){
     perror("Errore scanf scelta");
     onexit(sockd, 0, 0, 1);
   }
-  printf("\n");
   for(i=0; i<(int)strlen(sInfo.scelta); i++){
     if(isalpha((unsigned char)sInfo.scelta[i])){
       if(islower((unsigned char)sInfo.scelta[i])){
@@ -194,7 +182,12 @@ int main(int argc, char *argv[]){
   prepara:
   if(strcmp(sInfo.scelta, "HELP") == 0) goto exec_help;
   strcpy(buffer, sInfo.scelta);
-  if(send(sockd, buffer, strlen(buffer), 0) < 0){
+  len_string = strlen(buffer)+1;
+  if(send(sockd, &len_string, sizeof(len_string), 0) < 0){
+    perror("Errore invio len buffer scelta");
+    onexit(sockd, 0, 0, 1);
+  }
+  if(send(sockd, buffer, len_string, 0) < 0){
     perror("Errore durante l'invio azione");
     onexit(sockd, 0, 0, 1);
   }

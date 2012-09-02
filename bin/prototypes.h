@@ -15,7 +15,7 @@ void do_rmd_cmd(const int);
 void do_rnm_cmd(const int);
 //
 //Server's functions
-void sig_handler(int, int, int, int);
+void sig_handler(const int, const int, const int);
 void get_syst(char **);
 uint32_t file_list(char *, char ***);
 void free_file_list(char ***, uint32_t);
@@ -30,6 +30,7 @@ void do_server_mkd_cmd(const int, const int);
 void do_server_rmd_cmd(const int, const int);
 void do_server_rnm_cmd(const int, const int);
 char *get_public_ip(void); /* liberare la memoria al termine con free($POINTER_USED) */
+int check_login_details(char *, char *);
 //
 //Common functions
 void check_before_start(int, char **);

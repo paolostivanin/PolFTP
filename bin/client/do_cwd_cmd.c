@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdint.h> /* per usare uint32_t invece di size_t */
@@ -9,18 +8,17 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
-#include <sys/sendfile.h>
-#include <sys/stat.h>
-#include <errno.h>
 #include <netdb.h>
 #include <fcntl.h>
-#include "prototypes.h"
+#include "../prototypes.h"
 
 #define BUFFGETS 255
 
-void do_cwd_cmd(int f_sockd){
+void do_cwd_cmd(const int f_sockd){
+  uint32_t path_len = 0;
   char buf[256], dirp[256];
-  char *conferma = NULL;
+  char *path = NULL;
+
   memset(dirp, 0, sizeof(dirp));
   memset(buf, 0, sizeof(buf));
   printf("Inserire percorso: ");
@@ -28,22 +26,30 @@ void do_cwd_cmd(int f_sockd){
     perror("fgets dir path");
     onexit(f_sockd, 0, 0, 1);
   }
-  sprintf(buf, "CWD %s", dirp);
-  if(send(f_sockd, buf, strlen(buf), 0) < 0){
+  path = strtok(dirp, "\n");
+  path_len = strlen(path)+1;
+  if(send(f_sockd, &path_len, sizeof(path_len), 0) < 0){
+    perror("Errore durante invio lunghezza path");
+    onexit(f_sockd, 0, 0, 1);
+  }
+  sprintf(buf, "CWD %s", path);
+  if(send(f_sockd, buf, path_len+4, 0) < 0){
     perror("Errore durante l'invio richiesta CWD");
     onexit(f_sockd, 0, 0, 1);
   }
   memset(buf, 0, sizeof(buf));
-  if(recv(f_sockd, buf, sizeof(buf), 0) < 0){
+  path_len = 0;
+  if(recv(f_sockd, &path_len, sizeof(path_len), MSG_WAITALL) < 0){
+    perror("Errore ricezione lunghezza buffer");
+    onexit(f_sockd, 0, 0, 1);
+  }
+  if(recv(f_sockd, buf, path_len, 0) < 0){
     perror("Errore ricezione CWD");
     onexit(f_sockd, 0, 0, 1);
   }
-  conferma = NULL;
-  conferma = strtok(buf, "\0");
-  printf("%s", conferma);
-  if(strcmp(conferma, "ERRORE: Percorso non esistente\n") == 0){
-    onexit(f_sockd, 0, 0, 1);
-  }
+  path = NULL;
+  path = strtok(buf, "\0");
+  printf("%s", path);
   memset(buf, 0, sizeof(buf));
   memset(dirp, 0, sizeof(dirp));
 }

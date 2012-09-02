@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdint.h> /* per usare uint32_t invece di size_t */
@@ -9,42 +8,44 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
-#include <sys/sendfile.h>
-#include <sys/stat.h>
-#include <errno.h>
 #include <netdb.h>
 #include <fcntl.h>
-#include "prototypes.h"
+#include "../prototypes.h"
 
 #define BUFFGETS 255
 
-void do_mkd_cmd(int f_sockd){  
-  char *filename = NULL, *conferma = NULL;
-  char buf[256], dirp[256];
-  memset(dirp, 0, sizeof(dirp));
+void do_mkd_cmd(const int f_sockd){
+  uint32_t dir_name_len = 0;
+  char *client_dir_name = NULL, *conferma = NULL;
+  char buf[256], tmp_buf[256];
+
+  memset(tmp_buf, 0, sizeof(tmp_buf));
   memset(buf, 0, sizeof(buf));
   printf("Inserire il nome della cartella da creare: ");
-  if(fgets(dirp, BUFFGETS, stdin) == NULL){
+  if(fgets(tmp_buf, BUFFGETS, stdin) == NULL){
     perror("fgets nome file");
     onexit(f_sockd, 0 ,0 ,1);
   }
-  filename = NULL;
-  conferma = NULL;
-  filename = strtok(dirp, "\n");
-  sprintf(buf, "MKD %s", filename);
-  if(send(f_sockd, buf, strlen(buf), 0) < 0){
+  client_dir_name = strtok(tmp_buf, "\n");
+  dir_name_len = strlen(client_dir_name)+1;
+  if(send(f_sockd, &dir_name_len, sizeof(dir_name_len), 0) < 0){
+    perror("Errore invio lunghezza dirname");
+    onexit(f_sockd, 0, 0, 1);
+  }
+  sprintf(buf, "MKD %s", client_dir_name);
+  if(send(f_sockd, buf, dir_name_len+4, 0) < 0){
     perror("Errore durante l'invio del nome della cartella");
     onexit(f_sockd, 0, 0, 1);
   }
-  if(recv(f_sockd, buf, sizeof(buf), 0) < 0){
+  if(recv(f_sockd, buf, 3, 0) < 0){
     perror("Errore ricezione conferma cartella");
     onexit(f_sockd, 0 ,0 ,1);
   }
   conferma = strtok(buf, "\0");
-  if(strcmp(conferma, "ERRORE: Cartella non creata") == 0){
+  if(strcmp(conferma, "NO") == 0){
     printf("ERRORE: la cartella non può essere creata\n");
     onexit(f_sockd, 0, 0, 1);
-  } else printf("La cartella è stata creata correttamente\n");
-  memset(dirp, 0, sizeof(dirp));
+  } else printf("250 MKD OK\n");
+  memset(tmp_buf, 0, sizeof(tmp_buf));
   memset(buf, 0, sizeof(buf));
 }

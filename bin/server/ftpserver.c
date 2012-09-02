@@ -1,6 +1,6 @@
 /* Descrizione: Semplice server FTP iterativo sviluppato per il progetto di Reti di Calcolatori
  * Sviluppatore: Paolo Stivanin
- * Versione: 1.0-alpha4
+ * Versione: 1.0-alpha5
  * Copyright: 2012
  * Licenza: GNU AGPL v3 <http://www.gnu.org/licenses/agpl-3.0.html>
  * Sito web: <https://github.com/polslinux/FTPUtils>
@@ -20,19 +20,18 @@
 #include <netdb.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <sys/sendfile.h>
-#include <sys/stat.h>
 #include <signal.h>
 #include <dirent.h>
 #include <inttypes.h> /* per printare il tipo di dato uint32_t */
-#include "prototypes.h"
+#include "../prototypes.h"
 
 int main(int argc, char *argv[]){
 	
 	check_before_start(argc, argv);
 	
-	int sockd, newsockd, socket_len;
+	int sockd, newsockd, socket_len, login;
 	int NumPorta = atoi(argv[1]);
+    uint32_t len_string;
 	struct sockaddr_in serv_addr, cli_addr; /* strutture contenenti indirizzo del server e del client */
 	static char buffer[512], saved_user[512]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
 	char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL;
@@ -77,7 +76,12 @@ int main(int argc, char *argv[]){
     tmpip = get_public_ip();
     pubip = strtok(tmpip, "\n");
     sprintf(buffer, "220 FTPUtils Server [%s]", pubip);
-    if(send(newsockd, buffer, strlen(buffer), 0) < 0){
+    len_string = strlen(buffer)+1;
+    if(send(newsockd, &len_string, sizeof(len_string), 0) < 0){
+        perror("Errore invio len buffer");
+        onexit(newsockd, sockd, 0, 2);
+    }
+    if(send(newsockd, buffer, len_string, 0) < 0){
         perror("Errore durante l'invio");
 		onexit(newsockd, sockd, 0, 2);
 	}
@@ -86,56 +90,81 @@ int main(int argc, char *argv[]){
 	memset(buffer, 0, sizeof(buffer));
     /************************* FINE MESSAGGIO DI BENVENUTO *************************/
 
-		/************************* INIZIO PARTE LOGIN *************************/
+	/************************* INIZIO PARTE LOGIN *************************/
     /************************* RICEVIAMO NOME UTENTE E MANDIAMO CONFERMA *************************/
-	if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
-    	perror("Errore nella ricezione del nome utente");
+    if(recv(newsockd, &len_string, sizeof(len_string), MSG_WAITALL) < 0){
+        perror("Errore ricezione len user buffer");
+        onexit(newsockd, sockd, 0, 2);
+    }
+	if(recv(newsockd, buffer, len_string, 0) < 0){
+    	perror("Errore ricezione del nome utente");
     	onexit(newsockd, sockd, 0, 2);
     }    	
     user_string = strtok(buffer, " ");
     username = strtok(NULL, "\n");
+    username = strdup(username); /* con strdup copio lo username in un'altra zona di memoria così posso memsettare il buffer (ricordarsi FREE) */
     fprintf(stdout, "%s %s\n", user_string, username);
     sprintf(saved_user, "%s", username);
     memset(buffer, 0, sizeof(buffer));
-    strcpy(buffer, "USEROK\n");
-    if(send(newsockd, buffer, strlen(buffer), 0) < 0){
-        perror("Errore durante l'invio");
-		onexit(newsockd, sockd, 0, 2);
-	}
-	memset(buffer, 0, sizeof(buffer));
     /************************* FINE NOME UTENTE *************************/
 
     /************************* RICEVIAMO PASSWORD E MANDIAMO CONFERMA *************************/
-    if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
-    	perror("Errore nella ricezione del nome utente");
+    if(recv(newsockd, &len_string, sizeof(len_string), MSG_WAITALL) < 0){
+        perror("Errore ricezione len pass buffer");
+        onexit(newsockd, sockd, 0, 2);
+    }
+    if(recv(newsockd, buffer, len_string, 0) < 0){
+    	perror("Errore ricezione password");
     	onexit(newsockd, sockd, 0, 2);
     }
     pass_string = strtok(buffer, " ");
     password = strtok(NULL, "\n");
+    password = strdup(password);
     fprintf(stdout, "%s %s\n", pass_string, password);
     memset(buffer, 0, sizeof(buffer));
-   	strcpy(buffer, "PASSOK\n");
-    if(send(newsockd, buffer, strlen(buffer), 0) < 0){
-      perror("Errore durante l'invio");
-		  onexit(newsockd, sockd, 0, 2);
-		}
-		memset(buffer, 0, sizeof(buffer));
     /************************* FINE PASSWORD *************************/
     	
     /************************* INVIO CONFERMA LOG IN *************************/
-    sprintf(buffer, "230 USER %s logged in\n", saved_user);
+    printf("%s %s\n", username, password);
+    login = check_login_details(username, password);
+    if(login != 0){
+        strcpy(buffer, "Username o password non esistenti");
+        len_string = strlen(buffer)+1;
+        if(send(newsockd, &len_string, sizeof(len_string), 0) < 0){
+            perror("Errore invio len buffer login failed");
+            onexit(newsockd, sockd, 0, 2);
+        }
+        if(send(newsockd, buffer, len_string, 0) < 0){
+            perror("Errore invio buffer login failed");
+            onexit(newsockd, sockd, 0, 2);
+        }
+        onexit(newsockd, sockd, 0, 2);
+    }
+    printf("USER: %s - PASS: ******\n", username);
+    sprintf(buffer, "230 USER %s logged in", saved_user);
+    len_string = strlen(buffer)+1;
+    if(send(newsockd, &len_string, sizeof(len_string), 0) < 0){
+        perror("Errore invio len buffer conferma login");
+        onexit(newsockd, sockd, 0, 2);
+    }
     if(send(newsockd, buffer, strlen(buffer), 0) < 0){
-			perror("Errore durante l'invio");
-			onexit(newsockd, sockd, 0, 2);
-		}
-		memset(buffer, 0, sizeof(buffer));
-		/************************* FINE CONFERMA LOG IN *************************/
+		perror("Errore durante l'invio");
+		onexit(newsockd, sockd, 0, 2);
+	}
+    free(username);
+    free(password);
+	memset(buffer, 0, sizeof(buffer));
+	/************************* FINE CONFERMA LOG IN *************************/
     /************************* FINE PARTE LOGIN *************************/
 
     /************************* RESTO IN ASCOLTO DELL'AZIONE DAL CLIENT *************************/
     exec_listen_action:
     memset(buffer, 0, sizeof(buffer));
-    if(recv(newsockd, buffer, sizeof(buffer), 0) < 0){
+    if(recv(newsockd, &len_string, sizeof(len_string), MSG_WAITALL) < 0){
+        perror("Errore ricezione len buffer scelta");
+        onexit(newsockd, sockd, 0, 2);
+    }
+    if(recv(newsockd, buffer, len_string, 0) < 0){
       perror("Errore nella ricezione azione\n");
       close(newsockd);
       exit(1);
@@ -252,12 +281,11 @@ void check_before_start(int argc, char *argv[]){
 	}
 }
 
-void sig_handler(int signo, int sockd, int newsockd, int file){
+void sig_handler(const int signo, const int sockd, const int newsockd){
   if (signo == SIGINT){
     printf("Ricevuto SIGINT, esco...\n");
     if(newsockd) close(newsockd);
-    close(sockd);
-    if(file) close(file);
+    if(sockd) close(sockd);
     exit(EXIT_SUCCESS);
   }
 }

@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include "../prototypes.h"
 
 void get_syst(char **sysn){
 	struct utsname uts;

@@ -10,33 +10,34 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <netdb.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <sys/sendfile.h>
 #include <sys/stat.h>
-#include <signal.h>
-#include <dirent.h>
 #include <inttypes.h> /* per printare il tipo di dato uint32_t */
-#include "prototypes.h"
+#include "../prototypes.h"
 
-void do_server_retr_cmd(f_sockd, m_sockd){
+void do_server_retr_cmd(const int f_sockd, const int m_sockd){
   int fd, rc;
-  uint32_t fsize, size_to_send;
+  uint32_t fsize, size_to_send, fn_size;
   char *filename = NULL, *other = NULL;
-  char buf[512], t_buf[256];
+  char buf[512];
   off_t offset;
   struct stat fileStat;
 
   memset(buf, 0, sizeof(buf));
-  memset(t_buf, 0, sizeof(t_buf));
-  if(recv(f_sockd, buf, sizeof(buf), 0) < 0){
+  fn_size = 0;
+  if(recv(f_sockd, &fn_size, sizeof(fn_size), MSG_WAITALL) < 0){
+    perror("Errore durante la ricezione della lunghezza del nome del file");
+    onexit(f_sockd, m_sockd, 0, 2);
+  }
+  if(recv(f_sockd, buf, fn_size+5, 0) < 0){
     perror("Errore nella ricezione del nome del file");
     onexit(f_sockd, m_sockd, 0, 2);
   }
   other = NULL;
   filename = NULL;
   other = strtok(buf, " ");
-  filename = strtok(NULL, "\n");
+  filename = strtok(NULL, "\0");
 
   if(strcmp(other, "RETR") == 0){
     printf("Ricevuta richiesta RETR\n");
@@ -44,9 +45,9 @@ void do_server_retr_cmd(f_sockd, m_sockd){
 
   fd = open(filename, O_RDONLY);
   if(fd < 0){
-    fprintf(stderr, "Impossibile aprire '%s': %s\n", filename, strerror(errno));
-    strcpy(buf, "ERRORE: File non esistente\0");
-    if(send(f_sockd, buf, strlen(buf), 0) < 0){
+    fprintf(stderr, "Impossibile aprire il file '%s'\n", filename);
+    strcpy(buf, "NO\0");
+    if(send(f_sockd, buf, 3, 0) < 0){
       perror("Errore durante invio");
       onexit(f_sockd, m_sockd, 0 ,2);
     }
@@ -57,13 +58,14 @@ void do_server_retr_cmd(f_sockd, m_sockd){
     perror("Errore durante invio");
     onexit(f_sockd, m_sockd, 0 ,2);
   }
+  fsize = 0;
+  fileStat.st_size = 0;
   if(fstat(fd, &fileStat) < 0){
   perror("Errore fstat");
     onexit(f_sockd, m_sockd, fd, 3);
   }
   fsize = fileStat.st_size;
-  snprintf(t_buf, 255, "%" PRIu32, fsize);
-  if(send(f_sockd, t_buf, sizeof(t_buf), 0) < 0){
+  if(send(f_sockd, &fsize, sizeof(fsize), 0) < 0){
     perror("Errore durante l'invio della grandezza del file\n");
     onexit(f_sockd, m_sockd, fd, 3);
   }
@@ -78,11 +80,10 @@ void do_server_retr_cmd(f_sockd, m_sockd){
   }
   close(fd); /* la chiusura del file va qui altrimenti rischio loop infinito e scrittura all'interno del file */
   memset(buf, 0, sizeof(buf));
-  strcpy(buf, "226 File trasferito con successo\n");
-  if(send(f_sockd, buf, strlen(buf), 0) < 0){
+  strcpy(buf, "226 File trasferito con successo");
+  if(send(f_sockd, buf, 33, 0) < 0){
     perror("Errore durante l'invio 226");
     onexit(f_sockd, m_sockd, 0, 2);
   }
   memset(buf, 0, sizeof(buf));
-  memset(t_buf, 0, sizeof(t_buf));
 }
