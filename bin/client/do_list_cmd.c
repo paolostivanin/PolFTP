@@ -16,7 +16,8 @@
 
 void do_list_cmd(const int f_sockd){
   int fd;
-  uint32_t fsize, fsize_tmp, total_bytes_read = 0, nread = 0;
+  ssize_t nread = 0;
+  uint32_t fsize, fsize_tmp, total_bytes_read = 0;
   char *tmpfname = NULL;
   char c, buf[256], tmpname[L_tmpnam];
   FILE *fp;

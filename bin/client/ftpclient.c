@@ -1,6 +1,6 @@
 /* Descrizione: Semplice client FTP sviluppato per il progetto di Reti di Calcolatori
  * Sviluppatore: Paolo Stivanin
- * Versione: 1.0-alpha5
+ * Versione: 1.0-alpha6
  * Copyright: 2012
  * Licenza: GNU GPL v3 <http://www.gnu.org/licenses/gpl-3.0.html>
  * Sito web: <https://github.com/polslinux/FTPUtils>
@@ -23,6 +23,7 @@
 #include "../prototypes.h"
 
 #define BUFFGETS 255
+#define VERSION "1.0-alpha6"
 
 struct info{
   char *user, *pass, *filename, *conferma, *filebuffer, *scelta;
@@ -205,7 +206,7 @@ int main(int argc, char *argv[]){
   if(strcmp(sInfo.scelta, "EXIT") == 0){ free(sInfo.scelta); goto exec_exit; }
 
   exec_help:
-  printf("FTPUtils (Client) v1.0-alpha5 developed by Paolo Stivanin\n");
+  printf("FTPUtils (Client) %s developed by Paolo Stivanin\n", VERSION);
   printf("\nI comandi disponibili sono:\nSYST - LIST - PWD - CWD - RETR - STOR - DELE - MKD - RMD - RNM - STOR - EXIT - HELP\n");
   free(sInfo.scelta);
   goto exec_switch;

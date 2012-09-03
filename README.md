@@ -27,10 +27,10 @@ Verranno quindi creati due files: ftpclient e ftpserver.
 Come usare client e server
 --------------------------
 Attualmente il server è solo iterativo (1 connessione alla volta) ma è in sviluppo anche il server parallelo che userà la chiamata di sistema "fork".<br>
-Il server supporta una forma base di autenticazione basata su un semplice file di testo (potrebbe essere implementata una forma di database con l'uso di SQLite3 oppure un hash della password sul file in chiaro...si vedrà).<br>
-Prima di usare il server bisogna quindi aggiungere il nome utente e la password delle persone a cui si vuole concedere l'accesso FTP scrivendo tali informazioni nel file /etc/ftputils/auth nella forma:<br>
-USERNAME PASSWORD<br>
-USERNAME PASSWORD<br>
+Il server supporta una forma di autenticazione basata su un file di testo contenente il nome utente e lo sha256 (x50000) della password.<br>
+Prima di usare il server bisogna quindi **aggiungere il nome utente e lo sha256 della password** (tramite il tool generate_sha256) delle persone a cui si vuole concedere l'accesso FTP scrivendo tali informazioni **nel file /etc/ftputils/auth** nella forma:<br>
+USERNAME SHA256_PASSWORD<br>
+USERNAME SHA256_PASSWORD<br>
 Per avviare il server basta quindi dare il seguente comando:<br>
 `./ftpserver <numporta>`<br>
 e similarmente per il client:<br>

@@ -14,7 +14,8 @@
 
 void do_server_stor_cmd(const int f_sockd, const int m_sockd){
   int fd;
-  uint32_t fsize, fsize_tmp, nread = 0, total_bytes_read = 0, fn_size = 0;
+  ssize_t nread;
+  uint32_t fsize, fsize_tmp, total_bytes_read = 0, fn_size = 0;
   char *stor_filename = NULL, *other = NULL;
   void *filebuffer = NULL;
   char buf[256];
