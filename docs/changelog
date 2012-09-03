@@ -19,25 +19,42 @@
 	* ADDED: RNFR, RNTO, STOR
 
 02/09/2012 - v1.0-alpha5
-	* IMPROVED: general code improvement (using function instead of only gotos);
-	* FIXED: finally fixed some critical bugs that caused the server and the client failure;
-	* ADDED: basic text file authentication (see README.md);
-	* ADDED: using tmpfile function for list files;
+	* IMPROVED: general code improvement (using function instead of only gotos)
+	* FIXED: finally fixed some critical bugs that caused the server and the client failure
+	* ADDED: basic text file authentication (see README.md)
+	* ADDED: using tmpfile function for list files
 
-??/09/2012 - v1.0-alpha6
-	* ADDED: password's hash with sha256
+12/09/2012 - v1.0-alpha6
+	* ADDED: password's hash with sha256 (thanks to OpenSSL)
 	* ADDED: server with fork
 
-??/09/2012 - v1.0-beta1
+15/09/2012 - v1.0-beta1
 	* IMPROVED: better errors handling
-	* ADDED: better documentation
+	* IMPROVED: README
 
-??/09/2012 - v1.0-rc
-	* TEST: stress test :)
+19/09/2012 - v1.0-rc
+	* TEST: stress test
 
-??/09/2012 - v1.0
+21/09/2012 - v1.0.0
 	* Newstable release
 
-??/??/???? - v1.1
+??/??/???? - v1.1-alpha1
 	* ADDED: log file (connections + actions);
 	* ADDED: SQLite3 db
+
+??/??/???? - v1.1-rc
+	* IMPROVED: README
+	* TEST: stress test
+	
+??/??/???? - v1.1.0
+	* Newstable release
+
+??/??/???? - v1.2-alpha1
+	* ADDED: FTPS (thanks to OpenSSL)
+
+??/??/???? - v1.2-rc
+	* IMPROVED: README
+	* TEST: stress test
+
+??/??/???? - v1.2.0
+	* Newstable relase
