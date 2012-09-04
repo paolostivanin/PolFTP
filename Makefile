@@ -25,8 +25,9 @@ ftpserver: bin/server/ftpserver.c bin/onexit.c bin/server/do_server_syst_cmd.c b
 generate_sha256: bin/generate_sha256.c
 	@echo "-> Compiling generate_sha256..."
 	@$(CC) $(CFLAGS) -lcrypto -o generate_sha256 bin/generate_sha256.c
+	@echo "--> ...done"
 
 ftpclient_gui: bin/gtk3/entry.c
 	@echo "--> Compiling client GUI..."
 	@gcc -Wall -Wextra -O2 -D_FORTIFY_SOURCE=2 -fstack-protector -o ftpclient_gui bin/gtk3/client_ui.c  `pkg-config --cflags --libs gtk+-3.0`
-	@echo "--> ...done!"
+	@echo "--> ...done"
