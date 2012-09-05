@@ -20,9 +20,11 @@ Compilazione
 `git clone https://github.com/polslinux/FTPUtils.git`<br>
 * entrare nella root del repository appena clonato:<br>
 `cd $PWD/FTPUtils`<br>
-* infine dare il comando make:<br>
-`make`<br>
-Verranno quindi creati due files: ftpclient e ftpserver.
+* dare i permessi di esecuzione allo script autogen.sh:<br>
+`chmod 744 autogen.sh`<br>
+ed infine eseguire lo script sopra citato con:<br>
+`./autogen.sh`<br>
+Verranno quindi creati due files: ftpclient *(in src/client)* e ftpserver *(in src/server/concurrent)*.
 
 Come usare client e server
 --------------------------
