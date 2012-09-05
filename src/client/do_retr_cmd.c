@@ -14,7 +14,7 @@
 
 #define BUFFGETS 255
 
-void do_retr_cmd(const int f_sockd){
+int do_retr_cmd(const int f_sockd){
   int fd;
   ssize_t nread = 0;
   uint32_t fsize, fsize_tmp, total_bytes_read, size_to_receive, fn_len;
@@ -27,7 +27,7 @@ void do_retr_cmd(const int f_sockd){
   printf("Inserire il nome del file da scaricare: ");
   if(fgets(dirp, BUFFGETS, stdin) == NULL){
     perror("fgets nome file");
-    onexit(f_sockd, 0 ,0 ,1);
+    return -1;
   }
   filename = NULL;
   filename = strtok(dirp, "\n");
@@ -35,34 +35,35 @@ void do_retr_cmd(const int f_sockd){
   fn_len = strlen(filename)+1;
   if(send(f_sockd, &fn_len, sizeof(fn_len), 0) < 0){
     perror("Errore durante l'invio della lunghezza del nome del file");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   sprintf(buf, "RETR %s", filename);
   if(send(f_sockd, buf, fn_len+5, 0) < 0){
     perror("Errore durante l'invio del nome del file");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   if(recv(f_sockd, buf, 3, 0) < 0){
     perror("Errore ricezione conferma file");
-    onexit(f_sockd, 0 ,0 ,1);
+    return -1;
   }
   conferma = NULL;
   conferma = strtok(buf, "\0");
   if(strcmp(conferma, "NO") == 0){
     printf("ERRORE: il file richiesto non esiste\n");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   recv(f_sockd, &fsize, sizeof(fsize), MSG_WAITALL);
   fd = open(filename, O_CREAT | O_WRONLY, 0644);
   if (fd  < 0) {
     perror("open");
-    onexit(f_sockd, 0 ,0 ,1);
+    return -1;
   }
   fsize_tmp = fsize;
   filebuffer = malloc(fsize);
   if(filebuffer == NULL){
     perror("malloc");
-    onexit(f_sockd, 0, fd, 4);
+    close(fd);
+    return -1;
   }
   total_bytes_read = 0;
   nread = 0;
@@ -70,11 +71,13 @@ void do_retr_cmd(const int f_sockd){
     nread = read(f_sockd, filebuffer, size_to_receive);
     if(nread < 0){
       perror("read error on retr");
-      onexit(f_sockd, 0, 0, 1);
+      close(fd);
+      return -1;
     }
     if(write(fd, filebuffer, nread) != nread){
       perror("write error on retr");
-      onexit(f_sockd, 0, 0, 1);
+      close(fd);
+      return -1;
     }
     size_to_receive -= nread;
   }
@@ -82,10 +85,11 @@ void do_retr_cmd(const int f_sockd){
   memset(buf, 0, sizeof(buf));
   if(recv(f_sockd, buf, 33, 0) < 0){
     perror("Errore ricezione 226");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   printf("%.32s\n", buf);
   memset(buf, 0, sizeof(buf));
   memset(dirp, 0, sizeof(dirp));
   free(filebuffer);
+  return 0;
 }

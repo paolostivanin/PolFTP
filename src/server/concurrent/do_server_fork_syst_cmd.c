@@ -14,7 +14,7 @@
 #include <inttypes.h> /* per printare il tipo di dato uint32_t */
 #include "../../prototypes.h"
 
-void do_server_fork_syst_cmd(const int f_sockd){
+int do_server_fork_syst_cmd(const int f_sockd){
   char buf[256];
   char *sysname = NULL, *other = NULL;
   uint32_t buf_len = 0;
@@ -22,23 +22,24 @@ void do_server_fork_syst_cmd(const int f_sockd){
   memset(buf, 0, sizeof(buf));
   if(recv(f_sockd, buf, 5, 0) < 0){
     perror("Errore ricezione comando SYST");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   other = NULL;
   other = strtok(buf, "\0");
   if(strcmp(other, "SYST") == 0){
     printf("Ricevuta richiesta SYST\n");
-  } else onexit(f_sockd, 0, 0, 1); 
+  } else return -1; 
   get_syst(&sysname);
   sprintf(buf, "%s", sysname);
   buf_len = strlen(buf)+1;
   if(send(f_sockd, &buf_len, sizeof(buf_len), 0) < 0){
     perror("Errore durante invio lunghezza buffer");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   if(send(f_sockd, buf, buf_len, 0) < 0){
     perror("Errore durante l'invio risposta SYST");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   memset(buf, 0, sizeof(buf));
+  return 0;
 }

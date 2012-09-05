@@ -15,7 +15,7 @@
 #include <inttypes.h> /* per printare il tipo di dato uint32_t */
 #include "../../prototypes.h"
 
-void do_server_fork_dele_cmd(const int f_sockd){
+int do_server_fork_dele_cmd(const int f_sockd){
   int fd, retval;
   uint32_t s_len;
   char buf[256];
@@ -25,11 +25,11 @@ void do_server_fork_dele_cmd(const int f_sockd){
   s_len = 0;
   if(recv(f_sockd, &s_len, sizeof(s_len), 0) < 0){
     perror("Errore durante la ricezione della lunghezza nome del file");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   if(recv(f_sockd, buf, s_len+5, 0) < 0){
     perror("Errore nella ricezione del nome del file");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   other = NULL;
   server_dele_filename = NULL;
@@ -37,7 +37,7 @@ void do_server_fork_dele_cmd(const int f_sockd){
   server_dele_filename = strtok(NULL, "\n");
   if(strcmp(other, "DELE") == 0){
     printf("Ricevuta richiesta DELETE\n");
-  } else onexit(f_sockd, 0, 0, 1);
+  } else return -1;
   
   fd = open(server_dele_filename, O_WRONLY);
   if(fd < 0){
@@ -45,9 +45,9 @@ void do_server_fork_dele_cmd(const int f_sockd){
     strcpy(buf, "NO");
     if(send(f_sockd, buf, 3, 0) < 0){
       perror("Errore durante invio");
-      onexit(f_sockd, 0, 0, 1);
+      return -1;
     }
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   retval = remove(server_dele_filename);
   if(retval != 0){
@@ -55,14 +55,15 @@ void do_server_fork_dele_cmd(const int f_sockd){
     strcpy(buf, "NO");
     if(send(f_sockd, buf, 3, 0) < 0){
       perror("Errore durante invio");
-      onexit(f_sockd, 0, 0, 1);
+      return -1;
     }
     onexit(f_sockd, 0, fd, 4);
   }
   strcpy(buf, "OK");
   if(send(f_sockd, buf, 3, 0) < 0){
     perror("Errore durante invio");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   memset(buf, 0, sizeof(buf));
+  return 0;
 }

@@ -15,7 +15,7 @@
 #include <inttypes.h> /* per printare il tipo di dato uint32_t */
 #include "../../prototypes.h"
 
-void do_server_fork_pwd_cmd(const int f_sockd){
+int do_server_fork_pwd_cmd(const int f_sockd){
   char *other;
   char buf[256];
   uint32_t pwd_buf_len = 0;
@@ -23,23 +23,24 @@ void do_server_fork_pwd_cmd(const int f_sockd){
   memset(buf, 0, sizeof(buf));
   if(recv(f_sockd, buf, 4, 0) < 0){
     perror("Errore nella ricezione comando PWD");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   other = NULL;
   other = strtok(buf, "\n");
   if(strcmp(other, "PWD") == 0){
     printf("Ricevuta richiesta PWD\n");
-  } else onexit(f_sockd, 0, 0, 1); 
+  } else return -1; 
   memset(buf, 0, sizeof(buf));
   sprintf(buf, "PWD: %s", (char *)(intptr_t)get_current_dir_name());
   pwd_buf_len = strlen(buf)+1;
   if(send(f_sockd, &pwd_buf_len, sizeof(pwd_buf_len), 0) < 0){
     perror("Errore invio lunghezza buffer");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   if(send(f_sockd, buf, pwd_buf_len, 0) < 0){
     perror("Errore durante l'invio PWD");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   memset(buf, 0, sizeof(buf));
+  return 0;
 }

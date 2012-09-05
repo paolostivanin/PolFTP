@@ -12,7 +12,7 @@
 #include <inttypes.h> /* per printare il tipo di dato uint32_t */
 #include "../../prototypes.h"
 
-void do_server_fork_stor_cmd(const int f_sockd){
+int do_server_fork_stor_cmd(const int f_sockd){
   int fd;
   ssize_t nread;
   uint32_t fsize, fsize_tmp, total_bytes_read = 0, fn_size = 0;
@@ -23,11 +23,11 @@ void do_server_fork_stor_cmd(const int f_sockd){
   memset(buf, 0, sizeof(buf));
   if(recv(f_sockd, &fn_size, sizeof(fn_size), MSG_WAITALL) < 0){
     perror("Errore durante la ricezione della lunghezza del nome del file");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   if(recv(f_sockd, buf, fn_size+5, 0) < 0){
     perror("Errore ricezione nome file");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   other = NULL;
   stor_filename = NULL;
@@ -37,43 +37,45 @@ void do_server_fork_stor_cmd(const int f_sockd){
 
   if(strcmp(other, "STOR") == 0){
     printf("Ricevuta richiesta STOR\n");
-  } else onexit(f_sockd, 0, 0, 1);
+  } else return -1;
 
   memset(buf, 0, sizeof(buf));
   if(recv(f_sockd, buf, 3, 0) < 0){
     perror("Errore ricezione conferma file");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }    
 
   other = NULL;
   other = strtok(buf, "\0");
   if(strcmp(other, "NO") == 0){
     printf("ERRORE: il file richiesto non esiste\n");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
 
   fsize = 0;
   if(recv(f_sockd, &fsize, sizeof(fsize), 0) < 0){
     perror("Errore nella ricezione della grandezza del file");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   fd = open(stor_filename, O_CREAT | O_WRONLY, 0644);
   if (fd  < 0) {
     perror("open");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   fsize_tmp = fsize;
   filebuffer = malloc(fsize);
   if(filebuffer == NULL){
     perror("malloc");
-    onexit(f_sockd, 0, fd, 4);
+    close(fd);
+    return -1;
   }
   total_bytes_read = 0;
   nread = 0;
   while((total_bytes_read != fsize) && ((nread = read(f_sockd, filebuffer, fsize_tmp)) > 0)){
     if(write(fd, filebuffer, nread) != nread){
       perror("write RETR");
-      onexit(f_sockd, 0, 0, 1);
+      close(fd);
+      return -1;
     }
     total_bytes_read += nread;
     fsize_tmp -= nread;
@@ -84,9 +86,10 @@ void do_server_fork_stor_cmd(const int f_sockd){
   strcpy(buf, "226 File trasferito correttamente");
   if(send(f_sockd, buf, 33, 0) < 0){
     perror("Errore invio conferma upload");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   memset(buf, 0, sizeof(buf));
   free(filebuffer);
   free(stor_filename);
+  return 0;
 }

@@ -15,38 +15,39 @@
 #include <inttypes.h> /* per printare il tipo di dato uint32_t */
 #include "../../prototypes.h"
 
-void do_server_fork_cwd_cmd(const int f_sockd){
+int do_server_fork_cwd_cmd(const int f_sockd){
   uint32_t path_len = 0;
   char buf[256];
   char *cd_path = NULL, *path = NULL;
   memset(buf, 0, sizeof(buf));
   if(recv(f_sockd, &path_len, sizeof(path_len), MSG_WAITALL) < 0){
     perror("Errore ricezione lunghezza path");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   if(recv(f_sockd, buf, path_len+4, 0) < 0){
     perror("Errore nella ricezione comando CWD");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   cd_path = strtok(buf, " ");
   path = strtok(NULL, "\0");
   if(strcmp(cd_path, "CWD") == 0){
     printf("Ricevuta richiesta CWD\n");
-  } else onexit(f_sockd, 0, 0, 1);
+  } else return -1;
   if(chdir(path) < 0){
     perror("chdir");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   memset(buf, 0, sizeof(buf));
   sprintf(buf, "250 CWD command successful. PWD: %s\n", (char *)(intptr_t)get_current_dir_name());
   path_len = strlen(buf)+1;
   if(send(f_sockd, &path_len, sizeof(path_len), 0) < 0){
     perror("Errore invio lunghezza buffer");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   if(send(f_sockd, buf, path_len, 0) < 0){
     perror("Errore durante l'invio");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   memset(buf, 0, sizeof(buf));
+  return 0;
 }

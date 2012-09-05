@@ -87,7 +87,7 @@ int hash_pwd(char *to_hash, char *tocheck){
     		sprintf(outputBuffer + (i * 2), "%02x", md[i]);
     	}
     	if(strcmp(outputBuffer, tocheck) == 0) return 0;
-    	else return 1;
+    	else return -1;
 	}
 	goto here;
 }

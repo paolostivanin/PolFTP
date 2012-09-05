@@ -128,7 +128,9 @@ void do_child(const int child_sock){
     }    	
     user_string = strtok(buffer, " ");
     username = strtok(NULL, "\n");
-    username = strdup(username); /* con strdup copio lo username in un'altra zona di memoria così posso memsettare il buffer (ricordarsi FREE) */
+    username = strdup(username); /* con strdup copio lo username in un'altra zona di memoria così posso memsettare il buffer
+                                  * (altrimenti memsettando il buffer perdevo anche 'username' perchè strtok ritorna un puntatore a quella stringa.
+                                  * Bisogna ricordarsi 'free(USED-BY-STRDUP)') */
     fprintf(stdout, "%s %s\n", user_string, username);
     sprintf(saved_user, "%s", username);
     memset(buffer, 0, sizeof(buffer));

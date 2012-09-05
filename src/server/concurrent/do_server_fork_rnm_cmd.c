@@ -15,38 +15,44 @@
 #include <inttypes.h> /* per printare il tipo di dato uint32_t */
 #include "../../prototypes.h"
 
-void do_server_fork_rnm_cmd(const int f_sockd){
+int do_server_fork_rnm_cmd(const int f_sockd){
   uint32_t len_fname_todelete = 0;
   int renameFile = 0;
-  char buf[256], rnbuf[256];
-  char *other = NULL, *filename = NULL;
+  char buf[256];
+  char *other = NULL, *filename = NULL, *oldname = NULL;
 
   memset(buf, 0, sizeof(buf));
   if(recv(f_sockd, &len_fname_todelete, sizeof(len_fname_todelete), MSG_WAITALL) < 0){
     perror("Errore ricezione len fname");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   if(recv(f_sockd, buf, len_fname_todelete+5, 0) < 0){
     perror("Errore nella ricezione RNFR");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   other = strtok(buf, " ");
   filename = strtok(NULL, "\0");
-  strcpy(rnbuf, filename);
+  oldname = strdup(filename);
   
   if(strcmp(other, "RNFR") == 0){
     printf("Ricevuta richiesta RNFR\n");
-  } else onexit(f_sockd, 0, 0, 1);
+  }
+  else{
+    free(oldname);
+    return -1;
+  }
 
   memset(buf, 0, sizeof(buf));
   len_fname_todelete = 0;
   if(recv(f_sockd, &len_fname_todelete, sizeof(len_fname_todelete), MSG_WAITALL) < 0){
     perror("Errore ricezione len fname");
-    onexit(f_sockd, 0, 0, 1);
+    free(oldname);
+    return -1;
   }
   if(recv(f_sockd, buf, len_fname_todelete+5, 0) < 0){
     perror("Errore nella ricezione RNTO");
-    onexit(f_sockd, 0, 0, 1);
+    free(oldname);
+    return -1;
   }
   other = NULL;
   filename = NULL;
@@ -54,14 +60,25 @@ void do_server_fork_rnm_cmd(const int f_sockd){
   filename = strtok(NULL, "\0");
   if(strcmp(other, "RNTO") == 0){
     printf("Ricevuta richiesta RNTO\n");
-  } else onexit(f_sockd, 0, 0, 1);
-  renameFile = rename(rnbuf, filename);
+  }
+  else{
+    free(oldname);
+    return -1;
+  }
+  renameFile = rename(oldname, filename);
   if(renameFile == 0){
     strcpy(buf, "OK");
-  } else { strcpy(buf, "NO"); }
+  }
+  else{
+    free(oldname);
+    strcpy(buf, "NO");
+  }
   if(send(f_sockd, buf, 3, 0) < 0){
     perror("Errore durante invio rnm conferma");
-    onexit(f_sockd, 0, 0, 1);
+    free(oldname);
+    return -1;
   }
   memset(buf, 0, sizeof(buf));
+  free(oldname);
+  return 0;
 }

@@ -3,35 +3,36 @@
 #include <stdint.h>
 //
 //Client's functions
-void do_syst_cmd(const int);
-void do_pwd_cmd(const int);
-void do_cwd_cmd(const int);
-void do_list_cmd(const int);
-void do_retr_cmd(const int);
-void do_stor_cmd(const int);
-void do_dele_cmd(const int);
-void do_mkd_cmd(const int);
-void do_rmd_cmd(const int);
-void do_rnm_cmd(const int);
+int do_syst_cmd(const int);
+int do_pwd_cmd(const int);
+int do_cwd_cmd(const int);
+int do_list_cmd(const int);
+int do_retr_cmd(const int);
+int do_stor_cmd(const int);
+int do_dele_cmd(const int);
+int do_mkd_cmd(const int);
+int do_rmd_cmd(const int);
+int do_rnm_cmd(const int);
 //
 //Concurrent server's functions
-void do_child(const int);
-void sig_handler(const int, const int, const int);
-void get_syst(char **);
-uint32_t file_list(char *, char ***);
-void free_file_list(char ***, uint32_t);
-void do_server_fork_syst_cmd(const int);
-void do_server_fork_pwd_cmd(const int);
-void do_server_fork_cwd_cmd(const int);
-void do_server_fork_list_cmd(const int); /* chiamare free_file_list(&POINTER_USED, $NUM_OF_ELEMENTS) al termine */
-void do_server_fork_retr_cmd(const int);
-void do_server_fork_stor_cmd(const int);
-void do_server_fork_dele_cmd(const int);
-void do_server_fork_mkd_cmd(const int);
-void do_server_fork_rmd_cmd(const int);
-void do_server_fork_rnm_cmd(const int);
-char *get_public_ip(void); /* liberare la memoria al termine con free($POINTER_USED) */
+
+int get_syst(char **);
+int file_list(char *, char ***);
+int do_server_fork_syst_cmd(const int);
+int do_server_fork_pwd_cmd(const int);
+int do_server_fork_cwd_cmd(const int);
+int do_server_fork_list_cmd(const int); /* chiamare free_file_list(&POINTER_USED, $NUM_OF_ELEMENTS) al termine */
+int do_server_fork_retr_cmd(const int);
+int do_server_fork_stor_cmd(const int);
+int do_server_fork_dele_cmd(const int);
+int do_server_fork_mkd_cmd(const int);
+int do_server_fork_rmd_cmd(const int);
+int do_server_fork_rnm_cmd(const int);
 int check_login_details(char *, char *);
+char *get_public_ip(void); /* liberare la memoria al termine con free($POINTER_USED) */
+void do_child(const int);
+void free_file_list(char ***, uint32_t);
+void sig_handler(const int, const int, const int);
 //
 //Common functions
 void check_before_start(int, char **);

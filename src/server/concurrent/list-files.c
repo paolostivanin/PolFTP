@@ -9,17 +9,17 @@
 #include <dirent.h>
 #include "../../prototypes.h"
 
-uint32_t file_list(char *path, char ***ls){
+int file_list(char *path, char ***ls){
 	DIR *dp;
   struct stat fileStat;
   struct dirent *ep = NULL;
-  uint32_t len, count = 0;
-  int file = 0;
+  uint32_t len;
+  int file = 0, count = 0;
   *ls = NULL;
   dp = opendir (path);
   if(dp == NULL){
     fprintf(stderr, "Non esiste la directory: %s\n", path);
-    exit(1);
+    return -1;
   }
 
   ep = readdir(dp);
@@ -35,13 +35,13 @@ uint32_t file_list(char *path, char ***ls){
   while(ep != NULL){
     if((file = open(ep->d_name, O_RDONLY)) < 0){
       perror("apertura file");
-      exit(1);
+      return -1;
     }
     if(fstat(file, &fileStat) != 0){
       perror("filestat");
       free(*ls);
       close(file);
-      exit(EXIT_FAILURE);
+      return -1;
     }
     close(file);
     if(S_ISDIR(fileStat.st_mode)){

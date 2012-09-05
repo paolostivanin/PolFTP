@@ -17,7 +17,7 @@
 #include <inttypes.h> /* per printare il tipo di dato uint32_t */
 #include "../../prototypes.h"
 
-void do_server_fork_list_cmd(const int f_sockd){
+int do_server_fork_list_cmd(const int f_sockd){
   int fpl, count, i;
   ssize_t rc_list;
   uint32_t fsize, size_to_send;
@@ -32,13 +32,13 @@ void do_server_fork_list_cmd(const int f_sockd){
 
   if(recv(f_sockd, buf, 5, 0) < 0){ /* i 6 caratteri sono dati da L I S T \0 */
     perror("Errore nella ricezione comando LIST");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   other = NULL;
   other = strtok(buf, "\0");
   if(strcmp(other, "LIST") == 0){
     printf("Ricevuta richiesta LIST\n");
-  } else onexit(f_sockd, 0, 0, 1);
+  } else return -1;
 
   count = file_list("./", &files);
   if(!(tmpfname = tmpnam(tmpname))){ /* genero il nome del tmpfile (tip /tmp/X6Tr4Y) */
@@ -47,7 +47,7 @@ void do_server_fork_list_cmd(const int f_sockd){
   }
   if((fp_list = fopen(tmpfname, "w")) == NULL){
     perror("Impossibile aprire il file per la scrittura LIST");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
 
   for(i=0; i < count; i++){
@@ -60,19 +60,21 @@ void do_server_fork_list_cmd(const int f_sockd){
   free_file_list(&files, count);
   if((fpl = open(tmpfname, O_RDONLY)) < 0){
     perror("open file with open");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
 
   fsize = 0;
   fileStat.st_size = 0;
   if(fstat(fpl, &fileStat) < 0){
     perror("Errore fstat");
-    onexit(f_sockd, 0, fpl, 4);
+    close(fpl);
+    return -1;
   }
   fsize = fileStat.st_size;
   if(send(f_sockd, &fsize, sizeof(fsize), 0) < 0){
     perror("Errore durante l'invio della grandezza del file\n");
-    onexit(f_sockd, 0, fpl, 4);
+    close(fpl);
+    return -1;
   }
 
   offset_list = 0;
@@ -80,14 +82,16 @@ void do_server_fork_list_cmd(const int f_sockd){
     rc_list = sendfile(f_sockd, fpl, &offset_list, size_to_send);
     if (rc_list <= 0){
       perror("sendfile");
-      onexit(f_sockd, 0, fpl, 4);
+      close(fpl);
+      return -1;
     }
     size_to_send -= rc_list;
   }
   close(fpl);
   if(remove( tmpfname ) == -1 ){
     perror("errore cancellazione file");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   memset(buf, 0, sizeof(buf));
+  return 0;
 }

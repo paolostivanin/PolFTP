@@ -16,7 +16,7 @@
 #include <inttypes.h> /* per printare il tipo di dato uint32_t */
 #include "../../prototypes.h"
 
-void do_server_fork_retr_cmd(const int f_sockd){
+int do_server_fork_retr_cmd(const int f_sockd){
   int fd, rc;
   uint32_t fsize, size_to_send, fn_size;
   char *filename = NULL, *other = NULL;
@@ -28,11 +28,11 @@ void do_server_fork_retr_cmd(const int f_sockd){
   fn_size = 0;
   if(recv(f_sockd, &fn_size, sizeof(fn_size), MSG_WAITALL) < 0){
     perror("Errore durante la ricezione della lunghezza del nome del file");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   if(recv(f_sockd, buf, fn_size+5, 0) < 0){
     perror("Errore nella ricezione del nome del file");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   other = NULL;
   filename = NULL;
@@ -41,7 +41,7 @@ void do_server_fork_retr_cmd(const int f_sockd){
 
   if(strcmp(other, "RETR") == 0){
     printf("Ricevuta richiesta RETR\n");
-  } else onexit(f_sockd, 0, 0, 1);
+  } else return -1;
 
   fd = open(filename, O_RDONLY);
   if(fd < 0){
@@ -49,41 +49,49 @@ void do_server_fork_retr_cmd(const int f_sockd){
     strcpy(buf, "NO\0");
     if(send(f_sockd, buf, 3, 0) < 0){
       perror("Errore durante invio");
-      onexit(f_sockd, 0, 0 ,1);
+      close(fd);
+      return -1;
     }
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   strcpy(buf, "OK\0");
   if(send(f_sockd, buf, 3, 0) < 0){
     perror("Errore durante invio");
-    onexit(f_sockd, 0, 0 ,1);
+    close(fd);
+    return -1;
   }
+
   fsize = 0;
   fileStat.st_size = 0;
   if(fstat(fd, &fileStat) < 0){
   perror("Errore fstat");
-    onexit(f_sockd, 0, fd, 4);
+    close(fd);
+    return -1;
   }
   fsize = fileStat.st_size;
   if(send(f_sockd, &fsize, sizeof(fsize), 0) < 0){
     perror("Errore durante l'invio della grandezza del file\n");
-    onexit(f_sockd, 0, fd, 4);
+    close(fd);
+    return -1;
   }
   offset = 0;
   for (size_to_send = fsize; size_to_send > 0; ){
     rc = sendfile(f_sockd, fd, &offset, size_to_send);
     if (rc <= 0){
       perror("sendfile");
-      onexit(f_sockd, 0, fd, 4);
+      close(fd);
+      return -1;
     }
     size_to_send -= rc;
   }
   close(fd); /* la chiusura del file va qui altrimenti rischio loop infinito e scrittura all'interno del file */
+  
   memset(buf, 0, sizeof(buf));
   strcpy(buf, "226 File trasferito con successo");
   if(send(f_sockd, buf, 33, 0) < 0){
     perror("Errore durante l'invio 226");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   memset(buf, 0, sizeof(buf));
+  return 0;
 }

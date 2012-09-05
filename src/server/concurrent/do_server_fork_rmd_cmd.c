@@ -15,38 +15,39 @@
 #include <inttypes.h> /* per printare il tipo di dato uint32_t */
 #include "../../prototypes.h"
 
-void do_server_fork_rmd_cmd(const int f_sockd){
+int do_server_fork_rmd_cmd(const int f_sockd){
   uint32_t len_server_dirname_todelete;
   char *other = NULL, *filename = NULL;
   char buf[256];
   memset(buf, 0, sizeof(buf));
   if(recv(f_sockd, &len_server_dirname_todelete, sizeof(len_server_dirname_todelete), MSG_WAITALL) < 0){
     perror("Errore ricezione lunghezza dirname da eliminare");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   if(recv(f_sockd, buf, len_server_dirname_todelete+4, 0) < 0){
     perror("Errore nella ricezione del nome della cartella");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   other = strtok(buf, " ");
   filename = strtok(NULL, "\0");
   if(strcmp(other, "RMD") == 0){
     printf("Ricevuta richiesta RMDIR\n");
-  } else onexit(f_sockd, 0, 0, 1);
+  } else return -1;
   
   if(rmdir(filename) != 0){
     fprintf(stderr, "Impossibile eliminare la cartella '%s'\n", filename);
     strcpy(buf, "NO");
     if(send(f_sockd, buf, 3, 0) < 0){
       perror("Errore durante invio");
-      onexit(f_sockd, 0, 0, 1);
+      return -1;
     }
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   strcpy(buf, "OK");
   if(send(f_sockd, buf, 3, 0) < 0){
     perror("Errore durante invio");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   memset(buf, 0, sizeof(buf));
+  return 0;
 }

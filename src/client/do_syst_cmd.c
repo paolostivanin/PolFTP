@@ -12,7 +12,7 @@
 #include <fcntl.h>
 #include "../prototypes.h"
 
-void do_syst_cmd(const int f_sockd){
+int do_syst_cmd(const int f_sockd){
   char buf[256];
   char *conferma = NULL;
   uint32_t buf_len = 0;
@@ -21,18 +21,19 @@ void do_syst_cmd(const int f_sockd){
   strcpy(buf, "SYST");
   if(send(f_sockd, buf, 5, 0) < 0){
     perror("Errore durante l'invio richiesta SYST");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   if(recv(f_sockd, &buf_len, sizeof(buf_len), MSG_WAITALL) < 0){
     perror("Errore durante ricezione lunghezza buffer");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   if(recv(f_sockd, buf, buf_len, 0) < 0){
     perror("Errore durante la ricezione risposta SYST");
-    onexit(f_sockd, 0, 0, 1);
+    return -1;
   }
   conferma = strtok(buf, "\0");
   printf("SYST type: %s\n", conferma);
   conferma = NULL;
   memset(buf, 0, sizeof(buf));
+  return 0;
 }
