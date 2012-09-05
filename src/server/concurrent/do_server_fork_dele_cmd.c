@@ -57,7 +57,8 @@ int do_server_fork_dele_cmd(const int f_sockd){
       perror("Errore durante invio");
       return -1;
     }
-    onexit(f_sockd, 0, fd, 4);
+    close(fd);
+    return -1;
   }
   strcpy(buf, "OK");
   if(send(f_sockd, buf, 3, 0) < 0){

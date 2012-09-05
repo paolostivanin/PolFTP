@@ -43,7 +43,7 @@ int do_server_fork_list_cmd(const int f_sockd){
   count = file_list("./", &files);
   if(!(tmpfname = tmpnam(tmpname))){ /* genero il nome del tmpfile (tip /tmp/X6Tr4Y) */
     perror("Errore nome tmp file");
-    exit(1);
+    return -1;
   }
   if((fp_list = fopen(tmpfname, "w")) == NULL){
     perror("Impossibile aprire il file per la scrittura LIST");
