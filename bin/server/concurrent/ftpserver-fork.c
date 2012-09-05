@@ -316,7 +316,6 @@ void check_before_start(int argc, char *argv[]){
 
 void sig_handler(const int signo, const int sockd, const int newsockd){
   if (signo == SIGINT){
-    printf("%d\n", getpid());
     printf("Ricevuto SIGINT, esco...\n");
     if(newsockd) close(newsockd);
     if(sockd) close(sockd);
