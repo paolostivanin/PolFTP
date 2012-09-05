@@ -9,26 +9,42 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <termios.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <openssl/sha.h>
 
 int main(void){
+	static struct termios oldt, newt;
 	SHA256_CTX context;
  	unsigned char md[SHA256_DIGEST_LENGTH];
  	char *input = NULL, *compare = NULL;
  	static char hashed[65];
  	int i, n=1;
+
+ 	tcgetattr( STDIN_FILENO, &oldt);
+  	newt = oldt;
+  	
  	printf("Password: ");
+ 	newt.c_lflag &= ~(ECHO);
+ 	tcsetattr( STDIN_FILENO, TCSANOW, &newt);
  	if(scanf("%m[^\n]%*c", &input) == EOF){
  		perror("Scanf input");
  		return EXIT_FAILURE;
  	}
- 	printf("Retype password: ");
+ 	tcsetattr( STDIN_FILENO, TCSANOW, &oldt);
+ 	printf("\nRetype password: ");
+ 	newt.c_lflag &= ~(ECHO);
+ 	tcsetattr( STDIN_FILENO, TCSANOW, &newt);
  	if(scanf("%m[^\n]%*c", &compare) == EOF){
  		perror("Scanf compare");
  		return EXIT_FAILURE;
  	}
+ 	tcsetattr( STDIN_FILENO, TCSANOW, &oldt);
  	if(strcmp(input, compare) != 0){
- 		printf("Password doesn't match\n");
+ 		printf("\nPassword doesn't match\n");
  		free(input);
  		free(compare);
  		return EXIT_FAILURE;
@@ -48,7 +64,7 @@ int main(void){
  	SHA256_Update(&context, (unsigned char*)hashed, strlen(hashed));
  	SHA256_Final(md, &context);
  	if(n==50000){
- 		printf("--> Write the above hash into the file '/etc/ftputils/auth':\n");
+ 		printf("\n--> Write the above hash into the file '/etc/ftputils/auth':\n");
     	for(i=0; i<SHA256_DIGEST_LENGTH; i++){
    			printf("%02x", md[i]);
  		}
