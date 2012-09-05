@@ -1,6 +1,6 @@
 /* Descrizione: Semplice server FTP iterativo sviluppato per il progetto di Reti di Calcolatori
  * Sviluppatore: Paolo Stivanin
- * Versione: 1.0-alpha6
+ * Versione: 1.0-beta1
  * Copyright: 2012
  * Licenza: GNU AGPL v3 <http://www.gnu.org/licenses/agpl-3.0.html>
  * Sito web: <https://github.com/polslinux/FTPUtils>
