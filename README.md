@@ -44,7 +44,7 @@ Prima di usare il server bisogna quindi **aggiungere nel file auth il nome utent
 
 Generazione hash password
 -------------------------
-Per generare l'hash della password bisogna **prima** compilare i sorgenti con `make` e **poi** spostarsi nella root del progetto e dare il seguente comando: `./generate_sha256`. A questo punto basta inserire 2 volte la password e ne verrà generato l'hash.
+Per generare l'hash della password bisogna **prima** compilare i sorgenti *(per il come vedere sopra)* e **poi** spostarsi nella cartella `src` del progetto e dare il seguente comando: `./generate_sha256`. A questo punto basta inserire 2 volte la password e ne verrà generato l'hash.
 
 Licenza
 -------
