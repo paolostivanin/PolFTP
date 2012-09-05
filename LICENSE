@@ -1,7 +1,7 @@
 			GNU GENERAL PUBLIC LICENSE
 			  Version 3, 29 June 2007
 
-This file is part of FTPUtils (client side).
+This file is part of FTPUtils (client and generate_sha256).
 
 Copyright (C) 2012, Paolo Stivanin aka "Polslinux"
 All rights reserved.
@@ -24,7 +24,7 @@ along with FTPClient. If not, see <http://www.gnu.org/licenses/>.
                     GNU AFFERO GENERAL PUBLIC LICENSE
                        Version 3, 19 November 2007
 
-This file is part of FTPUtils (server side).
+This file is part of FTPUtils (server).
 
 Copyright (C) 2012, Paolo Stivanin aka "Polslinux"
 All rights reserved.
