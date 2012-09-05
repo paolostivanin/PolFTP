@@ -79,7 +79,7 @@ int main(int argc, char *argv[]){
             exit(0);
         }
         else{ /* siamo nel processo padre...che fare?? */
-            while(waitpid(child_pid, NULL, WNOHANG) > 0){ /* it's just to clean up after dead child processes, which ones doesn't matter. */
+            while(waitpid(child_pid, NULL, WNOHANG) > 0){ /* serve solo per "pulire" dopo la "morte" del figlio per evitare gli "zombie". */
                 continue;
             }
         }

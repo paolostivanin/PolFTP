@@ -1,6 +1,5 @@
 FTPUtils
 ========
-
 FTPUtils è sviluppato come progetto per corso di Reti di Calcolatori tenutosi presso il DTI di Crema durante l'anno scolastico 2011/2012.
 Esso è composto da un server e un client FTP che supportano le funzioni: SYST - LIST - PWD - CWD - RETR - STOR - DELE - MKD - RMD - RNM.<br>
 Lo studente sviluppatore del progetto è:
@@ -27,19 +26,26 @@ Verranno quindi creati due files: ftpclient e ftpserver.
 
 Come usare client e server
 --------------------------
-Attualmente il server è solo iterativo (1 connessione alla volta) ma è in sviluppo anche il server parallelo che userà la chiamata di sistema "fork".<br>
-Il server supporta una forma di autenticazione basata su un file di testo contenente il nome utente e lo sha256 (x50000) della password.<br>
-Prima di usare il server bisogna **aggiungere il nome utente e l'hash della password** (generare l'hash tramite il tool generate_sha256) delle persone a cui si vuole concedere l'accesso FTP **nel file /etc/ftputils/auth** nella forma:<br>
-USERNAME HASH(password)<br>
-USERNAME HASH(password)<br>
+Il server usa la chiamata di sistema "fork" per generare un nuovo processo ad ogni connessione (max 20 connessioni).<br>
 Per avviare il server basta quindi dare il seguente comando:<br>
 `./ftpserver <numporta>`<br>
 e similarmente per il client:<br>
 `./ftpclient <host> <numporta>`
 
+Autenticazione
+--------------
+Il server supporta una forma di autenticazione basata su un file di testo contenente il nome utente e lo sha256 (ripetuto 50'000 volte) della password.<br>
+Tale file di testo **deve** chiamarsi `auth` e **deve** trovarsi in `/etc/ftputils/` (percorso completo: `/etc/ftputils/auth`).<br>
+Prima di usare il server bisogna quindi **aggiungere nel file auth il nome utente e l'hash della password** delle persone a cui si vuole concedere l'accesso FTP. Le informazioni devono essere inserite nel file nella seguente forma:<br>
+`USERNAME HASH`<br>
+`USERNAME HASH`<br>
+
+Generazione hash password
+-------------------------
+Per generare l'hash della password bisogna **prima** compilare i sorgenti con `make` e **poi** spostarsi nella root del progetto e dare il seguente comando: `./generate_sha256`. A questo punto basta inserire 2 volte la password e ne verrà generato l'hash.
+
 Licenza
 -------
-
 Il software è rilasciato sotto due tipi di licenza, una per il client e l'altra per il server.<br>
 Il client FTP è rilasciato sotto licenza GPL:<br>
 <http://www.gnu.org/licenses/gpl-3.0.html><br>
@@ -48,6 +54,5 @@ mentre il server FTP è rilasciato sotto licenza AGPL:<br>
 
 Sito web
 --------
-
 Sito web dello sviluppatore:	<http://www.polslinux.it><br>
 Sito web del progetto:			<https://github.com/polslinux/FTPUtils>
