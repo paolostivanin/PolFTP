@@ -6,12 +6,24 @@ Lo studente sviluppatore del progetto è:
 
 * Paolo Stivanin (SSRI in presenza, DM270)
 
+
+Versione
+--------
+La versione **stabile più recente** è la **v1.0-beta1** scaricabile da questo link: https://github.com/polslinux/FTPUtils/zipball/v1.0-beta1<br>
+Se invece si desidera utilizzare la versione in sviluppo bisognare dare i seguenti comandi:<br>
+
+- `git clone https://github.com/polslinux/FTPUtils.git`<br>
+- `cd FTPUtils`<br>
+- `git checkout experimental`<br>
+
+e quindi seguire le istruzioni riportate in *Compilazione*.
+
 Requisiti
 ---------
 
-* GCC/Clang		: per compilare i programmi (per Clang **obbligatoria versione >= 3.1**, per GCC consigliata v4.4.0 e maggiori)
+* GCC/Clang	: per compilare i programmi (per Clang **obbligatoria versione >= 3.1**, per GCC consigliata v4.4.0 e maggiori)
 * Make      	: per lanciare il Makefile
-* GNU/Linux		: i software sono stati sviluppati su ambienti GNU/Linux e quindi **NON** compileranno nè su ambienti MS Windows nè su ambienti MAC OSX.
+* GNU/Linux	: i software sono stati sviluppati su ambienti GNU/Linux e quindi **NON** compileranno nè su ambienti MS Windows nè su ambienti MAC OSX.
 * Build Tools	: ovvero Autoconf e Automake **necessari** per controllare le dipendenze richieste durante la compilazione
 
 Compilazione
