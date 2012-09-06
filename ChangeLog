@@ -28,7 +28,7 @@
 	* ADDED: hashed passwords with x50000 sha256 (thanks to OpenSSL)
 	* ADDED: server with fork
 
-07/09/2012 - v1.0-beta1
+06/09/2012 - v1.0-beta1
 	* IMPROVED: better errors handling
 	* IMPROVED: added configure script
 	* IMPROVED: README
