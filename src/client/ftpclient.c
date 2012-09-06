@@ -216,37 +216,6 @@ int main(int argc, char *argv[]){
   /************************* INIZIO AZIONE SYST *************************/
   exec_syst:
   ret_val = do_syst_cmd(sockd);
-  /* invio al server la stringa ERR o OKK */
-  /*if(ret_val < 0){
-    memset(buffer, 0, sizeof(buffer));
-    strcpy(buffer, "ERR");
-    if(send(sockd, buffer, 4, 0) < 0){
-      perror("Error on sending the syst retval")
-      exit(1);
-    }
-    goto exec_switch;
-  }
-  else{
-    memset(buffer, 0, sizeof(buffer));
-    strcpy(buffer, "OKK");
-    if(send(sockd, buffer, 4, sizeof(buffer)) < 0){
-      perror("Error on sending the syst retval");
-      exit(1);
-    }
-  }*/
-  /* --- */
-  /* aspetto conferma dal server di OKK o ERR */
-  /*memset(buffer, 0, sizeof(buffer));
-  if(recv(sockd, buffer, 4, sizeof(buffer), MSG_WAITALL) < 0){
-    perror("Error on recv syst retval");
-    exit(1);
-  }
-  is_err = strtok(buffer, "\0");
-  if(strcmp(is_err, "ERR") == 0){
-    printf("An error occured on the server");
-    goto exec_switch;
-  }*/
-  /* --- */
   client_errors_handler(sockd, ret_val);
   goto exec_switch;
   /************************* FINE AZIONE SYST *************************/

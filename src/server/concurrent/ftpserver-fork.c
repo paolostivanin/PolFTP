@@ -90,7 +90,7 @@ int main(int argc, char *argv[]){
 void do_child(const int child_sock){
     int login, ret_val = -1;
     uint32_t len_string;
-    static char buffer[512], saved_user[512]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
+    static char buffer[512]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
     char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL;
     char *serverdir = (char *)(intptr_t)get_current_dir_name();
     char *tmpip = NULL, *pubip = NULL, *is_err = NULL;  
@@ -131,8 +131,6 @@ void do_child(const int child_sock){
     username = strdup(username); /* con strdup copio lo username in un'altra zona di memoria così posso memsettare il buffer
                                   * (altrimenti memsettando il buffer perdevo anche 'username' perchè strtok ritorna un puntatore a quella stringa.
                                   * Bisogna ricordarsi 'free(USED-BY-STRDUP)') */
-    fprintf(stdout, "%s %s\n", user_string, username);
-    sprintf(saved_user, "%s", username);
     memset(buffer, 0, sizeof(buffer));
     /************************* FINE NOME UTENTE *************************/
 
@@ -150,12 +148,10 @@ void do_child(const int child_sock){
     pass_string = strtok(buffer, " ");
     password = strtok(NULL, "\n");
     password = strdup(password);
-    fprintf(stdout, "%s %s\n", pass_string, password);
     memset(buffer, 0, sizeof(buffer));
     /************************* FINE PASSWORD *************************/
     	
     /************************* INVIO CONFERMA LOG IN *************************/
-    printf("%s %s\n", username, password);
     login = check_login_details(username, password);
     if(login != 0){
         strcpy(buffer, "Username o password non esistenti");
@@ -174,7 +170,7 @@ void do_child(const int child_sock){
         exit(1);
     }
     printf("USER: %s - PASS: ******\n", username);
-    sprintf(buffer, "230 USER %s logged in", saved_user);
+    sprintf(buffer, "230 USER %s logged in", username);
     len_string = strlen(buffer)+1;
     if(send(child_sock, &len_string, sizeof(len_string), 0) < 0){
         perror("Errore invio len buffer conferma login");
@@ -234,37 +230,6 @@ void do_child(const int child_sock){
     /************************* INIZIO AZIONE SYST *************************/
     exec_syst:
     ret_val = do_server_fork_syst_cmd(child_sock);
-    /* aspetto conferma dal client di OKK o ERR */
-    /*memset(buffer, 0, sizeof(buffer));
-    if(recv(child_sock, buffer, 4, sizeof(buffer), MSG_WAITALL) < 0){
-        perror("Error on recv syst retval");
-        exit(1);
-    }
-    is_err = strtok(buffer, "\0");
-    if(strcmp(is_err, "ERR") == 0){
-        printf("An error occured on the client");
-        goto exec_listen_action;
-    }*/
-    /* --- */
-    /* invio al client al stringa ERR o OKK */
-    /*if(ret_val < 0){
-        memset(buffer, 0, sizeof(buffer));
-        strcpy(buffer, "ERR");
-        if(send(child_sock, buffer, 4, 0) < 0){
-            perror("Error on sending the syst retval")
-            exit(1);
-        }
-        goto exec_listen_action;
-    }
-    else{
-        memset(buffer, 0, sizeof(buffer));
-        strcpy(buffer, "OKK");
-        if(send(child_sock, buffer, 4, 0) < 0){
-            perror("Error on sending the syst retval")
-            exit(1);
-        }
-    }*/
-    /* --- */
     server_errors_handler(child_sock, ret_val);
     goto exec_listen_action;
     /************************* FINE AZIONE SYST *************************/
