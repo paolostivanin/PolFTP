@@ -34,6 +34,7 @@
 	* IMPROVED: README
 
 17/09/2012 - v1.0-rc
+	* TRANSLATION: from ITA to ENG
 	* TEST: done various stress test
 
 18/09/2012 - v1.0.0
@@ -51,6 +52,7 @@
 	* Newstable release
 
 ??/??/???? - v1.2-alpha1
+	* IMPROVED: more info when an error occurs
 	* ADDED: FTPS (thanks to OpenSSL)
 
 ??/??/???? - v1.2-rc

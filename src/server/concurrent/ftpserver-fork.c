@@ -88,12 +88,12 @@ int main(int argc, char *argv[]){
 }
 
 void do_child(const int child_sock){
-    int login;
+    int login, ret_val = -1;
     uint32_t len_string;
     static char buffer[512], saved_user[512]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
     char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL;
     char *serverdir = (char *)(intptr_t)get_current_dir_name();
-    char *tmpip = NULL, *pubip = NULL;  
+    char *tmpip = NULL, *pubip = NULL, *is_err = NULL;  
     /************************* MESSAGGIO DI BENVENUTO *************************/
     tmpip = get_public_ip();
     pubip = strtok(tmpip, "\n");
@@ -233,61 +233,102 @@ void do_child(const int child_sock){
 
     /************************* INIZIO AZIONE SYST *************************/
     exec_syst:
-    do_server_fork_syst_cmd(child_sock);
+    ret_val = do_server_fork_syst_cmd(child_sock);
+    /* aspetto conferma dal client di OKK o ERR */
+    /*memset(buffer, 0, sizeof(buffer));
+    if(recv(child_sock, buffer, 4, sizeof(buffer), MSG_WAITALL) < 0){
+        perror("Error on recv syst retval");
+        exit(1);
+    }
+    is_err = strtok(buffer, "\0");
+    if(strcmp(is_err, "ERR") == 0){
+        printf("An error occured on the client");
+        goto exec_listen_action;
+    }*/
+    /* --- */
+    /* invio al client al stringa ERR o OKK */
+    /*if(ret_val < 0){
+        memset(buffer, 0, sizeof(buffer));
+        strcpy(buffer, "ERR");
+        if(send(child_sock, buffer, 4, 0) < 0){
+            perror("Error on sending the syst retval")
+            exit(1);
+        }
+        goto exec_listen_action;
+    }
+    else{
+        memset(buffer, 0, sizeof(buffer));
+        strcpy(buffer, "OKK");
+        if(send(child_sock, buffer, 4, 0) < 0){
+            perror("Error on sending the syst retval")
+            exit(1);
+        }
+    }*/
+    /* --- */
+    server_errors_handler(child_sock, ret_val);
     goto exec_listen_action;
     /************************* FINE AZIONE SYST *************************/
 
     /************************* INIZIO AZIONE LIST *************************/
     exec_list:
-    do_server_fork_list_cmd(child_sock);
+    ret_val = do_server_fork_list_cmd(child_sock);
+    server_errors_handler(child_sock, ret_val);
     goto exec_listen_action;
     /************************* FINE AZIONE LIST *************************/
 
     /************************* INIZIO AZIONE PWD *************************/
     exec_pwd:
-    do_server_fork_pwd_cmd(child_sock);
+    ret_val = do_server_fork_pwd_cmd(child_sock);
+    server_errors_handler(child_sock, ret_val);
     goto exec_listen_action;
     /************************* FINE AZIONE PWD *************************/
 
     /************************* INIZIO AZIONE CWD *************************/
     exec_cwd:
-    do_server_fork_cwd_cmd(child_sock);
+    ret_val = do_server_fork_cwd_cmd(child_sock);
+    server_errors_handler(child_sock, ret_val);
     goto exec_listen_action;
     /************************* FINE AZIONE CWD *************************/
 
     /************************* INIZIO AZIONE RETR *************************/
     exec_retr:
-    do_server_fork_retr_cmd(child_sock);
+    ret_val = do_server_fork_retr_cmd(child_sock);
+    server_errors_handler(child_sock, ret_val);
     goto exec_listen_action;
     /************************* FINE AZIONE RETR *************************/
 
     /************************* INIZIO AZIONE STOR *************************/
     exec_stor:
-    do_server_fork_stor_cmd(child_sock);
+    ret_val = do_server_fork_stor_cmd(child_sock);
+    server_errors_handler(child_sock, ret_val);
     goto exec_listen_action;
     /************************* FINE AZIONE STOR *************************/
 
     /************************* INIZIO AZIONE DELE *************************/
     exec_delete:
-    do_server_fork_dele_cmd(child_sock);
+    ret_val = do_server_fork_dele_cmd(child_sock);
+    server_errors_handler(child_sock, ret_val);
     goto exec_listen_action;
     /************************* FINE AZIONE DELE *************************/
 
     /************************* INIZIO AZIONE MKD *************************/
     exec_mkdir:
-    do_server_fork_mkd_cmd(child_sock);
+    ret_val = do_server_fork_mkd_cmd(child_sock);
+    server_errors_handler(child_sock, ret_val);
     goto exec_listen_action;
     /************************* FINE AZIONE MKD *************************/
 
     /************************* INIZIO AZIONE RMD *************************/
     exec_rmdir:
-    do_server_fork_rmd_cmd(child_sock);
+    ret_val = do_server_fork_rmd_cmd(child_sock);
+    server_errors_handler(child_sock, ret_val);
     goto exec_listen_action;
     /************************* FINE AZIONE RMD *************************/
 
     /************************* INIZIO AZIONE RNM *************************/
     exec_rename:
-    do_server_fork_rnm_cmd(child_sock);
+    ret_val = do_server_fork_rnm_cmd(child_sock);
+    server_errors_handler(child_sock, ret_val);
     goto exec_listen_action;
     /************************* FINE AZIONE RNM *************************/
 

@@ -13,6 +13,7 @@ int do_dele_cmd(const int);
 int do_mkd_cmd(const int);
 int do_rmd_cmd(const int);
 int do_rnm_cmd(const int);
+void client_errors_handler(const int, const int);
 //
 //Concurrent server's functions
 
@@ -33,6 +34,7 @@ char *get_public_ip(void); /* liberare la memoria al termine con free($POINTER_U
 void do_child(const int);
 void free_file_list(char ***, uint32_t);
 void sig_handler(const int, const int, const int);
+void server_errors_handler(const int, const int);
 //
 //Common functions
 void check_before_start(int, char **);

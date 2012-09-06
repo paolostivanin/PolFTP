@@ -33,9 +33,10 @@ int main(int argc, char *argv[]){
   
   check_before_start(argc, argv);
 
-  int sockd, i = 0; /* descrittore del socket, file, bytes letti alla ricezione del file in totale */
+  int sockd = -1, i = 0, ret_val = -1; /* descrittore del socket, file, contatore e valore di ritorno delle funzioni */
   uint32_t len_string;
   int NumPorta = atoi(argv[2]); /* numero di porta */
+  char *is_err = NULL;
   static struct sockaddr_in serv_addr; /* struttura contenente indirizzo del server */
   static struct termios oldt, newt; /* struttura contenente i paramentri della shell */
   static struct hostent *hp; /* la struttura hostent mi servirà per l'indirizzo ip del server */
@@ -207,68 +208,109 @@ int main(int argc, char *argv[]){
 
   exec_help:
   printf("FTPUtils (Client) %s developed by Paolo Stivanin\n", VERSION);
-  printf("\nI comandi disponibili sono:\nSYST - LIST - PWD - CWD - RETR - STOR - DELE - MKD - RMD - RNM - STOR - EXIT - HELP\n");
+  printf("\nAvailable commands are:\nSYST - LIST - PWD - CWD - RETR - STOR - DELE - MKD - RMD - RNM - STOR - EXIT - HELP\n");
   free(sInfo.scelta);
   goto exec_switch;
   /************************* FINE PARTE AZIONE UTENTE *************************/
 
   /************************* INIZIO AZIONE SYST *************************/
   exec_syst:
-  do_syst_cmd(sockd);
+  ret_val = do_syst_cmd(sockd);
+  /* invio al server la stringa ERR o OKK */
+  /*if(ret_val < 0){
+    memset(buffer, 0, sizeof(buffer));
+    strcpy(buffer, "ERR");
+    if(send(sockd, buffer, 4, 0) < 0){
+      perror("Error on sending the syst retval")
+      exit(1);
+    }
+    goto exec_switch;
+  }
+  else{
+    memset(buffer, 0, sizeof(buffer));
+    strcpy(buffer, "OKK");
+    if(send(sockd, buffer, 4, sizeof(buffer)) < 0){
+      perror("Error on sending the syst retval");
+      exit(1);
+    }
+  }*/
+  /* --- */
+  /* aspetto conferma dal server di OKK o ERR */
+  /*memset(buffer, 0, sizeof(buffer));
+  if(recv(sockd, buffer, 4, sizeof(buffer), MSG_WAITALL) < 0){
+    perror("Error on recv syst retval");
+    exit(1);
+  }
+  is_err = strtok(buffer, "\0");
+  if(strcmp(is_err, "ERR") == 0){
+    printf("An error occured on the server");
+    goto exec_switch;
+  }*/
+  /* --- */
+  client_errors_handler(sockd, ret_val);
   goto exec_switch;
   /************************* FINE AZIONE SYST *************************/
 
   /************************* INIZIO RICHIESTA LIST *************************/
   exec_list:
-  do_list_cmd(sockd);
+  ret_val = do_list_cmd(sockd);
+  client_errors_handler(sockd, ret_val);
   goto exec_switch;
   /************************* FINE AZIONE LIST *************************/
 
   /************************* INIZIO AZIONE PWD *************************/
   exec_pwd:
-  do_pwd_cmd(sockd);
+  ret_val = do_pwd_cmd(sockd);
+  client_errors_handler(sockd, ret_val);
   goto exec_switch;
   /************************* FINE AZIONE PWD *************************/
 
   /************************* INIZIO AZIONE CWD *************************/
   exec_cwd:
-  do_cwd_cmd(sockd);
+  ret_val = do_cwd_cmd(sockd);
+  client_errors_handler(sockd, ret_val);
   goto exec_switch;
   /************************* FINE AZIONE CWD *************************/
 
   /************************* INIZIO AZIONE RETR *************************/
   exec_retr:
-  do_retr_cmd(sockd);
+  ret_val = do_retr_cmd(sockd);
+  client_errors_handler(sockd, ret_val);
   goto exec_switch;
   /************************* FINE AZIONE RETR *************************/
 
   /************************* INIZIO AZIONE STOR *************************/
   exec_stor:
-  do_stor_cmd(sockd);
+  ret_val = do_stor_cmd(sockd);
+  client_errors_handler(sockd, ret_val);
   goto exec_switch;
   /************************* FINE AZIONE STOR *************************/
 
   /************************* INIZIO AZIONE DELE *************************/
   exec_delete:
-  do_dele_cmd(sockd);
+  ret_val = do_dele_cmd(sockd);
+  client_errors_handler(sockd, ret_val);
   goto exec_switch;
   /************************* FINE AZIONE DELE *************************/
 
   /************************* INIZIO AZIONE MKD *************************/
   exec_mkdir:
-  do_mkd_cmd(sockd);
+  ret_val = do_mkd_cmd(sockd);
+  client_errors_handler(sockd, ret_val);
   goto exec_switch;
   /************************* FINE AZIONE MKD *************************/
 
   /************************* INIZIO RICHIESTA RMD *************************/
   exec_rmdir:
-  do_rmd_cmd(sockd);
+  ret_val = do_rmd_cmd(sockd);
+  client_errors_handler(sockd, ret_val);
   goto exec_switch;
   /************************* FINE AZIONE RMD *************************/
 
   /************************* INIZIO AZIONE RNM *************************/
   exec_rename:
-  do_rnm_cmd(sockd);
+  ret_val = do_rnm_cmd(sockd);
+  client_errors_handler(sockd, ret_val);
   goto exec_switch;
   /************************* FINE AZIONE RNM *************************/
 
