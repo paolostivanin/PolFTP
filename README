@@ -23,7 +23,7 @@ Requisiti
 
 * GCC/Clang	: per compilare i programmi (per Clang **obbligatoria versione >= 3.1**, per GCC consigliata v4.4.0 e maggiori)
 * Make      	: per lanciare il Makefile
-* GNU/Linux	: i software sono stati sviluppati su ambienti GNU/Linux e quindi **NON** compileranno nè su ambienti MS Windows e, molto probabilmente, nemmeno su ambienti MAC OSX.
+* GNU/Linux	: i software sono stati sviluppati su ambienti GNU/Linux e quindi **NON** compileranno su ambienti MS Windows e, *molto probabilmente*, nemmeno su ambienti MAC OSX.
 * Build Tools	: ovvero Autoconf e Automake **necessari** per controllare le dipendenze richieste durante la compilazione
 
 Compilazione
@@ -60,10 +60,7 @@ Per generare l'hash della password bisogna **prima** compilare i sorgenti *(per 
 
 Licenza
 -------
-Il software è rilasciato sotto due tipi di licenza, una per il client e l'altra per il server.<br>
-Il client FTP è rilasciato sotto licenza GPL:<br>
-<http://www.gnu.org/licenses/gpl-3.0.html><br>
-mentre il server FTP è rilasciato sotto licenza AGPL:<br>
+**Tutto** il codice presente è rilasciato sotto licenza **GNU AGPL v3** e maggiori.<br>
 <http://www.gnu.org/licenses/agpl-3.0.html><br>
 
 Sito web

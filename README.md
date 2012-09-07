@@ -60,10 +60,7 @@ Per generare l'hash della password bisogna **prima** compilare i sorgenti *(per 
 
 Licenza
 -------
-Il software è rilasciato sotto due tipi di licenza, una per il client e l'altra per il server.<br>
-Il client FTP è rilasciato sotto licenza GPL:<br>
-<http://www.gnu.org/licenses/gpl-3.0.html><br>
-mentre il server FTP è rilasciato sotto licenza AGPL:<br>
+**Tutto** il codice presente è rilasciato sotto licenza **GNU AGPL v3** e maggiori.<br>
 <http://www.gnu.org/licenses/agpl-3.0.html><br>
 
 Sito web

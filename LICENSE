@@ -1,30 +1,7 @@
-			GNU GENERAL PUBLIC LICENSE
-			  Version 3, 29 June 2007
-
-This file is part of FTPUtils (client and generate_sha256).
-
-Copyright (C) 2012, Paolo Stivanin aka "Polslinux"
-All rights reserved.
-
-FTPClient is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-FTPClient is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with FTPClient. If not, see <http://www.gnu.org/licenses/>.
-
-----------------------------------------------------------------------
-
                     GNU AFFERO GENERAL PUBLIC LICENSE
                        Version 3, 19 November 2007
 
-This file is part of FTPUtils (server).
+This file is part of FTPUtils.
 
 Copyright (C) 2012, Paolo Stivanin aka "Polslinux"
 All rights reserved.
