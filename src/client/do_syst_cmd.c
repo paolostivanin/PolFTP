@@ -20,15 +20,15 @@ int do_syst_cmd(const int f_sockd){
   memset(buf, 0, sizeof(buf));
   strcpy(buf, "SYST");
   if(send(f_sockd, buf, 5, 0) < 0){
-    perror("Errore durante l'invio richiesta SYST");
+    perror("Error on sending SYST request");
     return -1;
   }
   if(recv(f_sockd, &buf_len, sizeof(buf_len), MSG_WAITALL) < 0){
-    perror("Errore durante ricezione lunghezza buffer");
+    perror("Error on receving buffer's length");
     return -1;
   }
   if(recv(f_sockd, buf, buf_len, 0) < 0){
-    perror("Errore durante la ricezione risposta SYST");
+    perror("Error on receving SYST confirmation");
     return -1;
   }
   conferma = strtok(buf, "\0");

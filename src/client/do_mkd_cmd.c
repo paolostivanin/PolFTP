@@ -21,29 +21,29 @@ int do_mkd_cmd(const int f_sockd){
 
   memset(tmp_buf, 0, sizeof(tmp_buf));
   memset(buf, 0, sizeof(buf));
-  printf("Inserire il nome della cartella da creare: ");
+  printf("Directory name: ");
   if(fgets(tmp_buf, BUFFGETS, stdin) == NULL){
-    perror("fgets nome file");
+    perror("Fgets dir name");
     return -1;
   }
   client_dir_name = strtok(tmp_buf, "\n");
   dir_name_len = strlen(client_dir_name)+1;
   if(send(f_sockd, &dir_name_len, sizeof(dir_name_len), 0) < 0){
-    perror("Errore invio lunghezza dirname");
+    perror("Error on sending the dir name length");
     return -1;
   }
   sprintf(buf, "MKD %s", client_dir_name);
   if(send(f_sockd, buf, dir_name_len+4, 0) < 0){
-    perror("Errore durante l'invio del nome della cartella");
+    perror("Error on sending the MKD request");
     return -1;
   }
   if(recv(f_sockd, buf, 3, 0) < 0){
-    perror("Errore ricezione conferma cartella");
+    perror("Error on receving MKD confirmation");
     return -1;
   }
   conferma = strtok(buf, "\0");
   if(strcmp(conferma, "NO") == 0){
-    printf("ERRORE: la cartella non può essere creata\n");
+    printf("ERROR: the directory cannot be created.\n");
     return -1;
   } else printf("250 MKD OK\n");
   memset(tmp_buf, 0, sizeof(tmp_buf));

@@ -21,9 +21,9 @@ int do_dele_cmd(const int f_sockd){
 
   memset(dirp, 0, sizeof(dirp));
   memset(buf, 0, sizeof(buf));
-  printf("Inserire il nome del file da eliminare: ");
+  printf("File to delete: ");
   if(fgets(dirp, BUFFGETS, stdin) == NULL){
-    perror("fgets nome file");
+    perror("Fgets file name");
     return -1;
   }
   client_dele_filename = NULL;
@@ -32,21 +32,21 @@ int do_dele_cmd(const int f_sockd){
   s_len = 0;
   s_len = strlen(client_dele_filename)+1;
   if(send(f_sockd, &s_len, sizeof(s_len), 0) < 0){
-    perror("Errore durante l'invio della lunghezza del nome del file");
+    perror("Error on sending the file name length");
     return -1;
   }
   sprintf(buf, "DELE %s", client_dele_filename);
   if(send(f_sockd, buf, s_len+5, 0) < 0){
-    perror("Errore durante l'invio del nome del file");
+    perror("Error on sending the file name");
     return -1;
   }
   if(recv(f_sockd, buf, 3, 0) < 0){
-    perror("Errore ricezione conferma file");
+    perror("Error on receving the DELE confirmation");
     return -1;
   }
   conferma = strtok(buf, "\0");
   if(strcmp(conferma, "NO") == 0){
-    printf("ERRORE: il file richiesto non esiste o non si può cancellare\n");
+    printf("ERROR: the file doesn't exist or cannot be deleted.\n");
     return -1;
   } else printf("250 DELE OK\n");
   memset(dirp, 0, sizeof(dirp));

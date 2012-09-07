@@ -21,43 +21,43 @@ int do_rnm_cmd(const int f_sockd){
 
   memset(tmp_buf, 0, sizeof(tmp_buf));
   memset(buf, 0, sizeof(buf));
-  printf("Inserire il nome del file da rinominare: ");
+  printf("Name of the file that will be renamed: ");
   if(fgets(tmp_buf, BUFFGETS, stdin) == NULL){
-    perror("fgets nome file");
+    perror("Fgets file name");
     return -1;
   }
   file_to_delete = strtok(tmp_buf, "\n");
   len_fname = strlen(file_to_delete)+1;
   if(send(f_sockd, &len_fname, sizeof(len_fname), 0) < 0){
-    perror("Errore invio len fname");
+    perror("Error on sending the file name length");
     return -1;
   }  
   sprintf(buf, "RNFR %s", file_to_delete);
   if(send(f_sockd, buf, len_fname+5, 0) < 0){
-    perror("Errore durante l'invio del nome del file");
+    perror("Error on sending the file name");
     return -1;
   }  
   memset(tmp_buf, 0, sizeof(tmp_buf));
   memset(buf, 0, sizeof(buf));
-  printf("Inserire il nuovo nome del file: ");
+  printf("New file name: ");
   if(fgets(tmp_buf, BUFFGETS, stdin) == NULL){
-    perror("fgets nome file");
+    perror("Fgets file name");
     return -1;
   }
   file_to_delete = NULL;
   file_to_delete = strtok(tmp_buf, "\n");
   len_fname = strlen(file_to_delete)+1;
   if(send(f_sockd, &len_fname, sizeof(len_fname), 0) < 0){
-    perror("Errore invio len fname");
+    perror("Error on sending the file name length");
     return -1;
   }
   sprintf(buf, "RNTO %s", tmp_buf);
   if(send(f_sockd, buf, len_fname+5, 0) < 0){
-    perror("Errore durante l'invio del nome del file");
+    perror("Error on sending the file name");
     return -1;
   }
   if(recv(f_sockd, buf, 3, 0) < 0){
-    perror("Errore ricezione conferma RNM");
+    perror("Error on receving the RNM confirmation");
     return -1;
   }
   conferma = NULL;

@@ -24,9 +24,9 @@ int do_retr_cmd(const int f_sockd){
   
   memset(dirp, 0, sizeof(dirp));
   memset(buf, 0, sizeof(buf));
-  printf("Inserire il nome del file da scaricare: ");
+  printf("File to download: ");
   if(fgets(dirp, BUFFGETS, stdin) == NULL){
-    perror("fgets nome file");
+    perror("Fgets file name");
     return -1;
   }
   filename = NULL;
@@ -34,34 +34,37 @@ int do_retr_cmd(const int f_sockd){
   fn_len = 0;
   fn_len = strlen(filename)+1;
   if(send(f_sockd, &fn_len, sizeof(fn_len), 0) < 0){
-    perror("Errore durante l'invio della lunghezza del nome del file");
+    perror("Error on sending the file length");
     return -1;
   }
   sprintf(buf, "RETR %s", filename);
   if(send(f_sockd, buf, fn_len+5, 0) < 0){
-    perror("Errore durante l'invio del nome del file");
+    perror("Error on sending the file name");
     return -1;
   }
   if(recv(f_sockd, buf, 3, 0) < 0){
-    perror("Errore ricezione conferma file");
+    perror("Error on receving RETR confirmation");
     return -1;
   }
   conferma = NULL;
   conferma = strtok(buf, "\0");
   if(strcmp(conferma, "NO") == 0){
-    printf("ERRORE: il file richiesto non esiste\n");
+    printf("ERROR: the requested file doesn't exist\n");
     return -1;
   }
-  recv(f_sockd, &fsize, sizeof(fsize), MSG_WAITALL);
+  if(recv(f_sockd, &fsize, sizeof(fsize), MSG_WAITALL) < 0){
+    perror("Error on receving the file size");
+    return -1;
+  }
   fd = open(filename, O_CREAT | O_WRONLY, 0644);
   if (fd  < 0) {
-    perror("open");
+    perror("Error: the file cannot be created.");
     return -1;
   }
   fsize_tmp = fsize;
   filebuffer = malloc(fsize);
   if(filebuffer == NULL){
-    perror("malloc");
+    perror("Error on memory allocation (malloc)");
     close(fd);
     return -1;
   }
@@ -84,7 +87,7 @@ int do_retr_cmd(const int f_sockd){
   close(fd); /* la chiusura del file va qui altrimenti client entra in loop infinito e si scrive all'interno del file */
   memset(buf, 0, sizeof(buf));
   if(recv(f_sockd, buf, 33, 0) < 0){
-    perror("Errore ricezione 226");
+    perror("Error on receving the 226 message");
     return -1;
   }
   printf("%.32s\n", buf);

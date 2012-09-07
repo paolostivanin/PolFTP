@@ -33,31 +33,31 @@
 	* IMPROVED: added configure script
 	* IMPROVED: README
 
-11/09/2012 - v1.0-rc
+10/09/2012 - v1.0-rc
 	* TRANSLATION: from ITA to ENG
 	* TEST: done various stress test
 
-14/09/2012 - v1.0.0
+11/09/2012 - v1.0.0
 	* Newstable release
 
-??/??/???? - v1.1-alpha1
+??/??/2013 - v1.1-alpha
 	* ADDED: log file (connections + actions);
 	* ADDED: SQLite3 db
 
-??/??/???? - v1.1-rc
+??/??/2013 - v1.1-beta
 	* IMPROVED: README
 	* TEST: stress test
 	
-??/??/???? - v1.1.0
+??/??/2013 - v1.1.0
 	* Newstable release
 
-??/??/???? - v1.2-alpha1
+??/??/2013 - v1.2-alpha
 	* IMPROVED: more info when an error occurs
 	* ADDED: FTPS (thanks to OpenSSL)
 
-??/??/???? - v1.2-rc
+??/??/2013 - v1.2-beta
 	* IMPROVED: README
 	* TEST: stress test
 
-??/??/???? - v1.2.0
+??/??/2013 - v1.2.0
 	* Newstable relase

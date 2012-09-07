@@ -28,31 +28,31 @@ int do_list_cmd(const int f_sockd){
 
   strcpy(buf, "LIST");
   if(send(f_sockd, buf, 5, 0) < 0){
-    perror("Errore durante l'invio richiesta LIST");
+    perror("Error on sending the LIST request");
     return -1;
   }
   if(recv(f_sockd, &fsize, sizeof(fsize), 0) < 0){
-    perror("Errore nella ricezione della grandezza del file");
+    perror("Error on receving the file size");
     return -1;
   }
   if(!(tmpfname = tmpnam(tmpname))){ /* genero il nome del tmpfile (tip /tmp/X6Tr4Y) */
-    perror("Errore nome tmp file");
+    perror("Error on tmp file name generation.");
     return -1;
   }
   if((fd = open(tmpfname, O_CREAT | O_WRONLY,0644)) < 0){
-    perror("open file list");
+    perror("Error: the tmp file cannot be created");
     return -1;
   }
   fsize_tmp = fsize;
   fbuf = malloc(fsize);
   if(fbuf == NULL){
-    perror("malloc");
+    perror("Error on memory allocation (malloc)");
     close(fd);
     return -1;
   }
   while((total_bytes_read != fsize) && ((nread = read(f_sockd, fbuf, fsize_tmp)) > 0)){
     if(write(fd, fbuf, nread) != nread){
-      perror("write list file");
+      perror("Error on writing file");
       close(fd);
       return -1;
     }
@@ -62,7 +62,7 @@ int do_list_cmd(const int f_sockd){
   close(fd);
   printf("----- FILE LIST -----\n");
   if((fp = fopen(tmpfname, "r+")) == NULL){
-    perror("open file for read");
+    perror("Error on opening the tmp file for read");
     return -1;
   }
   while((c=getc(fp)) != EOF){
@@ -71,7 +71,7 @@ int do_list_cmd(const int f_sockd){
   fclose(fp);
   printf("----- END FILE LIST -----\n");
   if(remove( tmpfname ) == -1 ){
-    perror("errore cancellazione file");
+    perror("Error: the tmp file cannot be deleted");
     return -1;
   }
   memset(buf, 0, sizeof(buf));

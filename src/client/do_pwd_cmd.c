@@ -20,16 +20,16 @@ int do_pwd_cmd(const int f_sockd){
   memset(buf, 0, sizeof(buf));
   strcpy(buf, "PWD");
   if(send(f_sockd, buf, 4, 0) < 0){
-    perror("Errore durante l'invio richiesta PWD");
+    perror("Error on sending the PWD request");
 		return -1;
 	}
 	memset(buf, 0, sizeof(buf));
   if(recv(f_sockd, &pwd_buf_len, sizeof(pwd_buf_len), MSG_WAITALL) < 0){
-    perror("Errore ricezione lunghezza buffer");
+    perror("Error on receving the buffer length");
     return -1;
   }
 	if(recv(f_sockd, buf, pwd_buf_len, 0) < 0){
-   	perror("Errore ricezione PWD");
+   	perror("Error on receving PWD");
    	return -1;
   }
 	conferma = strtok(buf, "\0");

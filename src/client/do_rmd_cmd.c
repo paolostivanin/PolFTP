@@ -21,29 +21,29 @@ int do_rmd_cmd(const int f_sockd){
 
   memset(tmp_buf_rmd, 0, sizeof(tmp_buf_rmd));
   memset(buf, 0, sizeof(buf));
-  printf("Inserire il nome della cartella da eliminare: ");
+  printf("Directory name (to delete): ");
   if(fgets(tmp_buf_rmd, BUFFGETS, stdin) == NULL){
-    perror("fgets nome file");
+    perror("Fgets dir name");
     return -1;
   }
   dir_name_delete = strtok(tmp_buf_rmd, "\n");
   len_dirname = strlen(dir_name_delete)+1;
   if(send(f_sockd, &len_dirname, sizeof(len_dirname), 0) < 0){
-    perror("Errore invio lunghezza dirname da eliminare");
+    perror("Error on sending the dir name length");
     return -1;
   }
   sprintf(buf, "RMD %s", dir_name_delete);
   if(send(f_sockd, buf, len_dirname+4, 0) < 0){
-    perror("Errore durante l'invio del nome della cartella");
+    perror("Error on sending the RMD request");
     return -1;
   }
   if(recv(f_sockd, buf, 3, 0) < 0){
-    perror("Errore ricezione conferma cartella");
+    perror("Error on receving the RMD confirmation");
     return -1;
   }
   conferma = strtok(buf, "\0");
   if(strcmp(conferma, "NO") == 0){
-    printf("ERRORE: impossibile eliminare la cartella\n");
+    printf("ERROR: the directory cannot be deleted\n");
     return -1;
   } else printf("250 RMD OK\n");
   memset(tmp_buf_rmd, 0, sizeof(tmp_buf_rmd));
