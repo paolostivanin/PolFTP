@@ -18,7 +18,7 @@ int file_list(char *path, char ***ls){
   *ls = NULL;
   dp = opendir (path);
   if(dp == NULL){
-    fprintf(stderr, "Non esiste la directory: %s\n", path);
+    fprintf(stderr, "The directory: '%s' doesn't exist\n", path);
     return -1;
   }
 
@@ -34,11 +34,11 @@ int file_list(char *path, char ***ls){
   ep = readdir(dp);
   while(ep != NULL){
     if((file = open(ep->d_name, O_RDONLY)) < 0){
-      perror("apertura file");
+      perror("Opening file");
       return -1;
     }
     if(fstat(file, &fileStat) != 0){
-      perror("filestat");
+      perror("error on fstat");
       free(*ls);
       close(file);
       return -1;

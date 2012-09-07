@@ -22,7 +22,7 @@ int check_login_details(char *u, char *p){
 
 	fp = fopen("/etc/ftputils/auth", "r");
 	if(fp == NULL){
-		printf("Errore apertura file\n");
+		printf("Error: the 'auth' file cannot be opened for read\n");
 		free(u);
 		free(p);
 		free(line);

@@ -13,7 +13,7 @@ void server_errors_handler(const int f_sockd, const int f_retval){
   /* aspetto conferma dal client di OKK o ERR */
   memset(buffer, 0, sizeof(buffer));
   if(recv(f_sockd, buffer, 4, MSG_WAITALL) < 0){
-    perror("Error on recv syst retval");
+    perror("Error on recv retval");
     exit(1);
   }
   is_err = strtok(buffer, "\0");
@@ -27,7 +27,7 @@ void server_errors_handler(const int f_sockd, const int f_retval){
     memset(buffer, 0, sizeof(buffer));
     strcpy(buffer, "ERR");
     if(send(f_sockd, buffer, 4, 0) < 0){
-        perror("Error on sending the syst retval");
+        perror("Error on sending the retval");
         exit(1);
     }
     return;
@@ -36,7 +36,7 @@ void server_errors_handler(const int f_sockd, const int f_retval){
     memset(buffer, 0, sizeof(buffer));
     strcpy(buffer, "OKK");
     if(send(f_sockd, buffer, 4, 0) < 0){
-        perror("Error on sending the syst retval");
+        perror("Error on sending the retval");
         exit(1);
     }
   }

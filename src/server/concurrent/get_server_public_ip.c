@@ -23,7 +23,7 @@ char * get_public_ip(void){
     curl = curl_easy_init();
 
     if(!(tmpfp = tmpfile())){
-        perror("errore creazione temp file");
+        perror("error on tmp file creation");
         return -1;
     }
 

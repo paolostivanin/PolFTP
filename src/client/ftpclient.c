@@ -50,23 +50,23 @@ int main(int argc, char *argv[]){
   serv_addr.sin_addr.s_addr = ((struct in_addr*)(hp->h_addr)) -> s_addr; /* memorizzo il tutto nella struttura serv_addr */
 
   if((sockd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-    perror("Errore nella creazione della socket");
+    perror("Error during socket creation");
     exit(1);
   }
 
   if(connect(sockd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0){
-    perror("Errore nella connessione");
+    perror("Connection error");
     close(sockd);
     exit(1);
   }
   /************************* MESSAGGIO DI BENVENUTO *************************/
   memset(buffer, 0, sizeof(buffer));
   if(recv(sockd, &len_string, sizeof(len_string), MSG_WAITALL) < 0){
-    perror("Errore ricezione len buffer");
+    perror("Error on receving the buffer length");
     onexit(sockd, 0, 0, 1);
   }
   if(recv(sockd, buffer, len_string, 0) < 0){
-    perror("Errore nella ricezione del messaggio di benvenuto\n");
+    perror("Error on receving the 'Welcome' message\n");
     onexit(sockd, 0, 0, 1);
    }
   printf("%s\n", buffer);
@@ -79,14 +79,14 @@ int main(int argc, char *argv[]){
   tcgetattr( STDIN_FILENO, &oldt);
   newt = oldt;
 
-  printf("User: ");
+  printf("USER: ");
   /* Which will read everything up to the newline into the string you pass in, then will consume
    * a single character (the newline) without assigning it to anything (that '*' is 'assignment suppression'). */
   if(scanf("%m[^\n]%*c", &sInfo.user) == EOF){
     perror("scanf user");
     onexit(sockd, 0, 0, 1);
   }
-  printf("Pass: ");
+  printf("PASS: ");
   /* imposto il bit appropriato nella struttura newt */
   newt.c_lflag &= ~(ECHO); 
   /* imposto il nuovo bit nell'attuale STDIN_FILENO */
@@ -101,11 +101,11 @@ int main(int argc, char *argv[]){
   sprintf(buffer, "USER %s\n", sInfo.user);
   len_string = strlen(buffer)+1;
   if(send(sockd, &len_string, sizeof(len_string), 0) < 0){
-    perror("Errore invio len buffer user");
+    perror("Error on sending the username length");
     onexit(sockd, 0, 0, 1);
   }
   if(send(sockd, buffer, len_string, 0) < 0){
-    perror("Errore durante l'invio di USER");
+    perror("Error on sending the username");
     onexit(sockd, 0, 0, 1);
   }
   memset(buffer, 0, sizeof(buffer));
@@ -115,11 +115,11 @@ int main(int argc, char *argv[]){
   sprintf(buffer, "PASS %s\n", sInfo.pass);
   len_string = strlen(buffer)+1;
   if(send(sockd, &len_string, sizeof(len_string), 0) < 0){
-    perror("Errore invio len pass buffer");
+    perror("Error on sending the password length");
     onexit(sockd, 0, 0, 1);
   }
   if(send(sockd, buffer, len_string, 0) < 0){
-    perror("Errore invio pass buffer");
+    perror("Error on sending password");
     onexit(sockd, 0, 0, 1);
   }
   memset(buffer, 0, sizeof(buffer));
@@ -127,11 +127,11 @@ int main(int argc, char *argv[]){
 
   /************************* RICEZIONE CONFERMA LOG IN *************************/
   if(recv(sockd, &len_string, sizeof(len_string), MSG_WAITALL) < 0){
-    perror("Errore ricezione len buffer conferma login");
+    perror("Error on sending LOG IN length");
     onexit(sockd, 0, 0, 1);
   }
   if(recv(sockd, buffer, len_string, 0) < 0){
-    perror("Errore nella ricezione dellaa conferma LOG IN");
+    perror("Error on receving LOG IN confirmation");
     onexit(sockd, 0, 0, 1);
   }
   sInfo.conferma = strtok(buffer, "\0");
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]){
   exec_switch:
   printf("\nFTPUtils:~$ ");
   if(scanf("%m[^\n]%*c", &sInfo.scelta) < 1){
-    perror("Errore scanf scelta");
+    perror("scanf error");
     onexit(sockd, 0, 0, 1);
   }
   for(i=0; i<(int)strlen(sInfo.scelta); i++){
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]){
       }
     }
     else{
-      printf("%c non è un carattere\n", sInfo.scelta[i]);
+      printf("%c isn't a char\n", sInfo.scelta[i]);
       free(sInfo.scelta);
       goto exec_switch;
     }
@@ -179,18 +179,18 @@ int main(int argc, char *argv[]){
   if((strcmp("RNM", sInfo.scelta) == 0)) goto prepara;
   if((strcmp("EXIT", sInfo.scelta) == 0)) goto prepara;
   if((strcmp("HELP", sInfo.scelta) == 0)) goto prepara;
-  printf("Comando errato. Scrivere HELP per l'aiuto.\n"); goto exec_switch;
+  printf("Wrong command. Type HELP to see the list of available commands.\n"); goto exec_switch;
 
   prepara:
   if(strcmp(sInfo.scelta, "HELP") == 0) goto exec_help;
   strcpy(buffer, sInfo.scelta);
   len_string = strlen(buffer)+1;
   if(send(sockd, &len_string, sizeof(len_string), 0) < 0){
-    perror("Errore invio len buffer scelta");
+    perror("Error on sending the buffer length");
     onexit(sockd, 0, 0, 1);
   }
   if(send(sockd, buffer, len_string, 0) < 0){
-    perror("Errore durante l'invio azione");
+    perror("Error on sending the action");
     onexit(sockd, 0, 0, 1);
   }
   
@@ -287,7 +287,7 @@ int main(int argc, char *argv[]){
   exec_exit:
   memset(buffer, 0, sizeof(buffer));
   if(recv(sockd, buffer, 12, 0) < 0){
-    perror("Errore ricezione 221");
+    perror("Error on receving 221 goodbye");
     onexit(sockd, 0, 0, 1);
   }
   printf("%s", buffer);
@@ -300,7 +300,7 @@ int main(int argc, char *argv[]){
 
 void check_before_start(int argc, char *argv[]){
   if(argc != 3){
-    printf("Uso: %s <hostname> <numero porta>\n", argv[0]);
+    printf("Usage: %s <hostname> <port number>\n", argv[0]);
     exit(EXIT_FAILURE);
   }
 }
