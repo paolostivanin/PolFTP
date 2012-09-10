@@ -9,7 +9,7 @@ Lo studente sviluppatore del progetto è:
 
 Versione
 --------
-La versione **stabile più recente** è la **v1.0-beta1** scaricabile da questo link: https://github.com/polslinux/FTPUtils/zipball/v1.0-beta1<br>
+La versione **stabile più recente** è la **v1.0-rc** scaricabile da questo link: https://github.com/polslinux/FTPUtils/zipball/v1.0-rc<br>
 Se invece si desidera utilizzare la versione in sviluppo bisognare dare i seguenti comandi:<br>
 
 - `git clone https://github.com/polslinux/FTPUtils.git`<br>
