@@ -22,23 +22,23 @@ int do_server_fork_pwd_cmd(const int f_sockd){
 
   memset(buf, 0, sizeof(buf));
   if(recv(f_sockd, buf, 4, 0) < 0){
-    perror("Errore nella ricezione comando PWD");
+    perror("Error on receiving PWD request");
     return -1;
   }
   other = NULL;
   other = strtok(buf, "\n");
   if(strcmp(other, "PWD") == 0){
-    printf("Ricevuta richiesta PWD\n");
+    printf("Received PWD request\n");
   } else return -1; 
   memset(buf, 0, sizeof(buf));
   sprintf(buf, "PWD: %s", (char *)(intptr_t)get_current_dir_name());
   pwd_buf_len = strlen(buf)+1;
   if(send(f_sockd, &pwd_buf_len, sizeof(pwd_buf_len), 0) < 0){
-    perror("Errore invio lunghezza buffer");
+    perror("Error on sending buffer length");
     return -1;
   }
   if(send(f_sockd, buf, pwd_buf_len, 0) < 0){
-    perror("Errore durante l'invio PWD");
+    perror("Error on sending buffer");
     return -1;
   }
   memset(buf, 0, sizeof(buf));

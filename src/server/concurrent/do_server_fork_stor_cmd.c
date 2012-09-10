@@ -22,11 +22,11 @@ int do_server_fork_stor_cmd(const int f_sockd){
 
   memset(buf, 0, sizeof(buf));
   if(recv(f_sockd, &fn_size, sizeof(fn_size), MSG_WAITALL) < 0){
-    perror("Errore durante la ricezione della lunghezza del nome del file");
+    perror("Error on receiving the file name length");
     return -1;
   }
   if(recv(f_sockd, buf, fn_size+5, 0) < 0){
-    perror("Errore ricezione nome file");
+    perror("Error on receiving the file name");
     return -1;
   }
   other = NULL;
@@ -36,25 +36,25 @@ int do_server_fork_stor_cmd(const int f_sockd){
   stor_filename = strdup(stor_filename);
 
   if(strcmp(other, "STOR") == 0){
-    printf("Ricevuta richiesta STOR\n");
+    printf("Received STOR request\n");
   } else return -1;
 
   memset(buf, 0, sizeof(buf));
   if(recv(f_sockd, buf, 3, 0) < 0){
-    perror("Errore ricezione conferma file");
+    perror("Error on receiving the buffer");
     return -1;
   }    
 
   other = NULL;
   other = strtok(buf, "\0");
   if(strcmp(other, "NO") == 0){
-    printf("ERRORE: il file richiesto non esiste\n");
+    printf("ERROR: requested file doesn't exist\n");
     return -1;
   }
 
   fsize = 0;
   if(recv(f_sockd, &fsize, sizeof(fsize), 0) < 0){
-    perror("Errore nella ricezione della grandezza del file");
+    perror("Error on receiving the file size");
     return -1;
   }
   fd = open(stor_filename, O_CREAT | O_WRONLY, 0644);
@@ -83,9 +83,9 @@ int do_server_fork_stor_cmd(const int f_sockd){
   close(fd); /* la chiusura del file va qui altrimenti client entra in loop infinito e si scrive all'interno del file */
 
   memset(buf, 0, sizeof(buf));
-  strcpy(buf, "226 File trasferito correttamente");
-  if(send(f_sockd, buf, 33, 0) < 0){
-    perror("Errore invio conferma upload");
+  strcpy(buf, "226 File successfully transferred");
+  if(send(f_sockd, buf, 34, 0) < 0){
+    perror("Error on sending the upload confirmation");
     return -1;
   }
   memset(buf, 0, sizeof(buf));

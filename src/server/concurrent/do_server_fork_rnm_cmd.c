@@ -23,11 +23,11 @@ int do_server_fork_rnm_cmd(const int f_sockd){
 
   memset(buf, 0, sizeof(buf));
   if(recv(f_sockd, &len_fname_todelete, sizeof(len_fname_todelete), MSG_WAITALL) < 0){
-    perror("Errore ricezione len fname");
+    perror("Error on receiving file name length");
     return -1;
   }
   if(recv(f_sockd, buf, len_fname_todelete+5, 0) < 0){
-    perror("Errore nella ricezione RNFR");
+    perror("Error on receiving RNFR request");
     return -1;
   }
   other = strtok(buf, " ");
@@ -35,7 +35,7 @@ int do_server_fork_rnm_cmd(const int f_sockd){
   oldname = strdup(filename);
   
   if(strcmp(other, "RNFR") == 0){
-    printf("Ricevuta richiesta RNFR\n");
+    printf("Received RNFR request\n");
   }
   else{
     free(oldname);
@@ -45,12 +45,12 @@ int do_server_fork_rnm_cmd(const int f_sockd){
   memset(buf, 0, sizeof(buf));
   len_fname_todelete = 0;
   if(recv(f_sockd, &len_fname_todelete, sizeof(len_fname_todelete), MSG_WAITALL) < 0){
-    perror("Errore ricezione len fname");
+    perror("Error on receiving file name length");
     free(oldname);
     return -1;
   }
   if(recv(f_sockd, buf, len_fname_todelete+5, 0) < 0){
-    perror("Errore nella ricezione RNTO");
+    perror("Error on receiving RNTO request");
     free(oldname);
     return -1;
   }
@@ -59,7 +59,7 @@ int do_server_fork_rnm_cmd(const int f_sockd){
   other = strtok(buf, " ");
   filename = strtok(NULL, "\0");
   if(strcmp(other, "RNTO") == 0){
-    printf("Ricevuta richiesta RNTO\n");
+    printf("Received RNTO request\n");
   }
   else{
     free(oldname);
@@ -74,7 +74,7 @@ int do_server_fork_rnm_cmd(const int f_sockd){
     strcpy(buf, "NO");
   }
   if(send(f_sockd, buf, 3, 0) < 0){
-    perror("Errore durante invio rnm conferma");
+    perror("Error on sending the RNM confirmation");
     free(oldname);
     return -1;
   }

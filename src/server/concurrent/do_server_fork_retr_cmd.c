@@ -27,11 +27,11 @@ int do_server_fork_retr_cmd(const int f_sockd){
   memset(buf, 0, sizeof(buf));
   fn_size = 0;
   if(recv(f_sockd, &fn_size, sizeof(fn_size), MSG_WAITALL) < 0){
-    perror("Errore durante la ricezione della lunghezza del nome del file");
+    perror("Error on receiving the file name length");
     return -1;
   }
   if(recv(f_sockd, buf, fn_size+5, 0) < 0){
-    perror("Errore nella ricezione del nome del file");
+    perror("Error on receiving the file name");
     return -1;
   }
   other = NULL;
@@ -40,15 +40,15 @@ int do_server_fork_retr_cmd(const int f_sockd){
   filename = strtok(NULL, "\0");
 
   if(strcmp(other, "RETR") == 0){
-    printf("Ricevuta richiesta RETR\n");
+    printf("Received RETR request\n");
   } else return -1;
 
   fd = open(filename, O_RDONLY);
   if(fd < 0){
-    fprintf(stderr, "Impossibile aprire il file '%s'\n", filename);
+    fprintf(stderr, "Cannot open the file '%s'\n", filename);
     strcpy(buf, "NO\0");
     if(send(f_sockd, buf, 3, 0) < 0){
-      perror("Errore durante invio");
+      perror("Error on sending NO");
       close(fd);
       return -1;
     }
@@ -56,7 +56,7 @@ int do_server_fork_retr_cmd(const int f_sockd){
   }
   strcpy(buf, "OK\0");
   if(send(f_sockd, buf, 3, 0) < 0){
-    perror("Errore durante invio");
+    perror("Error on sending OK");
     close(fd);
     return -1;
   }
@@ -64,13 +64,13 @@ int do_server_fork_retr_cmd(const int f_sockd){
   fsize = 0;
   fileStat.st_size = 0;
   if(fstat(fd, &fileStat) < 0){
-  perror("Errore fstat");
+  perror("Fstat error");
     close(fd);
     return -1;
   }
   fsize = fileStat.st_size;
   if(send(f_sockd, &fsize, sizeof(fsize), 0) < 0){
-    perror("Errore durante l'invio della grandezza del file\n");
+    perror("Error on sending the file size\n");
     close(fd);
     return -1;
   }
@@ -87,9 +87,9 @@ int do_server_fork_retr_cmd(const int f_sockd){
   close(fd); /* la chiusura del file va qui altrimenti rischio loop infinito e scrittura all'interno del file */
   
   memset(buf, 0, sizeof(buf));
-  strcpy(buf, "226 File trasferito con successo");
-  if(send(f_sockd, buf, 33, 0) < 0){
-    perror("Errore durante l'invio 226");
+  strcpy(buf, "226 File successfully transferred");
+  if(send(f_sockd, buf, 34, 0) < 0){
+    perror("Error on sending 226 message");
     return -1;
   }
   memset(buf, 0, sizeof(buf));

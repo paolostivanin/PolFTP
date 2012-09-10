@@ -43,7 +43,7 @@ int do_retr_cmd(const int f_sockd){
     return -1;
   }
   if(recv(f_sockd, buf, 3, 0) < 0){
-    perror("Error on receving RETR confirmation");
+    perror("Error on receiving RETR confirmation");
     return -1;
   }
   conferma = NULL;
@@ -53,7 +53,7 @@ int do_retr_cmd(const int f_sockd){
     return -1;
   }
   if(recv(f_sockd, &fsize, sizeof(fsize), MSG_WAITALL) < 0){
-    perror("Error on receving the file size");
+    perror("Error on receiving the file size");
     return -1;
   }
   fd = open(filename, O_CREAT | O_WRONLY, 0644);
@@ -86,11 +86,11 @@ int do_retr_cmd(const int f_sockd){
   }
   close(fd); /* la chiusura del file va qui altrimenti client entra in loop infinito e si scrive all'interno del file */
   memset(buf, 0, sizeof(buf));
-  if(recv(f_sockd, buf, 33, 0) < 0){
-    perror("Error on receving the 226 message");
+  if(recv(f_sockd, buf, 34, 0) < 0){
+    perror("Error on receiving the 226 message");
     return -1;
   }
-  printf("%.32s\n", buf);
+  printf("%s\n", buf);
   memset(buf, 0, sizeof(buf));
   memset(dirp, 0, sizeof(dirp));
   free(filebuffer);

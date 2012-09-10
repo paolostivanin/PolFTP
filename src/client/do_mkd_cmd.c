@@ -38,7 +38,7 @@ int do_mkd_cmd(const int f_sockd){
     return -1;
   }
   if(recv(f_sockd, buf, 3, 0) < 0){
-    perror("Error on receving MKD confirmation");
+    perror("Error on receiving MKD confirmation");
     return -1;
   }
   conferma = strtok(buf, "\0");

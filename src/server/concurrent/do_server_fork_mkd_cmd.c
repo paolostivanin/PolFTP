@@ -23,31 +23,31 @@ int do_server_fork_mkd_cmd(const int f_sockd){
 
   memset(buf, 0, sizeof(buf));
   if(recv(f_sockd, &server_dir_name_len, sizeof(server_dir_name_len), MSG_WAITALL) < 0){
-    perror("Errore ricezione lunghezza dirname");
+    perror("Error on receiving the dir name length");
     return -1;
   }
   if(recv(f_sockd, buf, server_dir_name_len+4, 0) < 0){
-    perror("Errore nella ricezione del nome della cartella");
+    perror("Error on receiving the dir name");
     return -1;
   }
   other = strtok(buf, " ");
   server_new_dir_name = strtok(NULL, "\n");
   if(strcmp(other, "MKD") == 0){
-    printf("Ricevuta richiesta MKDIR\n");
+    printf("Received MKD request\n");
   } else return -1;
   
   if(mkdir(server_new_dir_name, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) != 0){
-    fprintf(stderr, "Impossibile creare la cartella '%s'\n", server_new_dir_name);
+    fprintf(stderr, "Cannot create the folder '%s'\n", server_new_dir_name);
     strcpy(buf, "NO");
     if(send(f_sockd, buf, 3, 0) < 0){
-      perror("Errore durante invio");
+      perror("Error on sending NO");
       return -1;
     }
     return -1;
   }
   strcpy(buf, "OK");
   if(send(f_sockd, buf, 3, 0) < 0){
-    perror("Errore durante invio");
+    perror("Error on sending OK");
     return -1;
   }
   memset(buf, 0, sizeof(buf));

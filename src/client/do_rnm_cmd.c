@@ -57,7 +57,7 @@ int do_rnm_cmd(const int f_sockd){
     return -1;
   }
   if(recv(f_sockd, buf, 3, 0) < 0){
-    perror("Error on receving the RNM confirmation");
+    perror("Error on receiving the RNM confirmation");
     return -1;
   }
   conferma = NULL;

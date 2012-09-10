@@ -25,11 +25,11 @@ int do_pwd_cmd(const int f_sockd){
 	}
 	memset(buf, 0, sizeof(buf));
   if(recv(f_sockd, &pwd_buf_len, sizeof(pwd_buf_len), MSG_WAITALL) < 0){
-    perror("Error on receving the buffer length");
+    perror("Error on receiving the buffer length");
     return -1;
   }
 	if(recv(f_sockd, buf, pwd_buf_len, 0) < 0){
-   	perror("Error on receving PWD");
+   	perror("Error on receiving PWD");
    	return -1;
   }
 	conferma = strtok(buf, "\0");

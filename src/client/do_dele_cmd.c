@@ -41,7 +41,7 @@ int do_dele_cmd(const int f_sockd){
     return -1;
   }
   if(recv(f_sockd, buf, 3, 0) < 0){
-    perror("Error on receving the DELE confirmation");
+    perror("Error on receiving the DELE confirmation");
     return -1;
   }
   conferma = strtok(buf, "\0");

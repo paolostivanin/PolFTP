@@ -32,7 +32,7 @@ int do_list_cmd(const int f_sockd){
     return -1;
   }
   if(recv(f_sockd, &fsize, sizeof(fsize), 0) < 0){
-    perror("Error on receving the file size");
+    perror("Error on receiving the file size");
     return -1;
   }
   if(!(tmpfname = tmpnam(tmpname))){ /* genero il nome del tmpfile (tip /tmp/X6Tr4Y) */

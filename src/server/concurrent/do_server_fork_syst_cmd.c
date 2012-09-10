@@ -21,23 +21,23 @@ int do_server_fork_syst_cmd(const int f_sockd){
 
   memset(buf, 0, sizeof(buf));
   if(recv(f_sockd, buf, 5, 0) < 0){
-    perror("Errore ricezione comando SYST");
+    perror("Error on receiving SYST cmd");
     return -1;
   }
   other = NULL;
   other = strtok(buf, "\0");
   if(strcmp(other, "SYST") == 0){
-    printf("Ricevuta richiesta SYST\n");
+    printf("Received SYST request\n");
   } else return -1; 
   get_syst(&sysname);
   sprintf(buf, "%s", sysname);
   buf_len = strlen(buf)+1;
   if(send(f_sockd, &buf_len, sizeof(buf_len), 0) < 0){
-    perror("Errore durante invio lunghezza buffer");
+    perror("Error on sending buffer length");
     return -1;
   }
   if(send(f_sockd, buf, buf_len, 0) < 0){
-    perror("Errore durante l'invio risposta SYST");
+    perror("Error on sending the buffer");
     return -1;
   }
   memset(buf, 0, sizeof(buf));

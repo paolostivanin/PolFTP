@@ -36,7 +36,7 @@ int main(int argc, char *argv[]){
     pid_t child_pid;
 	
 	if((sockd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-		perror("Errore creazione socket\n");
+		perror("Error on socket creation\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -46,12 +46,12 @@ int main(int argc, char *argv[]){
 	serv_addr.sin_addr.s_addr = INADDR_ANY; /* dato che è un server bisogna associargli l'indirizzo della macchina su cui sta girando */
 	
 	if(bind(sockd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0){
-		perror("Errore di bind\n");
+		perror("Bind error\n");
 		onexit(sockd, 0, 0, 1);
 	}
 
 	if(listen(sockd, 20) < 0){
-		perror("Errore nella funzione listen");
+		perror("Error on listen");
         onexit(sockd, 0, 0, 1);
 	}
 	socket_len = sizeof(cli_addr);
@@ -63,11 +63,11 @@ int main(int argc, char *argv[]){
         memset(&cli_addr, 0, sizeof(cli_addr));
 
         if((newsockd = accept(sockd, (struct sockaddr *) &cli_addr, (socklen_t *) &socket_len)) < 0){
-            perror("Errore nella connessione\n");
+            perror("Connection error (accept)\n");
             onexit(newsockd, sockd, 0, 2);
         }
         /* inet_ntoa converte un hostname in un ip decimale puntato */
-        fprintf(stdout, "Ricevuta richiesta di connessione dall' indirizzo %s\n", inet_ntoa(cli_addr.sin_addr));
+        fprintf(stdout, "Received connection from address: %s\n", inet_ntoa(cli_addr.sin_addr));
 
         child_pid = fork();
         if(child_pid < 0){ /* se pid < 0 il processo figlio non è stato generato */
@@ -100,12 +100,12 @@ void do_child(const int child_sock){
     sprintf(buffer, "220 FTPUtils Server [%s]", pubip);
     len_string = strlen(buffer)+1;
     if(send(child_sock, &len_string, sizeof(len_string), 0) < 0){
-        perror("Errore invio len buffer");
+        perror("Error on sending buffer length");
         close(child_sock);
         exit(1);
     }
     if(send(child_sock, buffer, len_string, 0) < 0){
-        perror("Errore durante l'invio");
+        perror("Error on sending the buffer");
         close(child_sock);
         exit(1);
     }
@@ -117,12 +117,12 @@ void do_child(const int child_sock){
     /************************* INIZIO PARTE LOGIN *************************/
     /************************* RICEVIAMO NOME UTENTE E MANDIAMO CONFERMA *************************/
     if(recv(child_sock, &len_string, sizeof(len_string), MSG_WAITALL) < 0){
-        perror("Errore ricezione len user buffer");
+        perror("Error on receiving ");
         close(child_sock);
         exit(1);
     }
     if(recv(child_sock, buffer, len_string, 0) < 0){
-        perror("Errore ricezione del nome utente");
+        perror("Error on receiving USER");
     	close(child_sock);
         exit(1);
     }    	
@@ -136,12 +136,12 @@ void do_child(const int child_sock){
 
     /************************* RICEVIAMO PASSWORD E MANDIAMO CONFERMA *************************/
     if(recv(child_sock, &len_string, sizeof(len_string), MSG_WAITALL) < 0){
-        perror("Errore ricezione len pass buffer");
+        perror("Error on receiving buffer length");
         close(child_sock);
         exit(1);
     }
     if(recv(child_sock, buffer, len_string, 0) < 0){
-        perror("Errore ricezione password");
+        perror("Error on receiving PASS");
     	close(child_sock);
         exit(1);
     }
@@ -154,15 +154,15 @@ void do_child(const int child_sock){
     /************************* INVIO CONFERMA LOG IN *************************/
     login = check_login_details(username, password);
     if(login != 0){
-        strcpy(buffer, "Username o password non esistenti");
+        strcpy(buffer, "Wrong USER or PASS");
         len_string = strlen(buffer)+1;
         if(send(child_sock, &len_string, sizeof(len_string), 0) < 0){
-            perror("Errore invio len buffer login failed");
+            perror("Error on sending buffer length");
             close(child_sock);
             exit(1);
         }
         if(send(child_sock, buffer, len_string, 0) < 0){
-            perror("Errore invio buffer login failed");
+            perror("Error on sending buffer");
             close(child_sock);
             exit(1);
         }
@@ -173,12 +173,12 @@ void do_child(const int child_sock){
     sprintf(buffer, "230 USER %s logged in", username);
     len_string = strlen(buffer)+1;
     if(send(child_sock, &len_string, sizeof(len_string), 0) < 0){
-        perror("Errore invio len buffer conferma login");
+        perror("Error on sending buffer length");
         close(child_sock);
         exit(1);
     }
     if(send(child_sock, buffer, strlen(buffer), 0) < 0){
-        perror("Errore durante l'invio");
+        perror("Error on sending buffer");
         close(child_sock);
         exit(1);
     }
@@ -192,12 +192,12 @@ void do_child(const int child_sock){
     exec_listen_action:
     memset(buffer, 0, sizeof(buffer));
     if(recv(child_sock, &len_string, sizeof(len_string), MSG_WAITALL) < 0){
-        perror("Errore ricezione len buffer scelta");
+        perror("Error on receiving buffer length");
         close(child_sock);
         exit(1);
     }
     if(recv(child_sock, buffer, len_string, 0) < 0){
-        perror("Errore nella ricezione azione\n");
+        perror("Error on receiving buffer\n");
         close(child_sock);
         exit(1);
     }
@@ -302,7 +302,7 @@ void do_child(const int child_sock){
     memset(buffer, 0, sizeof(buffer));
     strcpy(buffer, "221 Goodbye\n");
     if(send(child_sock, buffer, strlen(buffer), 0) < 0){
-        perror("Errore durante l'invio 221");
+        perror("Error on receiving 221 message");
         close(child_sock);
         exit(1);
     }
@@ -310,21 +310,21 @@ void do_child(const int child_sock){
         perror("chdir on default dir");
     }
     memset(buffer, 0, sizeof(buffer));
-    printf("Ricevuta richiesta EXIT\n");
+    printf("Received EXIT request\n");
     close(child_sock);
     /************************* FINE SALUTO FINALE *************************/
 }
 
 void check_before_start(int argc, char *argv[]){
 	if(argc != 2){
-		fprintf(stdout, "Uso: %s <numero porta>\n", argv[0]);
+		fprintf(stdout, "Usage: %s <port number>\n", argv[0]);
 		exit(1);
 	}
 }
 
 void sig_handler(const int signo, const int sockd, const int newsockd){
   if (signo == SIGINT){
-    printf("Ricevuto SIGINT, esco...\n");
+    printf("Received SIGINT, exiting...\n");
     if(newsockd) close(newsockd);
     if(sockd) close(sockd);
     exit(EXIT_SUCCESS);

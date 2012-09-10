@@ -40,11 +40,11 @@ int do_cwd_cmd(const int f_sockd){
   memset(buf, 0, sizeof(buf));
   path_len = 0;
   if(recv(f_sockd, &path_len, sizeof(path_len), MSG_WAITALL) < 0){
-    perror("Error on receving the buffer length");
+    perror("Error on receiving the buffer length");
     return -1;
   }
   if(recv(f_sockd, buf, path_len, 0) < 0){
-    perror("Error on receving the CWD");
+    perror("Error on receiving the CWD");
     return -1;
   }
   path = NULL;

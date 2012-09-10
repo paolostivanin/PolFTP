@@ -62,11 +62,11 @@ int main(int argc, char *argv[]){
   /************************* MESSAGGIO DI BENVENUTO *************************/
   memset(buffer, 0, sizeof(buffer));
   if(recv(sockd, &len_string, sizeof(len_string), MSG_WAITALL) < 0){
-    perror("Error on receving the buffer length");
+    perror("Error on receiving the buffer length");
     onexit(sockd, 0, 0, 1);
   }
   if(recv(sockd, buffer, len_string, 0) < 0){
-    perror("Error on receving the 'Welcome' message\n");
+    perror("Error on receiving the 'Welcome' message\n");
     onexit(sockd, 0, 0, 1);
    }
   printf("%s\n", buffer);
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]){
     onexit(sockd, 0, 0, 1);
   }
   if(recv(sockd, buffer, len_string, 0) < 0){
-    perror("Error on receving LOG IN confirmation");
+    perror("Error on receiving LOG IN confirmation");
     onexit(sockd, 0, 0, 1);
   }
   sInfo.conferma = strtok(buffer, "\0");
@@ -287,7 +287,7 @@ int main(int argc, char *argv[]){
   exec_exit:
   memset(buffer, 0, sizeof(buffer));
   if(recv(sockd, buffer, 12, 0) < 0){
-    perror("Error on receving 221 goodbye");
+    perror("Error on receiving 221 goodbye");
     onexit(sockd, 0, 0, 1);
   }
   printf("%s", buffer);

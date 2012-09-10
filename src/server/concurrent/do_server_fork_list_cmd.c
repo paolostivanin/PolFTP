@@ -31,22 +31,22 @@ int do_server_fork_list_cmd(const int f_sockd){
   memset(buf, 0, sizeof(buf));
 
   if(recv(f_sockd, buf, 5, 0) < 0){ /* i 6 caratteri sono dati da L I S T \0 */
-    perror("Errore nella ricezione comando LIST");
+    perror("Error on receiving the LIST request");
     return -1;
   }
   other = NULL;
   other = strtok(buf, "\0");
   if(strcmp(other, "LIST") == 0){
-    printf("Ricevuta richiesta LIST\n");
+    printf("Received LIST request\n");
   } else return -1;
 
   count = file_list("./", &files);
   if(!(tmpfname = tmpnam(tmpname))){ /* genero il nome del tmpfile (tip /tmp/X6Tr4Y) */
-    perror("Errore nome tmp file");
+    perror("Error tmpfile name");
     return -1;
   }
   if((fp_list = fopen(tmpfname, "w")) == NULL){
-    perror("Impossibile aprire il file per la scrittura LIST");
+    perror("Cannot open tmp file in write mode");
     return -1;
   }
 
@@ -66,13 +66,13 @@ int do_server_fork_list_cmd(const int f_sockd){
   fsize = 0;
   fileStat.st_size = 0;
   if(fstat(fpl, &fileStat) < 0){
-    perror("Errore fstat");
+    perror("Fstat error");
     close(fpl);
     return -1;
   }
   fsize = fileStat.st_size;
   if(send(f_sockd, &fsize, sizeof(fsize), 0) < 0){
-    perror("Errore durante l'invio della grandezza del file\n");
+    perror("Error on sending the file size\n");
     close(fpl);
     return -1;
   }
@@ -89,7 +89,7 @@ int do_server_fork_list_cmd(const int f_sockd){
   }
   close(fpl);
   if(remove( tmpfname ) == -1 ){
-    perror("errore cancellazione file");
+    perror("Error on tmpfile deletion");
     return -1;
   }
   memset(buf, 0, sizeof(buf));

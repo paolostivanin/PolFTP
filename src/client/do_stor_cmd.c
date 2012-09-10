@@ -87,8 +87,8 @@ int do_stor_cmd(const int f_sockd){
   close(fd); /* la chiusura del file va qui altrimenti rischio loop infinito e scrittura all'interno del file */
 
   memset(buf, 0, sizeof(buf));
-  if(recv(f_sockd, buf, 33, 0) < 0){
-    perror("Error on receving the '226 File successfully transferred' confirmation");
+  if(recv(f_sockd, buf, 34, 0) < 0){
+    perror("Error on receiving the '226 File successfully transferred' confirmation");
     return -1;
   }
   printf("%s\n", buf);

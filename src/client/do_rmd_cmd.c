@@ -38,7 +38,7 @@ int do_rmd_cmd(const int f_sockd){
     return -1;
   }
   if(recv(f_sockd, buf, 3, 0) < 0){
-    perror("Error on receving the RMD confirmation");
+    perror("Error on receiving the RMD confirmation");
     return -1;
   }
   conferma = strtok(buf, "\0");

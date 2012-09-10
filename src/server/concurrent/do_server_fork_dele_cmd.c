@@ -24,11 +24,11 @@ int do_server_fork_dele_cmd(const int f_sockd){
   memset(buf, 0, sizeof(buf));
   s_len = 0;
   if(recv(f_sockd, &s_len, sizeof(s_len), 0) < 0){
-    perror("Errore durante la ricezione della lunghezza nome del file");
+    perror("Error on receiving file name length");
     return -1;
   }
   if(recv(f_sockd, buf, s_len+5, 0) < 0){
-    perror("Errore nella ricezione del nome del file");
+    perror("Error on receiving the file name");
     return -1;
   }
   other = NULL;
@@ -36,25 +36,25 @@ int do_server_fork_dele_cmd(const int f_sockd){
   other = strtok(buf, " ");
   server_dele_filename = strtok(NULL, "\n");
   if(strcmp(other, "DELE") == 0){
-    printf("Ricevuta richiesta DELETE\n");
+    printf("Received DELE request\n");
   } else return -1;
   
   fd = open(server_dele_filename, O_WRONLY);
   if(fd < 0){
-    fprintf(stderr, "Impossibile aprire il file '%s'\n", server_dele_filename);
+    fprintf(stderr, "Cannot open the file: '%s'\n", server_dele_filename);
     strcpy(buf, "NO");
     if(send(f_sockd, buf, 3, 0) < 0){
-      perror("Errore durante invio");
+      perror("Error on sending 'fail to open file'");
       return -1;
     }
     return -1;
   }
   retval = remove(server_dele_filename);
   if(retval != 0){
-    perror("File non cancellato");
+    perror("File not deleted");
     strcpy(buf, "NO");
     if(send(f_sockd, buf, 3, 0) < 0){
-      perror("Errore durante invio");
+      perror("Error on sending the 'fail to remove file'");
       return -1;
     }
     close(fd);
@@ -62,7 +62,7 @@ int do_server_fork_dele_cmd(const int f_sockd){
   }
   strcpy(buf, "OK");
   if(send(f_sockd, buf, 3, 0) < 0){
-    perror("Errore durante invio");
+    perror("Error on sending the DELE confirmation");
     return -1;
   }
   memset(buf, 0, sizeof(buf));
