@@ -21,3 +21,6 @@ else
 	echo "--> ERROR: something went wrong, exiting..."
 	exit
 fi
+mv -v src/client/ftpclient $PWD
+mv -v src/server/concurrent/ftpserver $PWD
+echo "--> All done :)"

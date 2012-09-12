@@ -1,69 +1,74 @@
 FTPUtils
 ========
-FTPUtils è sviluppato come progetto per corso di Reti di Calcolatori tenutosi presso il DTI di Crema durante l'anno scolastico 2011/2012.
-Esso è composto da un server e un client FTP che supportano le funzioni: SYST - LIST - PWD - CWD - RETR - STOR - DELE - MKD - RMD - RNM.<br>
-Lo studente sviluppatore del progetto è:
+FTPUtils is a project that is made by a FTP client and a FTP (concurrent) server.
+The supported functions are: SYST - LIST - PWD - CWD - RETR - STOR - DELE - MKD - RMD - RNM.<br>
+These software are developed by:
 
-* Paolo Stivanin (SSRI in presenza, DM270)
+* Paolo Stivanin a.k.a. Polslinux
 
 
-Versione
---------
-La versione **stabile più recente** è la **v1.0-rc** scaricabile da questo link: https://github.com/polslinux/FTPUtils/zipball/v1.0-rc<br>
-Se invece si desidera utilizzare la versione in sviluppo bisognare dare i seguenti comandi:<br>
+Version
+-------
+The **last and stable** version is the **1.0.0** and you can download it from: https://github.com/polslinux/FTPUtils/zipball/v1.0.0<br>
+If you want to use the *dev release* you have to do the following things:<br>
 
 - `git clone https://github.com/polslinux/FTPUtils.git`<br>
 - `cd FTPUtils`<br>
 - `git checkout experimental`<br>
 
-e quindi seguire le istruzioni riportate in *Compilazione (dal punto 3)*.
+and then follow the instructions that are in *Compiling (from number 3)*.
 
-Requisiti
----------
-
-* GCC/Clang	: per compilare i programmi (per Clang **obbligatoria versione >= 3.1**, per GCC consigliata v4.4.0 e maggiori)
-* Make      	: per lanciare il Makefile
-* GNU/Linux	: i software sono stati sviluppati su ambienti GNU/Linux e quindi **NON** compileranno su ambienti MS Windows e, *molto probabilmente*, nemmeno su ambienti MAC OSX.
-* Build Tools	: ovvero Autoconf e Automake **necessari** per controllare le dipendenze richieste durante la compilazione
-
-Compilazione
+Requirements
 ------------
-* Clonare il repository<br>
+
+* GCC or Clang	*(if you use Clang you **must use** a version **>= 3.1**)*
+* Make
+* GNU/Linux		*(FTPUtils **will not** run under MS Windows and maybe it **won't** run also under MAC OSX)*
+* Build Tools	*(Autoconf and Automake)*
+
+Compiling
+---------
+* Clone the repo<br>
 `git clone https://github.com/polslinux/FTPUtils.git`<br>
-* entrare nella root del repository appena clonato:<br>
+* move inside the directory you've just downloaded:<br>
 `cd $PWD/FTPUtils`<br>
-* dare i permessi di esecuzione allo script autogen.sh:<br>
+* give the right permission to autogen.sh:<br>
 `chmod 744 autogen.sh`<br>
-* infine eseguire lo script sopra citato con:<br>
+* and now execute the script:<br>
 `./autogen.sh`<br>
-Verranno quindi creati due files: ftpclient *(in src/client)* e ftpserver *(in src/server/concurrent)*.
+When the script finished you will find `ftpclient` and `ftpserver` on the project root directory.
 
-Come usare client e server
---------------------------
-Il server usa la chiamata di sistema "fork" per generare un nuovo processo ad ogni connessione (max 20 connessioni).<br>
-Per avviare il server basta quindi dare il seguente comando:<br>
-`./ftpserver <numporta>`<br>
-e similarmente per il client:<br>
-`./ftpclient <host> <numporta>`
+How to use ftpclient and ftpserver
+----------------------------------
+`ftpserver` uses the syscall `fork` to generate a new process when a connection arrives (20 connections max).<br>
+To use the `ftpserver` you have just to write:<br>
+`./ftpserver <port number>`<br>
+and to use the `ftpclient`:<br>
+`./ftpclient <host> <port number>`
 
-Autenticazione
+Authentication
 --------------
-Il server supporta una forma di autenticazione basata su un file di testo contenente il nome utente e lo sha256 (ripetuto 50'000 volte) della password.<br>
-Tale file di testo **deve** chiamarsi `auth` e **deve** trovarsi in `/etc/ftputils/` (percorso completo: `/etc/ftputils/auth`).<br>
-Prima di usare il server bisogna quindi **aggiungere nel file auth il nome utente e l'hash della password** delle persone a cui si vuole concedere l'accesso FTP. Le informazioni devono essere inserite nel file nella seguente forma:<br>
+The server will read the USER and the PASS from a file located in `/etc/ftputils/auth`.<br>
+The password isn't written in clear text. You must write the hash of the password repeated 50'000 times.<br>
+**Before** using the server **you must add the USER and the H(PASS)** inside the file `/etc/ftputils/auth` in this way:<br>
 `USERNAME HASH`<br>
 `USERNAME HASH`<br>
 
-Generazione hash password
--------------------------
-Per generare l'hash della password bisogna **prima** compilare i sorgenti *(per il come vedere sopra)* e **poi** spostarsi nella cartella `src` del progetto e dare il seguente comando: `./generate_sha256`. A questo punto basta inserire 2 volte la password e ne verrà generato l'hash.
+Generate password hash
+----------------------
+You must generate the hash of the password if you want to login into the `ftpserver`.<br>
+Follow these simple steps to do it:<br>
 
-Licenza
+* Compile the sources
+* `cd src` and then execute `./generate_sha256`
+* Type and re-type your password and then write the hash into the `auth` file.
+
+License
 -------
-**Tutto** il codice presente è rilasciato sotto licenza **GNU AGPL v3** e maggiori.<br>
+All the code is released under the license GNU AGPL v3 and above.<br>
 <http://www.gnu.org/licenses/agpl-3.0.html><br>
 
-Sito web
+Web Site
 --------
-Sito web dello sviluppatore:	<http://www.polslinux.it><br>
-Sito web del progetto:			<https://github.com/polslinux/FTPUtils>
+Developer web site:	<http://www.polslinux.it><br>
+Project web site:	<https://github.com/polslinux/FTPUtils>
