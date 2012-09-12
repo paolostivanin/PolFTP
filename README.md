@@ -1,8 +1,8 @@
 FTPUtils
 ========
-FTPUtils is a project that is made by a FTP client and a FTP (concurrent) server.
+FTPUtils is a project that is made by a FTP client and a FTP (concurrent) server.<br>
 The supported functions are: SYST - LIST - PWD - CWD - RETR - STOR - DELE - MKD - RMD - RNM.<br>
-These software are developed by:
+It is developed by:
 
 * Paolo Stivanin a.k.a. Polslinux
 
@@ -21,10 +21,10 @@ and then follow the instructions that are in *Compiling (from number 3)*.
 Requirements
 ------------
 
-* GCC or Clang	*(if you use Clang you **must use** a version **>= 3.1**)*
+* GCC or Clang	_(if you use Clang you **must use** a version **>= 3.1**)_
 * Make
-* GNU/Linux		*(FTPUtils **will not** run under MS Windows and maybe it **won't** run also under MAC OSX)*
-* Build Tools	*(Autoconf and Automake)*
+* GNU/Linux		_(FTPUtils **will not** run under MS Windows and maybe it **won't** run also under MAC OSX)_
+* Build Tools	_(Autoconf and Automake)_
 
 Compiling
 ---------
@@ -36,19 +36,19 @@ Compiling
 `chmod 744 autogen.sh`<br>
 * and now execute the script:<br>
 `./autogen.sh`<br>
-When the script finished you will find `ftpclient` and `ftpserver` on the project root directory.
+When the script finished you will find `ftpclient` and `ftpserver` in the project root directory.
 
 How to use ftpclient and ftpserver
 ----------------------------------
-`ftpserver` uses the syscall `fork` to generate a new process when a connection arrives (20 connections max).<br>
-To use the `ftpserver` you have just to write:<br>
+`ftpserver` uses the syscall `fork` to generate a new process when a connection arrives **(max 20)**.<br>
+To use the `ftpserver`:<br>
 `./ftpserver <port number>`<br>
 and to use the `ftpclient`:<br>
 `./ftpclient <host> <port number>`
 
 Authentication
 --------------
-The server will read the USER and the PASS from a file located in `/etc/ftputils/auth`.<br>
+The server will read the USER and the PASS from a file named `auth` located in `/etc/ftputils/`.<br>
 The password isn't written in clear text. You must write the hash of the password repeated 50'000 times.<br>
 **Before** using the server **you must add the USER and the H(PASS)** inside the file `/etc/ftputils/auth` in this way:<br>
 `USERNAME HASH`<br>
@@ -61,7 +61,7 @@ Follow these simple steps to do it:<br>
 
 * Compile the sources
 * `cd src` and then execute `./generate_sha256`
-* Type and re-type your password and then write the hash into the `auth` file.
+* Type and re-type your password and then write the hash into the `auth` file _(near the username)_.
 
 License
 -------
