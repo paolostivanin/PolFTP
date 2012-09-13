@@ -9,7 +9,7 @@ It is developed by:
 
 Version
 -------
-The **last and stable** version is the **1.0.0** and you can download it from: https://github.com/polslinux/FTPUtils/zipball/v1.0.0<br>
+The **last and stable** version is the **1.0.1** and you can download it from: https://github.com/polslinux/FTPUtils/zipball/v1.0.1<br>
 If you want to use the *dev release* you have to do the following things:<br>
 
 - `git clone https://github.com/polslinux/FTPUtils.git`<br>

@@ -40,6 +40,9 @@
 12/09/2012 - v1.0.0
 	* Newstable release
 
+13/09/2012 - v1.0.1
+	* FIXED: bug when exiting if an 'accept' fails;
+
 ??/??/2013 - v1.1-alpha
 	* ADDED: log file (connections + actions);
 	* ADDED: SQLite3 db

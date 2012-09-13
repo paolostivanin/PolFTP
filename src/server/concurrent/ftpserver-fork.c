@@ -1,6 +1,6 @@
 /* Descrizione: Semplice server FTP iterativo sviluppato per il progetto di Reti di Calcolatori
  * Sviluppatore: Paolo Stivanin
- * Versione: 1.0.0
+ * Versione: 1.0.1
  * Copyright: 2012
  * Licenza: GNU AGPL v3 <http://www.gnu.org/licenses/agpl-3.0.html>
  * Sito web: <https://github.com/polslinux/FTPUtils>
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]){
 
         if((newsockd = accept(sockd, (struct sockaddr *) &cli_addr, (socklen_t *) &socket_len)) < 0){
             perror("Connection error (accept)\n");
-            onexit(newsockd, sockd, 0, 2);
+            onexit(sockd, 0, 0, 1);
         }
         /* inet_ntoa converte un hostname in un ip decimale puntato */
         fprintf(stdout, "Received connection from address: %s\n", inet_ntoa(cli_addr.sin_addr));
