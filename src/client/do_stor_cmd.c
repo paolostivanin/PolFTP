@@ -17,10 +17,11 @@
 #define BUFFGETS 255
 
 int do_stor_cmd(const int f_sockd){
-  int fd;
+  int fd, sent20, sent40, sent60, sent80;
+  sent20 = sent40 = sent60 = sent80 = 0;
   struct stat fileStat;
   ssize_t rc;
-  uint32_t fsize, size_to_send, fn_size = 0;
+  uint32_t fsize, size_to_send, fn_size = 0, vxc, qxc, sxc, oxc, tmp_xc = 0;;
   char *client_stor_filename = NULL;
   char buf[256], dirp[256];
   off_t offset;
@@ -75,8 +76,29 @@ int do_stor_cmd(const int f_sockd){
     return -1;
   }
   offset = 0;
+  vxc = (fsize/100)*20;
+  qxc = vxc*2;
+  sxc = vxc*3;
+  oxc = vxc*4;
   for (size_to_send = fsize; size_to_send > 0; ){
     rc = sendfile(f_sockd, fd, &offset, size_to_send);
+    tmp_xc += rc;
+    if(tmp_xc < vxc){
+      if(sent20 != 1) printf("20%%\n");
+      sent20 = 1;
+    }
+    if(tmp_xc > vxc && tmp_xc < qxc){
+      if(sent40 != 1) printf("40%%\n");
+      sent40 = 1;
+    }
+    if(tmp_xc > qxc && tmp_xc < sxc){
+      if(sent60 != 1) printf("60%%\n");
+      sent60 = 1;
+    }
+    if(tmp_xc > sxc && tmp_xc < oxc){
+      if(sent80 != 1) printf("80%%\n");
+      sent80 = 1;
+    }
     if (rc <= 0){
       perror("Error on sendfile");
       close(fd);
@@ -84,7 +106,7 @@ int do_stor_cmd(const int f_sockd){
     }
     size_to_send -= rc;
   }
-  close(fd); /* la chiusura del file va qui altrimenti rischio loop infinito e scrittura all'interno del file */
+  close(fd);
 
   memset(buf, 0, sizeof(buf));
   if(recv(f_sockd, buf, 34, 0) < 0){
