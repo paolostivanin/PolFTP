@@ -44,7 +44,10 @@
 	* FIXED: bug when exiting if an 'accept' fails;
 
 25/09/2012 - v1.0.2
-	* FIXED: added % when downloading and uploading file;
+	* ADDED: added % when downloading and uploading file;
+
+25/09/2012 - v1.0.3
+	* FIXED: percentage on transfer;
 
 ??/??/2013 - v1.1-alpha
 	* ADDED: log file (connections + actions);
