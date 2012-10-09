@@ -22,5 +22,5 @@ else
 	exit
 fi
 mv -v src/client/ftpclient $PWD
-mv -v src/server/concurrent/ftpserver $PWD
+mv -v src/server/ftpserver $PWD
 echo "--> All done :)"

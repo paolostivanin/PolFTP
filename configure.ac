@@ -58,7 +58,7 @@ AC_CONFIG_FILES([
 Makefile
 src/Makefile
 src/client/Makefile
-src/server/concurrent/Makefile
+src/server/Makefile
 ])
 AC_OUTPUT
 
