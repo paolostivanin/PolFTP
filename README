@@ -18,9 +18,15 @@ If you want to use the *dev release* you have to do the following things:<br>
 
 and then follow the instructions that are in *Compiling (from number 3)*.
 
+RoadMap
+-------
+Version 2.0:
+* will add the support for the SFTP protocol;
+* will add a logging function for all the actions received and done by the server;
+* will improve security of the stored password because it will be salted and the hash algo will be changed from sha256 to whirlpool.
+
 Requirements
 ------------
-
 * GCC or Clang	_(if you use Clang you **must use** a version **>= 3.1**)_
 * Make
 * GNU/Linux		_(FTPUtils **will not** run under MS Windows and maybe it **won't** run also under MAC OSX)_
