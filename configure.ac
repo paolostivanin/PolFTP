@@ -1,4 +1,4 @@
-AC_INIT([FTPUtils], [1.1.0], [admin@polslinux.it])
+AC_INIT([FTPUtils], [1.1.0-alpha], [admin@polslinux.it])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_PROG_CC
 AC_CONFIG_HEADERS([config.h])

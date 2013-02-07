@@ -1,6 +1,6 @@
 /* Descrizione: Genera un hash data una stringa utilizzando 50000 volte sha256
  * Sviluppatore: Paolo Stivanin
- * Versione: 1.0-beta1
+ * Versione: 1.1.0-alpha
  * Copyright: 2012
  * Licenza: GNU GPL v3 <http://www.gnu.org/licenses/gpl-3.0.html>
  * Sito web: <https://github.com/polslinux/FTPUtils>

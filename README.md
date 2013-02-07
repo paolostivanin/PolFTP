@@ -40,7 +40,7 @@ When the script finished you will find `ftpclient` and `ftpserver` in the projec
 
 How to use ftpclient and ftpserver
 ----------------------------------
-`ftpserver` uses the syscall `fork` to generate a new process when a connection arrives **(max 20)**.<br>
+`ftpserver` uses the syscall `fork` to generate a new process when a connection arrive **(max 20)**.<br>
 To use the `ftpserver`:<br>
 `./ftpserver <port number>`<br>
 and to use the `ftpclient`:<br>
@@ -48,7 +48,7 @@ and to use the `ftpclient`:<br>
 
 Authentication
 --------------
-The server will read the USER and the PASS from a file named `auth` located in `/etc/ftputils/`.<br>
+The server read the allowed USER (and its PASS) from a file named `auth` located in `/etc/ftputils/`.<br>
 The password isn't written in clear text. You must write the hash of the password repeated 50'000 times.<br>
 **Before** using the server **you must add the USER and the H(PASS)** inside the file `/etc/ftputils/auth` in this way:<br>
 `USERNAME HASH`<br>
