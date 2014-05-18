@@ -49,15 +49,15 @@
 25/09/2012 - v1.0.3
 	* FIXED: percentage on transfer;
 
-??/??/2013 - v2.0-alpha
+??/??/2014 - v2.0-alpha
 	* ADDED: logging function (server side, connections + actions);
 	* ADDED: SFTP (thanks to libSSH2);
-	* IMPROVED SECURITY: stored password will be salted and will use SHA512
-	* IMPROVED INFO: more info when an error occurs;
+	* IMPROVED SECURITY: stored password will use SHA512;
+	* IMPROVED ERRORS: more info when an error occurs;
 
-??/??/2013 - v2.0-beta
+??/??/2014 - v2.0-beta
 	* UPDATED: README
 	* TEST: stress test
 	
-??/??/2013 - v2.0
+??/??/2014 - v2.0
 	* Newstable release

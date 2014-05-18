@@ -1,6 +1,7 @@
 #ifndef PROTOTYPES_H_INCLUDED
 #define PROTOTYPES_H_INCLUDED
 #include <stdint.h>
+#define VERSION "1.1.0-alpha1"
 //
 //Client's functions
 int do_syst_cmd(const int);

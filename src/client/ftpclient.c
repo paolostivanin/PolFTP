@@ -1,8 +1,7 @@
 /* Descrizione: Semplice client FTP sviluppato per il progetto di Reti di Calcolatori
  * Sviluppatore: Paolo Stivanin
- * Versione: 1.1.0-alpha
- * Copyright: 2012
- * Licenza: GNU GPL v3 <http://www.gnu.org/licenses/gpl-3.0.html>
+ * Copyright: 2012-2014
+ * Licenza: GNU AGPL v3 <http://www.gnu.org/licenses/agpl-3.0.html>
  * Sito web: <https://github.com/polslinux/FTPUtils>
  */
 
@@ -23,7 +22,6 @@
 #include "../prototypes.h"
 
 #define BUFFGETS 255
-#define VERSION "1.1.0-alpha1"
 
 struct info{
   char *user, *pass, *filename, *conferma, *filebuffer, *scelta;

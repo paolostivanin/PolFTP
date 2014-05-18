@@ -76,5 +76,5 @@ All the code is released under the license GNU AGPL v3 and above.<br>
 
 Web Site
 --------
-Developer web site:	<http://www.polslinux.it><br>
+Developer web site:	<https://www.paolostivanin.com><br>
 Project web site:	<https://github.com/polslinux/FTPUtils>
