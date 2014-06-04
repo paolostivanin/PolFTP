@@ -12,7 +12,6 @@
 #include <fcntl.h>
 #include "../ftputils.h"
 
-#define BUFFGETS 255
 
 int do_cwd_cmd(const int f_sockd){
   uint32_t path_len = 0;

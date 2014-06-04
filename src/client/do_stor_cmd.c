@@ -14,8 +14,6 @@
 #include <fcntl.h>
 #include "../ftputils.h"
 
-#define BUFFGETS 255
-
 int do_stor_cmd(const int f_sockd){
   int fd;
   struct stat fileStat;

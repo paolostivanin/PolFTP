@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <stdint.h> /* per usare uint32_t invece di size_t */
+#include <stdint.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -15,10 +15,10 @@
 #include <signal.h>
 #include <dirent.h>
 #include <wait.h>
-#include <inttypes.h> /* per printare il tipo di dato uint32_t */
+#include <glib.h>
+#include <inttypes.h>
 #include "../ftputils.h"
 
-int get_syst(char **);
 int file_list(char *, char ***);
 int do_server_fork_syst_cmd(int);
 int do_server_fork_pwd_cmd(int);
@@ -31,35 +31,39 @@ int do_server_fork_mkd_cmd(int);
 int do_server_fork_rmd_cmd(int);
 int do_server_fork_rnm_cmd(int);
 int check_login_details(char *, char *);
-char *get_public_ip(void); /* liberare la memoria al termine con free($POINTER_USED) */
+char *get_public_ip(void);
 void do_child(int);
-void free_file_list(char ***, uint32_t);
 void sig_handler(int, int, int);
 void server_errors_handler(int, int);
 void check_before_start(int, char **);
 
+//generare dataPort random e tener traccia dei numeri usati (linked list?)
+/*
+ * Passive FTP :
+ *    command : client(>1023) -> server(21)    & (server(21) -> client(>1023))
+ *    data    : client(>1024) -> server(>1023) & (server(>1023) -> client(>1024))
+ */
+
 int main(int argc, char *argv[]){
-	
-	check_before_start(argc, argv);
-	
+
+	if(getuid() != 0){
+		fprintf(stderr, "You must be root to start the server\n");
+		return -1;
+	}
+
 	int sockd = -1, newsockd, socket_len;
-	int NumPorta = atoi(argv[1]);
+	int cmdPort = 21, dataPort = g_random_int_range(1024, 65535);
 	struct sockaddr_in serv_addr, cli_addr;
     pid_t child_pid;
-    
-  if(NumPorta < 1 || NumPorta > 65535){
-	  fprintf(stderr, "Port number must be between 1 and 65535\n");
-	  return -1;
-  }
-	
+
 	if((sockd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
 		perror("Error on socket creation\n");
 		exit(EXIT_FAILURE);
 	}
 
-	bzero((char *) &serv_addr, sizeof(serv_addr));
+	memset(&serv_addr, 0, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_port = htons(NumPorta);
+	serv_addr.sin_port = htons(cmdPort);
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	
 	if(bind(sockd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0){
@@ -111,7 +115,7 @@ int main(int argc, char *argv[]){
 void do_child(const int child_sock){
     int login, ret_val = -1;
     uint32_t len_string;
-    static char buffer[512]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
+    static char buffer[512];
     char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL;
     char *serverdir = (char *)(intptr_t)get_current_dir_name();
     char *tmpip = NULL, *pubip = NULL;  
@@ -334,13 +338,6 @@ void do_child(const int child_sock){
     printf("Received EXIT request\n");
     close(child_sock);
     /************************* FINE SALUTO FINALE *************************/
-}
-
-void check_before_start(int argc, char *argv[]){
-	if(argc != 2){
-		fprintf(stdout, "Usage: %s <port number>\n", argv[0]);
-		exit(1);
-	}
 }
 
 void sig_handler(const int signo, const int sockd, const int newsockd){

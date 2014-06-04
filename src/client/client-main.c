@@ -11,10 +11,16 @@
 #include <sys/types.h>
 #include <netdb.h>
 #include <fcntl.h>
+#include <glib.h>
 #include <termios.h>
 #include "../ftputils.h"
 
-#define BUFFGETS 255
+/*
+ * Passive FTP :
+ *    command : client(>1023) -> server(21)    & (server(21) -> client(>1023))
+ *    data    : client(>1024) -> server(>1023) & (server(>1023) -> client(>1024))
+ */
+
 
 struct info{
   char *user, *pass, *filename, *conferma, *filebuffer, *scelta;
@@ -31,141 +37,131 @@ int do_mkd_cmd(int);
 int do_rmd_cmd(int);
 int do_rnm_cmd(int);
 void client_errors_handler(int, int);
-void check_before_start(int, char **);
 
 int main(int argc, char *argv[]){
+	if(argc != 2){
+		printf("Usage: %s <hostname>\n", argv[0]);
+		return -1;
+	}
+	int sockd = -1, i = 0, ret_val = -1;
+	gint32 cmdPort = 21;
+	gint32 dataPort = g_random_int_range(1024, 65535);
+	uint32_t len_string;
+	static struct sockaddr_in serv_addr;
+	static struct termios oldt, newt;
+	static struct hostent *hp;
+	struct info sInfo;
+	static char buffer[BUFFGETS], expected_string[BUFFGETS/2];
+	
+	hp = gethostbyname(argv[1]);
+	memset(&serv_addr, 0, sizeof(serv_addr));
+	
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_port = htons(cmdPort);
+	serv_addr.sin_addr.s_addr = ((struct in_addr*)(hp->h_addr)) -> s_addr;
+
+	if((sockd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+		perror("Error during socket creation");
+		return -1;
+	}
+
+	if(connect(sockd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0){
+		perror("Connection error");
+		close(sockd);
+		return -1;
+	}
+	/************************* MESSAGGIO DI BENVENUTO *************************/
+	memset(buffer, 0, sizeof(buffer));
+	if(recv(sockd, &len_string, sizeof(len_string), MSG_WAITALL) < 0){
+		perror("Error on receiving the buffer length");
+		close(sockd);
+		return -1;
+	}
+	if(recv(sockd, buffer, len_string, 0) < 0){
+		perror("Error on receiving the 'Welcome' message\n");
+		close(sockd);
+		return -1;
+	}
+	printf("%s\n", buffer);
+	memset(buffer, 0, sizeof(buffer));
+	/************************* FINE MESSAGGIO DI BENVENUTO *************************/
+
+	/************************* INIZIO PARTE LOGIN *************************/
+	/************************* INVIO NOME UTENTE E RICEVO CONFERMA *************************/
+	tcgetattr( STDIN_FILENO, &oldt);
+	newt = oldt;
+	printf("USER: ");
+	if(scanf("%m[^\n]%*c", &sInfo.user) == EOF){
+		perror("scanf user");
+		close(sockd);
+		return -1;
+	}
+	printf("PASS: ");
+	newt.c_lflag &= ~(ECHO); 
+	tcsetattr( STDIN_FILENO, TCSANOW, &newt);
+	if(scanf("%m[^\n]%*c", &sInfo.pass) == EOF){
+		perror("scanf user");
+		close(sockd);
+		return -1;
+	}
+	tcsetattr( STDIN_FILENO, TCSANOW, &oldt);
+	printf("\n");
+	sprintf(buffer, "USER %s\n", sInfo.user);
+	len_string = strlen(buffer)+1;
+	if(send(sockd, &len_string, sizeof(len_string), 0) < 0){
+		perror("Error on sending the username length");
+		close(sockd);
+		return -1;
+	}
+	if(send(sockd, buffer, len_string, 0) < 0){
+		perror("Error on sending the username");
+		close(sockd);
+		return -1;
+	}
+	memset(buffer, 0, sizeof(buffer));
+	/************************* FINE NOME UTENTE *************************/
   
-  check_before_start(argc, argv);
+	/************************* INVIO PASSWORD E RICEVO CONFERMA *************************/
+	snprintf(buffer, BUFFGETS, "PASS %s\n", sInfo.pass);
+	len_string = strlen(buffer)+1;
+	if(send(sockd, &len_string, sizeof(len_string), 0) < 0){
+		perror("Error on sending the password length");
+		close(sockd);
+		return -1;
+	}
+	if(send(sockd, buffer, len_string, 0) < 0){
+		perror("Error on sending password");
+		close(sockd);
+		return -1;
+	}
+	memset(buffer, 0, sizeof(buffer));
+	/************************* FINE PASSWORD *************************/
 
-  int sockd = -1, i = 0, ret_val = -1;
-  uint32_t len_string;
-  int NumPorta = atoi(argv[2]);
-  static struct sockaddr_in serv_addr;
-  static struct termios oldt, newt;
-  static struct hostent *hp;
-  struct info sInfo;
-  static char buffer[BUFFGETS], expected_string[128];
-  
-  if(NumPorta < 1 || NumPorta > 65535){
-	  fprintf(stderr, "Port number must be between 1 and 65535\n");
-	  return -1;
-  }
-  
-  hp = gethostbyname(argv[1]);
-  bzero((char *) &serv_addr, sizeof(serv_addr));
-  serv_addr.sin_family = AF_INET;
-  serv_addr.sin_port = htons(NumPorta);
-  serv_addr.sin_addr.s_addr = ((struct in_addr*)(hp->h_addr)) -> s_addr;
-
-  if((sockd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-    perror("Error during socket creation");
-    return -1;
-  }
-
-  if(connect(sockd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0){
-    perror("Connection error");
-    close(sockd);
-    return -1;
-  }
-  /************************* MESSAGGIO DI BENVENUTO *************************/
-  memset(buffer, 0, sizeof(buffer));
-  if(recv(sockd, &len_string, sizeof(len_string), MSG_WAITALL) < 0){
-    perror("Error on receiving the buffer length");
-    close(sockd);
-    return -1;
-  }
-  if(recv(sockd, buffer, len_string, 0) < 0){
-    perror("Error on receiving the 'Welcome' message\n");
-    close(sockd);
-    return -1;
-   }
-  printf("%s\n", buffer);
-  memset(buffer, 0, sizeof(buffer));
-  /************************* FINE MESSAGGIO DI BENVENUTO *************************/
-
-  /************************* INIZIO PARTE LOGIN *************************/
-  /************************* INVIO NOME UTENTE E RICEVO CONFERMA *************************/
-  /* salvo i settaggi attuali di STDIN_FILENO ed assegno a newt i valore di oldt*/
-  tcgetattr( STDIN_FILENO, &oldt);
-  newt = oldt;
-
-  printf("USER: ");
-  /* Which will read everything up to the newline into the string you pass in, then will consume
-   * a single character (the newline) without assigning it to anything (that '*' is 'assignment suppression'). */
-  if(scanf("%m[^\n]%*c", &sInfo.user) == EOF){
-    perror("scanf user");
-    close(sockd);
-    return -1;
-  }
-  printf("PASS: ");
-  /* imposto il bit appropriato nella struttura newt */
-  newt.c_lflag &= ~(ECHO); 
-  /* imposto il nuovo bit nell'attuale STDIN_FILENO */
-  tcsetattr( STDIN_FILENO, TCSANOW, &newt);
-  if(scanf("%m[^\n]%*c", &sInfo.pass) == EOF){
-    perror("scanf user");
-    close(sockd);
-    return -1;
-  }
-  /* resetto con oldt l'attuale STDIN_FILENO*/ 
-  tcsetattr( STDIN_FILENO, TCSANOW, &oldt);
-  printf("\n");
-  sprintf(buffer, "USER %s\n", sInfo.user);
-  len_string = strlen(buffer)+1;
-  if(send(sockd, &len_string, sizeof(len_string), 0) < 0){
-    perror("Error on sending the username length");
-    close(sockd);
-    return -1;
-  }
-  if(send(sockd, buffer, len_string, 0) < 0){
-    perror("Error on sending the username");
-    close(sockd);
-    return -1;
-  }
-  memset(buffer, 0, sizeof(buffer));
-  /************************* FINE NOME UTENTE *************************/
-  
-  /************************* INVIO PASSWORD E RICEVO CONFERMA *************************/
-  sprintf(buffer, "PASS %s\n", sInfo.pass);
-  len_string = strlen(buffer)+1;
-  if(send(sockd, &len_string, sizeof(len_string), 0) < 0){
-    perror("Error on sending the password length");
-    close(sockd);
-    return -1;
-  }
-  if(send(sockd, buffer, len_string, 0) < 0){
-    perror("Error on sending password");
-    close(sockd);
-    return -1;
-  }
-  memset(buffer, 0, sizeof(buffer));
-  /************************* FINE PASSWORD *************************/
-
-  /************************* RICEZIONE CONFERMA LOG IN *************************/
-  if(recv(sockd, &len_string, sizeof(len_string), MSG_WAITALL) < 0){
-    perror("Error on sending LOG IN length");
-    close(sockd);
-    return -1;
-  }
-  if(recv(sockd, buffer, len_string, 0) < 0){
-    perror("Error on receiving LOG IN confirmation");
-    close(sockd);
-    return -1;
-  }
-  sInfo.conferma = strtok(buffer, "\0");
-  sprintf(expected_string, "230 USER %s logged in", sInfo.user);
-  if(strcmp(sInfo.conferma, expected_string) != 0){
-    printf("%s\n", sInfo.conferma);
-    close(sockd);
-    return -1;
-  } else{
-    printf("%s\n", sInfo.conferma);
-  }
-  memset(buffer, 0, sizeof(buffer));
-  free(sInfo.user);
-  free(sInfo.pass);
-  /************************* FINE RICEZIONE CONFERMA LOG IN *************************/
-  /************************* FINE PARTE LOGIN *************************/
+	/************************* RICEZIONE CONFERMA LOG IN *************************/
+	if(recv(sockd, &len_string, sizeof(len_string), MSG_WAITALL) < 0){
+		perror("Error on sending LOG IN length");
+		close(sockd);
+		return -1;
+	}
+	if(recv(sockd, buffer, len_string, 0) < 0){
+		perror("Error on receiving LOG IN confirmation");
+		close(sockd);
+		return -1;
+	}
+	sInfo.conferma = strtok(buffer, "\0");
+	snprintf(expected_string, BUFFGETS/2, "230 USER %s logged in", sInfo.user);
+	if(strcmp(sInfo.conferma, expected_string) != 0){
+		printf("%s\n", sInfo.conferma);
+		close(sockd);
+		return -1;
+	} else{
+		printf("%s\n", sInfo.conferma);
+	}
+	memset(buffer, 0, sizeof(buffer));
+	free(sInfo.user);
+	free(sInfo.pass);
+	/************************* FINE RICEZIONE CONFERMA LOG IN *************************/
+	/************************* FINE PARTE LOGIN *************************/
 
   /************************* SCELTA AZIONE, INVIO AZIONE, RICEZIONE CONFERMA, ESECUZIONE AZIONE *************************/
   exec_switch:
@@ -318,12 +314,4 @@ int main(int argc, char *argv[]){
   /************************* FINE SALUTO FINALE *************************/
 
   return EXIT_SUCCESS;
-}
-
-
-void check_before_start(int argc, char *argv[]){
-  if(argc != 3){
-    printf("Usage: %s <hostname> <port number>\n", argv[0]);
-	return;
-  }
 }

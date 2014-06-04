@@ -12,8 +12,6 @@
 #include <fcntl.h>
 #include "../ftputils.h"
 
-#define BUFFGETS 255
-
 int do_rnm_cmd(const int f_sockd){
   uint32_t len_fname = 0;
   char *file_to_delete = NULL, *conferma = NULL;

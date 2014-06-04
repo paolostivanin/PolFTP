@@ -12,7 +12,6 @@
 #include <fcntl.h>
 #include "../ftputils.h"
 
-#define BUFFGETS 255
 
 int do_mkd_cmd(const int f_sockd){
   uint32_t dir_name_len = 0;

@@ -14,7 +14,6 @@
 #include <fcntl.h>
 #include "../ftputils.h"
 
-#define BUFFGETS 255
 
 int do_list_cmd(const int f_sockd){
   ssize_t nread = 0;
