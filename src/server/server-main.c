@@ -16,7 +16,27 @@
 #include <dirent.h>
 #include <wait.h>
 #include <inttypes.h> /* per printare il tipo di dato uint32_t */
-#include "../prototypes.h"
+#include "../ftputils.h"
+
+int get_syst(char **);
+int file_list(char *, char ***);
+int do_server_fork_syst_cmd(int);
+int do_server_fork_pwd_cmd(int);
+int do_server_fork_cwd_cmd(int);
+int do_server_fork_list_cmd(int); /* chiamare free_file_list(&POINTER_USED, $NUM_OF_ELEMENTS) al termine */
+int do_server_fork_retr_cmd(int);
+int do_server_fork_stor_cmd(int);
+int do_server_fork_dele_cmd(int);
+int do_server_fork_mkd_cmd(int);
+int do_server_fork_rmd_cmd(int);
+int do_server_fork_rnm_cmd(int);
+int check_login_details(char *, char *);
+char *get_public_ip(void); /* liberare la memoria al termine con free($POINTER_USED) */
+void do_child(int);
+void free_file_list(char ***, uint32_t);
+void sig_handler(int, int, int);
+void server_errors_handler(int, int);
+void check_before_start(int, char **);
 
 int main(int argc, char *argv[]){
 	

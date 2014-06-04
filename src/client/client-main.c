@@ -12,13 +12,26 @@
 #include <netdb.h>
 #include <fcntl.h>
 #include <termios.h>
-#include "../prototypes.h"
+#include "../ftputils.h"
 
 #define BUFFGETS 255
 
 struct info{
   char *user, *pass, *filename, *conferma, *filebuffer, *scelta;
 };
+
+int do_syst_cmd(int);
+int do_pwd_cmd(int);
+int do_cwd_cmd(int);
+int do_list_cmd(int);
+int do_retr_cmd(int);
+int do_stor_cmd(int);
+int do_dele_cmd(int);
+int do_mkd_cmd(int);
+int do_rmd_cmd(int);
+int do_rnm_cmd(int);
+void client_errors_handler(int, int);
+void check_before_start(int, char **);
 
 int main(int argc, char *argv[]){
   

@@ -14,7 +14,7 @@
 #include <sys/sendfile.h>
 #include <sys/stat.h>
 #include <inttypes.h> /* per printare il tipo di dato uint32_t */
-#include "../prototypes.h"
+#include "../ftputils.h"
 
 int do_server_fork_retr_cmd(const int f_sockd){
   int fd, rc;

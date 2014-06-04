@@ -10,7 +10,7 @@
 #include <sys/types.h>
 #include <netdb.h>
 #include <fcntl.h>
-#include "../prototypes.h"
+#include "../ftputils.h"
 
 #define BUFFGETS 255
 

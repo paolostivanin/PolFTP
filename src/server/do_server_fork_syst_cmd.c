@@ -12,7 +12,7 @@
 #include <netdb.h>
 #include <fcntl.h>
 #include <inttypes.h> /* per printare il tipo di dato uint32_t */
-#include "../prototypes.h"
+#include "../ftputils.h"
 
 int do_server_fork_syst_cmd(const int f_sockd){
   char buf[256];

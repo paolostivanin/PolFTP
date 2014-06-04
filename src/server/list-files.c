@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <stdint.h>
 #include <dirent.h>
-#include "../prototypes.h"
+#include "../ftputils.h"
 
 int file_list(char *path, char ***ls){
 	DIR *dp;

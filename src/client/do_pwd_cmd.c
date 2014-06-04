@@ -10,7 +10,7 @@
 #include <sys/types.h>
 #include <netdb.h>
 #include <fcntl.h>
-#include "../prototypes.h"
+#include "../ftputils.h"
 
 int do_pwd_cmd(const int f_sockd){
   char buf[256];

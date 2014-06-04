@@ -5,7 +5,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include "../prototypes.h"
+#include "../ftputils.h"
 
 void client_errors_handler(const int f_sockd, const int f_retval){
 	char buffer[5];

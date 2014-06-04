@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <gcrypt.h>
-#include "../prototypes.h"
+#include "../ftputils.h"
 
 int hash_pwd(const char *, const char *);
 
