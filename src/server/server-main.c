@@ -114,7 +114,7 @@ void do_child(const int child_sock){
     static char buffer[512]; /* dichiaro static così viene direttamente inizializzato a 0 l'array */
     char *user_string = NULL, *username = NULL, *pass_string = NULL, *password = NULL;
     char *serverdir = (char *)(intptr_t)get_current_dir_name();
-    char *tmpip = NULL, *pubip = NULL, *is_err = NULL;  
+    char *tmpip = NULL, *pubip = NULL;  
     /************************* MESSAGGIO DI BENVENUTO *************************/
     tmpip = get_public_ip();
     pubip = strtok(tmpip, "\n");

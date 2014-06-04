@@ -17,7 +17,7 @@
 int do_retr_cmd(const int f_sockd){
   int fd;
   ssize_t nread = 0, tx = 0;
-  uint32_t fsize, fsize_tmp, total_bytes_read, size_to_receive, fn_len;
+  uint32_t fsize, size_to_receive, fn_len;
   char *filename = NULL, *conferma = NULL;
   void *filebuffer = NULL;
   char buf[256], dirp[256];
@@ -61,20 +61,18 @@ int do_retr_cmd(const int f_sockd){
     perror("Error: the file cannot be created.");
     return -1;
   }
-  fsize_tmp = fsize;
   filebuffer = malloc(fsize);
   if(filebuffer == NULL){
     perror("Error on memory allocation (malloc)");
     close(fd);
     return -1;
   }
-  total_bytes_read = 0;
   nread = 0;
   printf("Downloading...\n");
   for(size_to_receive = fsize; size_to_receive > 0;){
     nread = read(f_sockd, filebuffer, size_to_receive);
     tx += nread;
-    printf("\r%d%%", (tx * 100 / fsize));
+    printf("\r%zu%%", (tx * 100 / fsize));
     fflush(NULL);
     if(nread < 0){
       perror("read error on retr");

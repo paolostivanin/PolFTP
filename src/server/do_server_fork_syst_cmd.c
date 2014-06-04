@@ -14,6 +14,8 @@
 #include <inttypes.h> /* per printare il tipo di dato uint32_t */
 #include "../ftputils.h"
 
+int get_syst(char **);
+
 int do_server_fork_syst_cmd(const int f_sockd){
   char buf[256];
   char *sysname = NULL, *other = NULL;

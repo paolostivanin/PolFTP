@@ -78,7 +78,7 @@ int do_stor_cmd(const int f_sockd){
   for (size_to_send = fsize; size_to_send > 0; ){
     rc = sendfile(f_sockd, fd, &offset, size_to_send);
     tx += rc;
-    printf("\r%d%%", (tx * 100 / fsize));
+    printf("\r%zu%%", (tx * 100 / fsize));
     fflush(NULL);
     if (rc <= 0){
       perror("Error on sendfile");

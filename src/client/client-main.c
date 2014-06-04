@@ -40,11 +40,10 @@ int main(int argc, char *argv[]){
   int sockd = -1, i = 0, ret_val = -1;
   uint32_t len_string;
   int NumPorta = atoi(argv[2]);
-  char *is_err = NULL;
   static struct sockaddr_in serv_addr;
   static struct termios oldt, newt;
   static struct hostent *hp;
-  static struct info sInfo;
+  struct info sInfo;
   static char buffer[BUFFGETS], expected_string[128];
   
   if(NumPorta < 1 || NumPorta > 65535){
@@ -325,6 +324,6 @@ int main(int argc, char *argv[]){
 void check_before_start(int argc, char *argv[]){
   if(argc != 3){
     printf("Usage: %s <hostname> <port number>\n", argv[0]);
-	return -1;
+	return;
   }
 }

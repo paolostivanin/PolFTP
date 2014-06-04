@@ -17,16 +17,21 @@
 #include <inttypes.h> /* per printare il tipo di dato uint32_t */
 #include "../ftputils.h"
 
+#define BUFFGETS 255
+
+int file_list(const char *, char ***);
+void free_file_list(char ***, uint32_t);
+
 int do_server_fork_list_cmd(const int f_sockd){
   int fpl, count, i;
   ssize_t rc_list;
   uint32_t fsize, size_to_send;
   char *other = NULL, **files;
-  char buf[512], tmpname[L_tmpnam];
+  char buf[512], tmpname[] = "/tmp/ftputilsXXXXXX";
   FILE *fp_list;
   off_t offset_list;
   struct stat fileStat;
-  char *tmpfname = NULL;
+  int tmpfname;
 
   memset(buf, 0, sizeof(buf));
 
@@ -41,11 +46,19 @@ int do_server_fork_list_cmd(const int f_sockd){
   } else return -1;
 
   count = file_list("./", &files);
-  if(!(tmpfname = tmpnam(tmpname))){ /* genero il nome del tmpfile (tip /tmp/X6Tr4Y) */
-    perror("Error tmpfile name");
+  if((tmpfname = mkostemp(tmpname, 0)) == -1){ /* genero il nome del tmpfile (tip /tmp/X6Tr4Y) */
+    perror("Error on tmp file name generation.");
     return -1;
   }
-  if((fp_list = fopen(tmpfname, "w")) == NULL){
+  
+  char fdPath[BUFFGETS];
+  char absolutePath[BUFFGETS];
+  snprintf(fdPath, BUFFGETS-1, "/proc/self/fd/%d", tmpfname);
+  ssize_t numOfBytesInCompletePath = readlink(fdPath, absolutePath, BUFFGETS);
+  absolutePath[numOfBytesInCompletePath] = '\0';
+  close(tmpfname);
+  
+  if((fp_list = fopen(absolutePath, "w")) == NULL){
     perror("Cannot open tmp file in write mode");
     return -1;
   }
@@ -58,7 +71,7 @@ int do_server_fork_list_cmd(const int f_sockd){
   }
   fclose(fp_list);
   free_file_list(&files, count);
-  if((fpl = open(tmpfname, O_RDONLY)) < 0){
+  if((fpl = open(absolutePath, O_RDONLY)) < 0){
     perror("open file with open");
     return -1;
   }
@@ -88,7 +101,7 @@ int do_server_fork_list_cmd(const int f_sockd){
     size_to_send -= rc_list;
   }
   close(fpl);
-  if(remove( tmpfname ) == -1 ){
+  if(remove( absolutePath ) == -1 ){
     perror("Error on tmpfile deletion");
     return -1;
   }

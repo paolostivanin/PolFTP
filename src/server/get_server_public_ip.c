@@ -17,14 +17,14 @@ char * get_public_ip(void){
 
     if(((ipresult = malloc(17))) == NULL){
         perror("malloc on pub ip");
-        return -1;
+        return NULL;
     }
     
     curl = curl_easy_init();
 
     if(!(tmpfp = tmpfile())){
         perror("error on tmp file creation");
-        return -1;
+        return NULL;
     }
 
     if(curl){
@@ -37,7 +37,7 @@ char * get_public_ip(void){
     rewind(tmpfp);
     if(fgets(ipresult, 16, tmpfp) == NULL){
         perror("fgets error pubip");
-        return -1;
+        return NULL;
     }
     fclose(tmpfp);
     return ipresult;

@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -15,11 +17,10 @@
 #define BUFFGETS 255
 
 int do_list_cmd(const int f_sockd){
-  int fd;
   ssize_t nread = 0;
   uint32_t fsize, fsize_tmp, total_bytes_read = 0;
-  char *tmpfname = NULL;
-  char c, buf[256], tmpname[L_tmpnam];
+  int tmpfname;
+  char c, buf[256], tmpname[] = "/tmp/ftputilsXXXXXX";
   FILE *fp;
   void *fbuf = NULL;
   
@@ -35,33 +36,29 @@ int do_list_cmd(const int f_sockd){
     perror("Error on receiving the file size");
     return -1;
   }
-  if(!(tmpfname = tmpnam(tmpname))){ /* genero il nome del tmpfile (tip /tmp/X6Tr4Y) */
+  if((tmpfname = mkostemp(tmpname, 0)) == -1){ /* genero il nome del tmpfile (tip /tmp/X6Tr4Y) */
     perror("Error on tmp file name generation.");
-    return -1;
-  }
-  if((fd = open(tmpfname, O_CREAT | O_WRONLY,0644)) < 0){
-    perror("Error: the tmp file cannot be created");
     return -1;
   }
   fsize_tmp = fsize;
   fbuf = malloc(fsize);
   if(fbuf == NULL){
     perror("Error on memory allocation (malloc)");
-    close(fd);
+    close(tmpfname);
     return -1;
   }
   while((total_bytes_read != fsize) && ((nread = read(f_sockd, fbuf, fsize_tmp)) > 0)){
-    if(write(fd, fbuf, nread) != nread){
+    if(write(tmpfname, fbuf, nread) != nread){
       perror("Error on writing file");
-      close(fd);
+      close(tmpfname);
       return -1;
     }
     total_bytes_read += nread;
     fsize_tmp -= nread;
   }
-  close(fd);
+  close(tmpfname);
   printf("----- FILE LIST -----\n");
-  if((fp = fopen(tmpfname, "r+")) == NULL){
+  if((fp = fdopen(tmpfname, "r")) == NULL){
     perror("Error on opening the tmp file for read");
     return -1;
   }
@@ -70,7 +67,13 @@ int do_list_cmd(const int f_sockd){
   }
   fclose(fp);
   printf("----- END FILE LIST -----\n");
-  if(remove( tmpfname ) == -1 ){
+  
+  char fdPath[BUFFGETS];
+  char absolutePath[BUFFGETS];
+  snprintf(fdPath, BUFFGETS-1, "/proc/self/fd/%d", tmpfname);
+  ssize_t numOfBytesInCompletePath = readlink(fdPath, absolutePath, BUFFGETS);
+  absolutePath[numOfBytesInCompletePath] = '\0';
+  if(unlink( absolutePath ) == -1 ){
     perror("Error: the tmp file cannot be deleted");
     return -1;
   }
