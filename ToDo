@@ -1,3 +1,2 @@
-1) rimuovere funzione onexit
-2) cambiare da sha256 a sha512
-3) rivisitare *tutto* il codice
+1) cambiare da sha256 a sha512
+2) rivisitare *tutto* il codice

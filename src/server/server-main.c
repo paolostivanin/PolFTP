@@ -1,10 +1,3 @@
-/* Descrizione: Semplice server FTP iterativo sviluppato per il progetto di Reti di Calcolatori
- * Sviluppatore: Paolo Stivanin
- * Copyright: 2012-2014
- * Licenza: GNU AGPL v3 <http://www.gnu.org/licenses/agpl-3.0.html>
- * Sito web: <https://github.com/polslinux/FTPUtils>
- */
-
 #define _GNU_SOURCE /* per definire get_current_dir_name */
 
 #include <stdio.h>
@@ -31,27 +24,34 @@ int main(int argc, char *argv[]){
 	
 	int sockd = -1, newsockd, socket_len;
 	int NumPorta = atoi(argv[1]);
-	struct sockaddr_in serv_addr, cli_addr; /* strutture contenenti indirizzo del server e del client */
+	struct sockaddr_in serv_addr, cli_addr;
     pid_t child_pid;
+    
+  if(NumPorta < 1 || NumPorta > 65535){
+	  fprintf(stderr, "Port number must be between 1 and 65535\n");
+	  return -1;
+  }
 	
 	if((sockd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
 		perror("Error on socket creation\n");
 		exit(EXIT_FAILURE);
 	}
 
-	bzero((char *) &serv_addr, sizeof(serv_addr)); /* bzero scrive dei null bytes dove specificato per la lunghezza specificata */
-	serv_addr.sin_family = AF_INET; /* la famiglia dei protocolli */
-	serv_addr.sin_port = htons(NumPorta); /* porta htons converte nell'ordine dei byte di rete */
-	serv_addr.sin_addr.s_addr = INADDR_ANY; /* dato che è un server bisogna associargli l'indirizzo della macchina su cui sta girando */
+	bzero((char *) &serv_addr, sizeof(serv_addr));
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_port = htons(NumPorta);
+	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	
 	if(bind(sockd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0){
 		perror("Bind error\n");
-		onexit(sockd, 0, 0, 1);
+		close(sockd);
+		return -1;
 	}
 
 	if(listen(sockd, 20) < 0){
 		perror("Error on listen");
-        onexit(sockd, 0, 0, 1);
+        close(sockd);
+        return -1;
 	}
 	socket_len = sizeof(cli_addr);
 
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]){
 
         if((newsockd = accept(sockd, (struct sockaddr *) &cli_addr, (socklen_t *) &socket_len)) < 0){
             perror("Connection error (accept)\n");
-            onexit(sockd, 0, 0, 1);
+            close(sockd);return -1;
         }
         /* inet_ntoa converte un hostname in un ip decimale puntato */
         fprintf(stdout, "Received connection from address: %s\n", inet_ntoa(cli_addr.sin_addr));
@@ -71,7 +71,9 @@ int main(int argc, char *argv[]){
         child_pid = fork();
         if(child_pid < 0){ /* se pid < 0 il processo figlio non è stato generato */
             perror("Fork error");
-            onexit(newsockd, sockd, 0, 2);
+            close(sockd);
+            close(newsockd);
+            return -1;
         }
         if(child_pid == 0){ /* se pid == 0 il processo figlio è stato generato */
             do_child(newsockd); /* ed eseguo il server figlio */

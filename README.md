@@ -44,7 +44,7 @@ and to use the `ftpclient`:<br>
 Authentication
 --------------
 The server read the allowed USER (and its PASS) from a file named `auth` located in `/etc/ftputils/`.<br>
-The password isn't written in clear text. You must write the hash of the password repeated 50'000 times.<br>
+The password is store hashed with SHA-512.<br>
 **Before** using the server **you must add the USER and the H(PASS)** inside the file `/etc/ftputils/auth` in this way:<br>
 `USERNAME HASH`<br>
 `USERNAME HASH`<br>
@@ -56,7 +56,7 @@ You must generate the hash of the password if you want to login into the `ftpser
 Follow these simple steps to do it:<br>
 
 * Compile the sources
-* `cd src` and then execute `./generate_sha256`
+* `cd src` and then execute `./generate_sha512`
 * Type and re-type your password and then write the hash into the `auth` file _(near the username)_.
 
 License

@@ -16,7 +16,7 @@ void client_errors_handler(const int f_sockd, const int f_retval){
     		strcpy(buffer, "ERR");
     		if(send(f_sockd, buffer, 4, 0) < 0){
       			perror("Error on sending the retval");
-      			exit(1);
+      			return -1;
     		}
     return;
   	}
@@ -25,7 +25,7 @@ void client_errors_handler(const int f_sockd, const int f_retval){
     		strcpy(buffer, "OKK");
     		if(send(f_sockd, buffer, 4, 0) < 0){
       			perror("Error on sending the retval");
-      			exit(1);
+      			return -1;
     		}
  	}
   /* --- */
@@ -33,7 +33,7 @@ void client_errors_handler(const int f_sockd, const int f_retval){
   memset(buffer, 0, sizeof(buffer));
   if(recv(f_sockd, buffer, 4, MSG_WAITALL) < 0){
    		perror("Error on recv retval");
-   		exit(1);
+   		return -1;
   }
   is_err = strtok(buffer, "\0");
   if(strcmp(is_err, "ERR") == 0){

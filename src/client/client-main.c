@@ -1,10 +1,3 @@
-/* Descrizione: Semplice client FTP sviluppato per il progetto di Reti di Calcolatori
- * Sviluppatore: Paolo Stivanin
- * Copyright: 2014
- * Licenza: GNU AGPL v3 <http://www.gnu.org/licenses/agpl-3.0.html>
- * Sito web: <https://github.com/polslinux/FTPUtils>
- */
-
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -31,41 +24,48 @@ int main(int argc, char *argv[]){
   
   check_before_start(argc, argv);
 
-  int sockd = -1, i = 0, ret_val = -1; /* descrittore del socket, file, contatore e valore di ritorno delle funzioni */
+  int sockd = -1, i = 0, ret_val = -1;
   uint32_t len_string;
-  int NumPorta = atoi(argv[2]); /* numero di porta */
+  int NumPorta = atoi(argv[2]);
   char *is_err = NULL;
-  static struct sockaddr_in serv_addr; /* struttura contenente indirizzo del server */
-  static struct termios oldt, newt; /* struttura contenente i paramentri della shell */
-  static struct hostent *hp; /* la struttura hostent mi servirà per l'indirizzo ip del server */
-  static struct info sInfo; /* struttura che contiene alcuni dati utili al programma */
-  static char buffer[256], expected_string[128]; /*buffer usato per contenere vari dati */
+  static struct sockaddr_in serv_addr;
+  static struct termios oldt, newt;
+  static struct hostent *hp;
+  static struct info sInfo;
+  static char buffer[BUFFGETS], expected_string[128];
   
-  hp = gethostbyname(argv[1]); /* inseriamo nella struttura hp le informazione sull'host "argv[1]" */
-  bzero((char *) &serv_addr, sizeof(serv_addr)); /* bzero scrive dei null bytes dove specificato per la lunghezza specificata */
-  serv_addr.sin_family = AF_INET; /* la famiglia dei protocolli */
-  serv_addr.sin_port = htons(NumPorta); /* la porta */
-  serv_addr.sin_addr.s_addr = ((struct in_addr*)(hp->h_addr)) -> s_addr; /* memorizzo il tutto nella struttura serv_addr */
+  if(NumPorta < 1 || NumPorta > 65535){
+	  fprintf(stderr, "Port number must be between 1 and 65535\n");
+	  return -1;
+  }
+  
+  hp = gethostbyname(argv[1]);
+  bzero((char *) &serv_addr, sizeof(serv_addr));
+  serv_addr.sin_family = AF_INET;
+  serv_addr.sin_port = htons(NumPorta);
+  serv_addr.sin_addr.s_addr = ((struct in_addr*)(hp->h_addr)) -> s_addr;
 
   if((sockd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
     perror("Error during socket creation");
-    exit(1);
+    return -1;
   }
 
   if(connect(sockd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0){
     perror("Connection error");
     close(sockd);
-    exit(1);
+    return -1;
   }
   /************************* MESSAGGIO DI BENVENUTO *************************/
   memset(buffer, 0, sizeof(buffer));
   if(recv(sockd, &len_string, sizeof(len_string), MSG_WAITALL) < 0){
     perror("Error on receiving the buffer length");
-    onexit(sockd, 0, 0, 1);
+    close(sockd);
+    return -1;
   }
   if(recv(sockd, buffer, len_string, 0) < 0){
     perror("Error on receiving the 'Welcome' message\n");
-    onexit(sockd, 0, 0, 1);
+    close(sockd);
+    return -1;
    }
   printf("%s\n", buffer);
   memset(buffer, 0, sizeof(buffer));
@@ -82,7 +82,8 @@ int main(int argc, char *argv[]){
    * a single character (the newline) without assigning it to anything (that '*' is 'assignment suppression'). */
   if(scanf("%m[^\n]%*c", &sInfo.user) == EOF){
     perror("scanf user");
-    onexit(sockd, 0, 0, 1);
+    close(sockd);
+    return -1;
   }
   printf("PASS: ");
   /* imposto il bit appropriato nella struttura newt */
@@ -91,7 +92,8 @@ int main(int argc, char *argv[]){
   tcsetattr( STDIN_FILENO, TCSANOW, &newt);
   if(scanf("%m[^\n]%*c", &sInfo.pass) == EOF){
     perror("scanf user");
-    onexit(sockd, 0, 0, 1);
+    close(sockd);
+    return -1;
   }
   /* resetto con oldt l'attuale STDIN_FILENO*/ 
   tcsetattr( STDIN_FILENO, TCSANOW, &oldt);
@@ -100,11 +102,13 @@ int main(int argc, char *argv[]){
   len_string = strlen(buffer)+1;
   if(send(sockd, &len_string, sizeof(len_string), 0) < 0){
     perror("Error on sending the username length");
-    onexit(sockd, 0, 0, 1);
+    close(sockd);
+    return -1;
   }
   if(send(sockd, buffer, len_string, 0) < 0){
     perror("Error on sending the username");
-    onexit(sockd, 0, 0, 1);
+    close(sockd);
+    return -1;
   }
   memset(buffer, 0, sizeof(buffer));
   /************************* FINE NOME UTENTE *************************/
@@ -114,11 +118,13 @@ int main(int argc, char *argv[]){
   len_string = strlen(buffer)+1;
   if(send(sockd, &len_string, sizeof(len_string), 0) < 0){
     perror("Error on sending the password length");
-    onexit(sockd, 0, 0, 1);
+    close(sockd);
+    return -1;
   }
   if(send(sockd, buffer, len_string, 0) < 0){
     perror("Error on sending password");
-    onexit(sockd, 0, 0, 1);
+    close(sockd);
+    return -1;
   }
   memset(buffer, 0, sizeof(buffer));
   /************************* FINE PASSWORD *************************/
@@ -126,17 +132,20 @@ int main(int argc, char *argv[]){
   /************************* RICEZIONE CONFERMA LOG IN *************************/
   if(recv(sockd, &len_string, sizeof(len_string), MSG_WAITALL) < 0){
     perror("Error on sending LOG IN length");
-    onexit(sockd, 0, 0, 1);
+    close(sockd);
+    return -1;
   }
   if(recv(sockd, buffer, len_string, 0) < 0){
     perror("Error on receiving LOG IN confirmation");
-    onexit(sockd, 0, 0, 1);
+    close(sockd);
+    return -1;
   }
   sInfo.conferma = strtok(buffer, "\0");
   sprintf(expected_string, "230 USER %s logged in", sInfo.user);
   if(strcmp(sInfo.conferma, expected_string) != 0){
     printf("%s\n", sInfo.conferma);
-    onexit(sockd, 0, 0, 1);
+    close(sockd);
+    return -1;
   } else{
     printf("%s\n", sInfo.conferma);
   }
@@ -151,7 +160,8 @@ int main(int argc, char *argv[]){
   printf("\nFTPUtils:~$ ");
   if(scanf("%m[^\n]%*c", &sInfo.scelta) < 1){
     perror("scanf error");
-    onexit(sockd, 0, 0, 1);
+    close(sockd);
+    return -1;
   }
   for(i=0; i<(int)strlen(sInfo.scelta); i++){
     if(isalpha((unsigned char)sInfo.scelta[i])){
@@ -185,11 +195,13 @@ int main(int argc, char *argv[]){
   len_string = strlen(buffer)+1;
   if(send(sockd, &len_string, sizeof(len_string), 0) < 0){
     perror("Error on sending the buffer length");
-    onexit(sockd, 0, 0, 1);
+    close(sockd);
+    return -1;
   }
   if(send(sockd, buffer, len_string, 0) < 0){
     perror("Error on sending the action");
-    onexit(sockd, 0, 0, 1);
+    close(sockd);
+    return -1;
   }
   
   if(strcmp(sInfo.scelta, "SYST") == 0){ free(sInfo.scelta); goto exec_syst; }
@@ -286,7 +298,8 @@ int main(int argc, char *argv[]){
   memset(buffer, 0, sizeof(buffer));
   if(recv(sockd, buffer, 12, 0) < 0){
     perror("Error on receiving 221 goodbye");
-    onexit(sockd, 0, 0, 1);
+    close(sockd);
+    return -1;
   }
   printf("%s", buffer);
   close(sockd);
@@ -299,6 +312,6 @@ int main(int argc, char *argv[]){
 void check_before_start(int argc, char *argv[]){
   if(argc != 3){
     printf("Usage: %s <hostname> <port number>\n", argv[0]);
-    exit(EXIT_FAILURE);
+	return -1;
   }
 }
