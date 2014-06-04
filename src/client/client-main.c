@@ -1,6 +1,6 @@
 /* Descrizione: Semplice client FTP sviluppato per il progetto di Reti di Calcolatori
  * Sviluppatore: Paolo Stivanin
- * Copyright: 2012-2014
+ * Copyright: 2014
  * Licenza: GNU AGPL v3 <http://www.gnu.org/licenses/agpl-3.0.html>
  * Sito web: <https://github.com/polslinux/FTPUtils>
  */
@@ -10,7 +10,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <stdint.h> /* per usare uint32_t invece di size_t */
+#include <stdint.h>
 #include <inttypes.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -18,7 +18,7 @@
 #include <sys/types.h>
 #include <netdb.h>
 #include <fcntl.h>
-#include <termios.h> /* per nascondere la password */
+#include <termios.h>
 #include "../prototypes.h"
 
 #define BUFFGETS 255
