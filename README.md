@@ -9,40 +9,28 @@ It is developed by:
 
 Version
 -------
-The **last and stable** version is the **1.0.3** and you can download it from: https://github.com/polslinux/FTPUtils/zipball/v1.0.3<br>
-If you want to use the *dev release* you have to do the following things:<br>
+The **last and stable** version is the **none**
 
-- `git clone https://github.com/polslinux/FTPUtils.git`<br>
-- `cd FTPUtils`<br>
-- `git checkout experimental`<br>
-
-and then follow the instructions that are in *Compiling (from number 3)*.
 
 RoadMap
 -------
-Version 2.0:
-* will add the support for the SFTP protocol;
-* will add a logging function for all the actions received and done by the server;
-* will improve security of the stored password because it will be salted and the hash algo will be changed from sha256 to whirlpool.
+See the ChangeLog file
+
 
 Requirements
 ------------
-* GCC or Clang	_(if you use Clang you **must use** a version **>= 3.1**)_
+* GCC (>=4.6.0) or Clang (>= 3.2)
 * Make
-* GNU/Linux		_(FTPUtils **will not** run under MS Windows and maybe it **won't** run also under MAC OSX)_
-* Build Tools	_(Autoconf and Automake)_
+* GNU/Linux
+* Gcrypt (>=1.5.0)
 
 Compiling
 ---------
-* Clone the repo<br>
 `git clone https://github.com/polslinux/FTPUtils.git`<br>
-* move inside the directory you've just downloaded:<br>
-`cd $PWD/FTPUtils`<br>
-* give the right permission to autogen.sh:<br>
-`chmod 744 autogen.sh`<br>
-* and now execute the script:<br>
-`./autogen.sh`<br>
-When the script finished you will find `ftpclient` and `ftpserver` in the project root directory.
+`cd /path/to/FTPUtils`<br>
+`make`<br>
+When the script finished you will find the binaries `ftpclient` and `ftpserver` inside the project root directory.
+
 
 How to use ftpclient and ftpserver
 ----------------------------------
@@ -52,6 +40,7 @@ To use the `ftpserver`:<br>
 and to use the `ftpclient`:<br>
 `./ftpclient <host> <port number>`
 
+
 Authentication
 --------------
 The server read the allowed USER (and its PASS) from a file named `auth` located in `/etc/ftputils/`.<br>
@@ -59,6 +48,7 @@ The password isn't written in clear text. You must write the hash of the passwor
 **Before** using the server **you must add the USER and the H(PASS)** inside the file `/etc/ftputils/auth` in this way:<br>
 `USERNAME HASH`<br>
 `USERNAME HASH`<br>
+
 
 Generate password hash
 ----------------------
@@ -73,6 +63,7 @@ License
 -------
 All the code is released under the license GNU AGPL v3 and above.<br>
 <http://www.gnu.org/licenses/agpl-3.0.html><br>
+
 
 Web Site
 --------
