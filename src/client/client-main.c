@@ -15,17 +15,11 @@
 #include <termios.h>
 #include "../ftputils.h"
 
-/*
- * Passive FTP :
- *    command : client(>1023) -> server(21)    & (server(21) -> client(>1023))
- *    data    : client(>1024) -> server(>1023) & (server(>1023) -> client(>1024))
- */
-
-
 struct info{
   char *user, *pass, *filename, *conferma, *filebuffer, *scelta;
 };
 
+long int get_host_ip(const char *);
 int do_syst_cmd(int);
 int do_pwd_cmd(int);
 int do_cwd_cmd(int);
@@ -40,7 +34,7 @@ void client_errors_handler(int, int);
 
 int main(int argc, char *argv[]){
 	if(argc != 2){
-		printf("Usage: %s <hostname>\n", argv[0]);
+		printf("[!] Usage: %s <hostname>\n", argv[0]);
 		return -1;
 	}
 	int sockd = -1, i = 0, ret_val = -1;
@@ -49,24 +43,25 @@ int main(int argc, char *argv[]){
 	uint32_t len_string;
 	static struct sockaddr_in serv_addr;
 	static struct termios oldt, newt;
-	static struct hostent *hp;
+	//static struct hostent *hp;
+	long int hostIp;
 	struct info sInfo;
 	static char buffer[BUFFGETS], expected_string[BUFFGETS/2];
 	
-	hp = gethostbyname(argv[1]);
+	hostIp = get_host_ip(argv[1]);
 	memset(&serv_addr, 0, sizeof(serv_addr));
 	
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_port = htons(cmdPort);
-	serv_addr.sin_addr.s_addr = ((struct in_addr*)(hp->h_addr)) -> s_addr;
+	serv_addr.sin_addr.s_addr = htonl(hostIp);
 
 	if((sockd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-		perror("Error during socket creation");
+		perror("[!] Error during socket creation");
 		return -1;
 	}
 
 	if(connect(sockd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0){
-		perror("Connection error");
+		perror("[!] Connection error");
 		close(sockd);
 		return -1;
 	}

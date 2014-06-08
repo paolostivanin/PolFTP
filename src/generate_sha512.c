@@ -8,8 +8,8 @@
 #include <gcrypt.h>
 
 int main(void){
-	static struct termios oldt, newt;
- 	char *input = NULL, *compare = NULL;
+	struct termios oldt, newt;
+ 	char input[256], compare[256];
  	gcry_md_hd_t hd;
 	char sha512hash[129];
 	const char *name = gcry_md_algo_name(GCRY_MD_SHA512);
@@ -18,27 +18,33 @@ int main(void){
  	tcgetattr( STDIN_FILENO, &oldt);
   	newt = oldt;
   	
- 	printf("Password: ");
+  	start:
+ 	printf("[+] Password: ");
  	newt.c_lflag &= ~(ECHO);
  	tcsetattr( STDIN_FILENO, TCSANOW, &newt);
- 	if(scanf("%m[^\n]%*c", &input) == EOF){
- 		perror("Scanf input");
- 		return EXIT_FAILURE;
+ 	if(fgets(input, sizeof(input)-2, stdin) == NULL){
+ 		perror("Error while reading input (fgets input)\n");
+ 		memset(input, 0, sizeof(input));
+ 		return -1;
  	}
  	tcsetattr( STDIN_FILENO, TCSANOW, &oldt);
- 	printf("\nRetype password: ");
+ 	printf("\n[+] Retype password: ");
  	newt.c_lflag &= ~(ECHO);
  	tcsetattr( STDIN_FILENO, TCSANOW, &newt);
- 	if(scanf("%m[^\n]%*c", &compare) == EOF){
- 		perror("Scanf compare");
- 		return EXIT_FAILURE;
+ 	if(fgets(compare, sizeof(compare)-2, stdin) == NULL){
+ 		perror("Error while reading input (fgets input)\n");
+ 		memset(input, 0, sizeof(input));
+ 		memset(compare, 0, sizeof(compare));
+ 		return -1;
  	}
+ 	input[strlen(input)-1] = '\0';
+ 	compare[strlen(compare)-1] = '\0';
  	tcsetattr( STDIN_FILENO, TCSANOW, &oldt);
  	if(strcmp(input, compare) != 0){
- 		printf("\nPassword doesn't match\n");
- 		free(input);
- 		free(compare);
- 		return EXIT_FAILURE;
+ 		printf("\n[!]Password doesn't match\n");
+		memset(input, 0, sizeof(input));
+		memset(compare, 0, sizeof(compare));
+ 		goto start;
  	}
 	printf("\n");
 	
@@ -52,7 +58,7 @@ int main(void){
  		sprintf(sha512hash+(i*2), "%02x", sha[i]);
  	}
  	sha512hash[128] = '\0';
- 	printf("\nWrite this hash inside the auth file (see the README file):\n%s\n", sha512hash);
+ 	printf("[+]Write this hash inside the auth file (see the README file):\n%s\n", sha512hash);
 
 	gcry_md_close(hd);
 	

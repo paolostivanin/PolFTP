@@ -1,0 +1,18 @@
+(C) -> IP,P:21(S) ;store cmdPort (S:21, C:read_inside_struct)
+
+(S) -> 220 HELLO -> (C)
+
+(C) -> USER xxx -> (S)
+
+(S) -> 331 PWD REQUIRED -> (C)
+
+(C) -> PASS yyy -> (S)
+
+(S) -> 230 LOGGED IN -> (C)
+
+(C) -> PASV -> (S)
+
+(S) -> o1,o2,o3,o4,p1,p2 -> (C) ;where o{X} are the IP octects and p{Y} is the dataPort (S:p1*256+p2, C:*after*)
+
+(C) -> open data channel -> (S) ;read dataPort from the struct
+

@@ -15,7 +15,7 @@ $(OUT_CLIENT): $(CLIENT_SOURCES)
 	$(CC) $(CFLAGS) $(CLIENT_SOURCES) -o $(OUT_CLIENT) $(LDFLAGS) `pkg-config --cflags --libs glib-2.0`
 
 $(OUT_SERVER): $(SERVER_SOURCES)
-	$(CC) $(CFLAGS) $(SERVER_SOURCES) -o $(OUT_SERVER) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(SERVER_SOURCES) -o $(OUT_SERVER) $(LDFLAGS) `pkg-config --cflags --libs glib-2.0`
 
 $(OUT_HASH): $(HASH_SOURCES)
 	$(CC) $(CFLAGS) $(HASH_SOURCES) -o $(OUT_HASH) $(LDFLAGS)

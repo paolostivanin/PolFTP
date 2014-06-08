@@ -37,13 +37,6 @@ void sig_handler(int, int, int);
 void server_errors_handler(int, int);
 void check_before_start(int, char **);
 
-//generare dataPort random e tener traccia dei numeri usati (linked list?)
-/*
- * Passive FTP :
- *    command : client(>1023) -> server(21)    & (server(21) -> client(>1023))
- *    data    : client(>1024) -> server(>1023) & (server(>1023) -> client(>1024))
- */
-
 int main(int argc, char *argv[]){
 
 	if(getuid() != 0){
