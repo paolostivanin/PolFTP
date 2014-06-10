@@ -1,7 +1,7 @@
 #ifndef FTPUTILS_H_INCLUDED
 #define FTPUTILS_H_INCLUDED
 
-#define VERSION "2.0.0-pre_alpha1"
-#define BUFFGETS 255
+#define VERSION "v1.99.901"
+#define BUFSIZE 4096
 
 #endif

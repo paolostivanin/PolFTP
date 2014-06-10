@@ -50,16 +50,14 @@
 	* FIXED: percentage on transfer
 
 ??/??/2014 - v1.99.1 (v2.0-alpha1)
-	* IMPROVED: major code rewriting
-	* IMPROVED: stored password will use SHA512 instead of SHA256
+	* NEW: client code completely rewritten
 
 ??/??/2014 - v1.99.2 (v2.0-alpha2)
-	* ADDED: logging function (server side, connections + actions)
-	* IMPROVED: more info when an error occurs
+	* NEW: server code completely rewritten (now it is RFC compliant)
 	
 ??/??/2014 - v2.0-beta
 	* ADDED: i18n
-	* UPDATED: various docs
+	* IMPROVED: docs
 	
 ??/??/2014 - v2.0
 	* Newstable release

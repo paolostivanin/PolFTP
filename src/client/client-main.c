@@ -1,312 +1,171 @@
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
-#include <stdlib.h>
 #include <unistd.h>
-#include <stdint.h>
-#include <inttypes.h>
+#include <stdlib.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <netdb.h>
 #include <fcntl.h>
-#include <glib.h>
-#include <termios.h>
+#include <errno.h>
 #include "../ftputils.h"
 
-struct info{
-  char *user, *pass, *filename, *conferma, *filebuffer, *scelta;
-};
-
 long int get_host_ip(const char *);
-int do_syst_cmd(int);
-int do_pwd_cmd(int);
-int do_cwd_cmd(int);
-int do_list_cmd(int);
-int do_retr_cmd(int);
-int do_stor_cmd(int);
-int do_dele_cmd(int);
-int do_mkd_cmd(int);
-int do_rmd_cmd(int);
-int do_rnm_cmd(int);
-void client_errors_handler(int, int);
+void send_info(int, const char *, const char *);
+void recv_info(int);
+void recv_pasv(int, char *);
+int get_data_port(char *);
+
 
 int main(int argc, char *argv[]){
 	if(argc != 2){
 		printf("[!] Usage: %s <hostname>\n", argv[0]);
 		return -1;
 	}
-	int sockd = -1, i = 0, ret_val = -1;
-	gint32 cmdPort = 21;
-	gint32 dataPort = g_random_int_range(1024, 65535);
-	uint32_t len_string;
-	static struct sockaddr_in serv_addr;
-	static struct termios oldt, newt;
-	//static struct hostent *hp;
-	long int hostIp;
-	struct info sInfo;
-	static char buffer[BUFFGETS], expected_string[BUFFGETS/2];
+	if(strlen(argv[1]) > 256){
+		printf("WTF?!? A hostname bigger than 256 chars? What are you trying to do? ;)\nIt's better to stop the client...\n");
+		return -1;
+	}
+	int cmdSock, dataSock, retVal;
+	int serverCmdPort = 21, serverDataPort;
+	int clientCmdPort, clientDataPort;
+	struct sockaddr_in client_cmd_addr, server_cmd_addr;
+	struct sockaddr_in client_data_addr, server_data_addr; 
+	long int serverIp;
+	char buffer[BUFSIZE];
 	
-	hostIp = get_host_ip(argv[1]);
-	memset(&serv_addr, 0, sizeof(serv_addr));
+	serverIp = get_host_ip(argv[1]);
+	memset(&server_cmd_addr, 0, sizeof(server_cmd_addr));
+
+    printf("[+] Creating socket\n");
+    if ((cmdSock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+		printf("client: socket error : %d\n", errno);
+		return -1;
+	}
+     
+    printf("[+] Binding local socket\n");
+    memset(&client_cmd_addr, 0, sizeof(client_cmd_addr));
+    client_cmd_addr.sin_family = AF_INET;
+    client_cmd_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    client_cmd_addr.sin_port = htons(clientCmdPort);
+    if(bind(cmdSock ,(struct sockaddr *) &client_cmd_addr, sizeof(client_cmd_addr)) < 0){
+		printf("client: bind  error :%d\n", errno);
+		return -1;
+    }
+                                             
+    printf("[+] Starting connect\n");
+    memset(&server_cmd_addr, 0, sizeof(server_cmd_addr));
+    server_cmd_addr.sin_family = AF_INET;
+    server_cmd_addr.sin_addr.s_addr = htonl(serverIp);
+    server_cmd_addr.sin_port = htons(serverCmdPort);
+	if(connect(cmdSock ,(struct sockaddr *) &server_cmd_addr, sizeof(server_cmd_addr)) < 0){
+		 printf("client: connect  error :%d\n", errno);
+		 return -1;
+	}
+    if((retVal = recv(cmdSock, buffer, sizeof(buffer), 0)) < 0){
+		printf("client: read  error :%d\n", errno);
+		return -1;
+	}
+	buffer[retVal] = '\0';
+	printf("%s", buffer);
+
+    send_info(cmdSock, "USER polftp\r\n", "USER");
+    recv_info(cmdSock);
+    
+    send_info(cmdSock, "PASS polftp!\r\n", "PASS");
+    recv_info(cmdSock);
+    
+    char *pasbuf = malloc(128);
+	send_info(cmdSock, "PASV\r\n", "PASV");
+    recv_pasv(cmdSock, pasbuf);
+    
+    serverDataPort = get_data_port(pasbuf);
+    free(pasbuf);
+    
+    if ((dataSock = socket(AF_INET,SOCK_STREAM,0)) < 0){
+		printf("client: data socket error : %d\n", errno);
+		return -1;
+	}
+    client_data_addr.sin_family = AF_INET;
+    client_data_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    client_data_addr.sin_port = htons(clientDataPort);
+    if (bind(dataSock ,(struct sockaddr *) &client_data_addr, sizeof(client_data_addr)) < 0){
+		printf("client: bind  error dataSock:%d\n", errno);
+		printf("%s\n", strerror(errno));
+		return -1;
+    }
+   
+    server_data_addr.sin_family = AF_INET;
+    server_data_addr.sin_port = htons(serverDataPort);
+    server_data_addr.sin_addr.s_addr = htonl(serverIp);
+	if(connect(dataSock ,(struct sockaddr *) &server_data_addr, sizeof(server_data_addr)) < 0){
+		 printf("client: connect  error :%d\n", errno);
+		 return -1;
+	}
 	
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_port = htons(cmdPort);
-	serv_addr.sin_addr.s_addr = htonl(hostIp);
+	send_info(cmdSock, "LIST\r\n", "LIST"); //per ogni list devo rifare pasv, connect, etc
+    recv_info(cmdSock);
+    recv_info(dataSock);
+    close(dataSock);
+    recv_info(cmdSock);
+    
+    send_info(cmdSock, "QUIT\r\n", "QUIT");
+    recv_info(cmdSock);
+	
+    close(cmdSock);
+    return 0;
+}
 
-	if((sockd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-		perror("[!] Error during socket creation");
-		return -1;
+void send_info(int sockfd, const char *data, const char *cmd){
+    fprintf(stdout, "[+] Sending %s to ftp server\n", cmd);
+    if(send(sockfd, data, strlen(data), 0) < 0){
+		printf("client: write  error :%d\n", errno);
+		return;
+	} 
+}
+
+void recv_info(int sockfd){
+	int r;
+	char buffer[BUFSIZE];
+    if((r = recv(sockfd, buffer, BUFSIZE, 0)) < 0){
+		printf("client: read  error :%d\n", errno);
+		return;
 	}
+	buffer[r] = '\0';
+	printf("%s", buffer);
+}
 
-	if(connect(sockd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0){
-		perror("[!] Connection error");
-		close(sockd);
-		return -1;
+void recv_pasv(int sockfd, char *pasvBuf){
+	int r;
+    if((r = recv(sockfd, pasvBuf, 128, 0)) < 0){
+		printf("client: read  error :%d\n", errno);
+		return;
 	}
-	/************************* MESSAGGIO DI BENVENUTO *************************/
-	memset(buffer, 0, sizeof(buffer));
-	if(recv(sockd, &len_string, sizeof(len_string), MSG_WAITALL) < 0){
-		perror("Error on receiving the buffer length");
-		close(sockd);
-		return -1;
+	pasvBuf[r] = '\0';
+}
+
+int get_data_port(char *toCut){
+	//227 Entering Passive Mode (o1,o2,o3,o4,p1,p2).\r\n
+	int i=0, np1, np2;
+	char p1[4], p2[4];
+	toCut[strlen(toCut)-4] = '\0';
+	char *token = strtok(toCut, ",");
+	i+=1;
+	while(token != NULL){
+		token = strtok(NULL, ",");
+		i+=1;
+		if(i==5){
+			strncpy(p1, token, 4);
+			p1[strlen(p1)] = '\0';
+		}
+		if(i==6){
+			strncpy(p2, token, 4);
+			p2[strlen(p2)] = '\0';
+		}
 	}
-	if(recv(sockd, buffer, len_string, 0) < 0){
-		perror("Error on receiving the 'Welcome' message\n");
-		close(sockd);
-		return -1;
-	}
-	printf("%s\n", buffer);
-	memset(buffer, 0, sizeof(buffer));
-	/************************* FINE MESSAGGIO DI BENVENUTO *************************/
-
-	/************************* INIZIO PARTE LOGIN *************************/
-	/************************* INVIO NOME UTENTE E RICEVO CONFERMA *************************/
-	tcgetattr( STDIN_FILENO, &oldt);
-	newt = oldt;
-	printf("USER: ");
-	if(scanf("%m[^\n]%*c", &sInfo.user) == EOF){
-		perror("scanf user");
-		close(sockd);
-		return -1;
-	}
-	printf("PASS: ");
-	newt.c_lflag &= ~(ECHO); 
-	tcsetattr( STDIN_FILENO, TCSANOW, &newt);
-	if(scanf("%m[^\n]%*c", &sInfo.pass) == EOF){
-		perror("scanf user");
-		close(sockd);
-		return -1;
-	}
-	tcsetattr( STDIN_FILENO, TCSANOW, &oldt);
-	printf("\n");
-	sprintf(buffer, "USER %s\n", sInfo.user);
-	len_string = strlen(buffer)+1;
-	if(send(sockd, &len_string, sizeof(len_string), 0) < 0){
-		perror("Error on sending the username length");
-		close(sockd);
-		return -1;
-	}
-	if(send(sockd, buffer, len_string, 0) < 0){
-		perror("Error on sending the username");
-		close(sockd);
-		return -1;
-	}
-	memset(buffer, 0, sizeof(buffer));
-	/************************* FINE NOME UTENTE *************************/
-  
-	/************************* INVIO PASSWORD E RICEVO CONFERMA *************************/
-	snprintf(buffer, BUFFGETS, "PASS %s\n", sInfo.pass);
-	len_string = strlen(buffer)+1;
-	if(send(sockd, &len_string, sizeof(len_string), 0) < 0){
-		perror("Error on sending the password length");
-		close(sockd);
-		return -1;
-	}
-	if(send(sockd, buffer, len_string, 0) < 0){
-		perror("Error on sending password");
-		close(sockd);
-		return -1;
-	}
-	memset(buffer, 0, sizeof(buffer));
-	/************************* FINE PASSWORD *************************/
-
-	/************************* RICEZIONE CONFERMA LOG IN *************************/
-	if(recv(sockd, &len_string, sizeof(len_string), MSG_WAITALL) < 0){
-		perror("Error on sending LOG IN length");
-		close(sockd);
-		return -1;
-	}
-	if(recv(sockd, buffer, len_string, 0) < 0){
-		perror("Error on receiving LOG IN confirmation");
-		close(sockd);
-		return -1;
-	}
-	sInfo.conferma = strtok(buffer, "\0");
-	snprintf(expected_string, BUFFGETS/2, "230 USER %s logged in", sInfo.user);
-	if(strcmp(sInfo.conferma, expected_string) != 0){
-		printf("%s\n", sInfo.conferma);
-		close(sockd);
-		return -1;
-	} else{
-		printf("%s\n", sInfo.conferma);
-	}
-	memset(buffer, 0, sizeof(buffer));
-	free(sInfo.user);
-	free(sInfo.pass);
-	/************************* FINE RICEZIONE CONFERMA LOG IN *************************/
-	/************************* FINE PARTE LOGIN *************************/
-
-  /************************* SCELTA AZIONE, INVIO AZIONE, RICEZIONE CONFERMA, ESECUZIONE AZIONE *************************/
-  exec_switch:
-  printf("\nFTPUtils:~$ ");
-  if(scanf("%m[^\n]%*c", &sInfo.scelta) < 1){
-    perror("scanf error");
-    close(sockd);
-    return -1;
-  }
-  for(i=0; i<(int)strlen(sInfo.scelta); i++){
-    if(isalpha((unsigned char)sInfo.scelta[i])){
-      if(islower((unsigned char)sInfo.scelta[i])){
-          sInfo.scelta[i] = toupper((unsigned char)sInfo.scelta[i]);
-      }
-    }
-    else{
-      printf("%c isn't a char\n", sInfo.scelta[i]);
-      free(sInfo.scelta);
-      goto exec_switch;
-    }
-  }
-  if((strcmp("SYST", sInfo.scelta) == 0)) goto prepara;
-  if((strcmp("LIST", sInfo.scelta) == 0)) goto prepara;
-  if((strcmp("PWD", sInfo.scelta) == 0)) goto prepara;
-  if((strcmp("CWD", sInfo.scelta) == 0)) goto prepara;
-  if((strcmp("RETR", sInfo.scelta) == 0)) goto prepara;
-  if((strcmp("STOR", sInfo.scelta) == 0)) goto prepara;
-  if((strcmp("DELE", sInfo.scelta) == 0)) goto prepara;
-  if((strcmp("MKD", sInfo.scelta) == 0)) goto prepara;
-  if((strcmp("RMD", sInfo.scelta) == 0)) goto prepara;
-  if((strcmp("RNM", sInfo.scelta) == 0)) goto prepara;
-  if((strcmp("EXIT", sInfo.scelta) == 0)) goto prepara;
-  if((strcmp("HELP", sInfo.scelta) == 0)) goto prepara;
-  printf("Wrong command. Type HELP to see the list of available commands.\n"); goto exec_switch;
-
-  prepara:
-  if(strcmp(sInfo.scelta, "HELP") == 0) goto exec_help;
-  strcpy(buffer, sInfo.scelta);
-  len_string = strlen(buffer)+1;
-  if(send(sockd, &len_string, sizeof(len_string), 0) < 0){
-    perror("Error on sending the buffer length");
-    close(sockd);
-    return -1;
-  }
-  if(send(sockd, buffer, len_string, 0) < 0){
-    perror("Error on sending the action");
-    close(sockd);
-    return -1;
-  }
-  
-  if(strcmp(sInfo.scelta, "SYST") == 0){ free(sInfo.scelta); goto exec_syst; }
-  if(strcmp(sInfo.scelta, "LIST") == 0){ free(sInfo.scelta); goto exec_list; }
-  if(strcmp(sInfo.scelta, "PWD") == 0){ free(sInfo.scelta); goto exec_pwd; }
-  if(strcmp(sInfo.scelta, "CWD") == 0){ free(sInfo.scelta); goto exec_cwd; }
-  if(strcmp(sInfo.scelta, "RETR") == 0){ free(sInfo.scelta); goto exec_retr; }
-  if(strcmp(sInfo.scelta, "STOR") == 0){ free(sInfo.scelta); goto exec_stor; }
-  if(strcmp(sInfo.scelta, "DELE") == 0){ free(sInfo.scelta); goto exec_delete; }
-  if(strcmp(sInfo.scelta, "MKD") == 0){ free(sInfo.scelta); goto exec_mkdir; }
-  if(strcmp(sInfo.scelta, "RMD") == 0){ free(sInfo.scelta); goto exec_rmdir; }
-  if(strcmp(sInfo.scelta, "RNM") == 0){ free(sInfo.scelta); goto exec_rename; }
-  if(strcmp(sInfo.scelta, "EXIT") == 0){ free(sInfo.scelta); goto exec_exit; }
-
-  exec_help:
-  printf("FTPUtils (Client) %s developed by Paolo Stivanin\n", VERSION);
-  printf("\nAvailable commands are:\nSYST - LIST - PWD - CWD - RETR - STOR - DELE - MKD - RMD - RNM - STOR - EXIT - HELP\n");
-  free(sInfo.scelta);
-  goto exec_switch;
-  /************************* FINE PARTE AZIONE UTENTE *************************/
-
-  /************************* INIZIO AZIONE SYST *************************/
-  exec_syst:
-  ret_val = do_syst_cmd(sockd);
-  client_errors_handler(sockd, ret_val);
-  goto exec_switch;
-  /************************* FINE AZIONE SYST *************************/
-
-  /************************* INIZIO RICHIESTA LIST *************************/
-  exec_list:
-  ret_val = do_list_cmd(sockd);
-  client_errors_handler(sockd, ret_val);
-  goto exec_switch;
-  /************************* FINE AZIONE LIST *************************/
-
-  /************************* INIZIO AZIONE PWD *************************/
-  exec_pwd:
-  ret_val = do_pwd_cmd(sockd);
-  client_errors_handler(sockd, ret_val);
-  goto exec_switch;
-  /************************* FINE AZIONE PWD *************************/
-
-  /************************* INIZIO AZIONE CWD *************************/
-  exec_cwd:
-  ret_val = do_cwd_cmd(sockd);
-  client_errors_handler(sockd, ret_val);
-  goto exec_switch;
-  /************************* FINE AZIONE CWD *************************/
-
-  /************************* INIZIO AZIONE RETR *************************/
-  exec_retr:
-  ret_val = do_retr_cmd(sockd);
-  client_errors_handler(sockd, ret_val);
-  goto exec_switch;
-  /************************* FINE AZIONE RETR *************************/
-
-  /************************* INIZIO AZIONE STOR *************************/
-  exec_stor:
-  ret_val = do_stor_cmd(sockd);
-  client_errors_handler(sockd, ret_val);
-  goto exec_switch;
-  /************************* FINE AZIONE STOR *************************/
-
-  /************************* INIZIO AZIONE DELE *************************/
-  exec_delete:
-  ret_val = do_dele_cmd(sockd);
-  client_errors_handler(sockd, ret_val);
-  goto exec_switch;
-  /************************* FINE AZIONE DELE *************************/
-
-  /************************* INIZIO AZIONE MKD *************************/
-  exec_mkdir:
-  ret_val = do_mkd_cmd(sockd);
-  client_errors_handler(sockd, ret_val);
-  goto exec_switch;
-  /************************* FINE AZIONE MKD *************************/
-
-  /************************* INIZIO RICHIESTA RMD *************************/
-  exec_rmdir:
-  ret_val = do_rmd_cmd(sockd);
-  client_errors_handler(sockd, ret_val);
-  goto exec_switch;
-  /************************* FINE AZIONE RMD *************************/
-
-  /************************* INIZIO AZIONE RNM *************************/
-  exec_rename:
-  ret_val = do_rnm_cmd(sockd);
-  client_errors_handler(sockd, ret_val);
-  goto exec_switch;
-  /************************* FINE AZIONE RNM *************************/
-
-  /************************* INIZIO SALUTO FINALE *************************/
-  exec_exit:
-  memset(buffer, 0, sizeof(buffer));
-  if(recv(sockd, buffer, 12, 0) < 0){
-    perror("Error on receiving 221 goodbye");
-    close(sockd);
-    return -1;
-  }
-  printf("%s", buffer);
-  close(sockd);
-  /************************* FINE SALUTO FINALE *************************/
-
-  return EXIT_SUCCESS;
+	sscanf(p1, "%d", &np1);
+	sscanf(p2, "%d", &np2);
+	
+	return np1*256+np2;
 }
