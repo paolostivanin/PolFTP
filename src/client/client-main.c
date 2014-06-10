@@ -70,10 +70,10 @@ int main(int argc, char *argv[]){
 	buffer[retVal] = '\0';
 	printf("%s", buffer);
 
-    send_info(cmdSock, "USER polftp\r\n", "USER");
+    send_info(cmdSock, "USER username\r\n", "USER");
     recv_info(cmdSock);
     
-    send_info(cmdSock, "PASS polftp!\r\n", "PASS");
+    send_info(cmdSock, "PASS password\r\n", "PASS");
     recv_info(cmdSock);
     
     char *pasbuf = malloc(128);
