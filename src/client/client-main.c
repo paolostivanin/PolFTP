@@ -11,7 +11,13 @@
 #include <errno.h>
 #include "../ftputils.h"
 
+struct _info{
+	char *username;
+	char *password;
+};
+
 long int get_host_ip(const char *);
+void login(struct _info *);
 void send_info(int, const char *, const char *);
 void recv_info(int);
 void recv_pasv(int, char *);
@@ -29,11 +35,13 @@ int main(int argc, char *argv[]){
 	}
 	int cmdSock, dataSock, retVal;
 	int serverCmdPort = 21, serverDataPort;
-	int clientCmdPort, clientDataPort;
+	int clientCmdPort = 9991, clientDataPort = 11121;
 	struct sockaddr_in client_cmd_addr, server_cmd_addr;
-	struct sockaddr_in client_data_addr, server_data_addr; 
+	struct sockaddr_in client_data_addr, server_data_addr;
+	struct _info LoginInfo;
 	long int serverIp;
 	char buffer[BUFSIZE];
+	char *pasvBuf;
 	
 	serverIp = get_host_ip(argv[1]);
 	memset(&server_cmd_addr, 0, sizeof(server_cmd_addr));
@@ -57,7 +65,7 @@ int main(int argc, char *argv[]){
     printf("[+] Starting connect\n");
     memset(&server_cmd_addr, 0, sizeof(server_cmd_addr));
     server_cmd_addr.sin_family = AF_INET;
-    server_cmd_addr.sin_addr.s_addr = htonl(serverIp);
+    server_cmd_addr.sin_addr.s_addr = serverIp;
     server_cmd_addr.sin_port = htons(serverCmdPort);
 	if(connect(cmdSock ,(struct sockaddr *) &server_cmd_addr, sizeof(server_cmd_addr)) < 0){
 		 printf("client: connect  error :%d\n", errno);
@@ -69,19 +77,28 @@ int main(int argc, char *argv[]){
 	}
 	buffer[retVal] = '\0';
 	printf("%s", buffer);
+	
+	login(&LoginInfo);
 
-    send_info(cmdSock, "USER username\r\n", "USER");
+    send_info(cmdSock, LoginInfo.username, "USER");
     recv_info(cmdSock);
     
-    send_info(cmdSock, "PASS password\r\n", "PASS");
+    send_info(cmdSock, LoginInfo.password, "PASS");
     recv_info(cmdSock);
     
-    char *pasbuf = malloc(128);
+    free(LoginInfo.username);
+    free(LoginInfo.password);
+    
+    pasvBuf = malloc(128);
+    if(pasvBuf == NULL){
+		fprintf(stderr, "Error on memory allocation (pasvBuf main)\n");
+		return -1;
+	}
 	send_info(cmdSock, "PASV\r\n", "PASV");
-    recv_pasv(cmdSock, pasbuf);
+    recv_pasv(cmdSock, pasvBuf);
     
-    serverDataPort = get_data_port(pasbuf);
-    free(pasbuf);
+    serverDataPort = get_data_port(pasvBuf);
+    free(pasvBuf);
     
     if ((dataSock = socket(AF_INET,SOCK_STREAM,0)) < 0){
 		printf("client: data socket error : %d\n", errno);
@@ -98,7 +115,7 @@ int main(int argc, char *argv[]){
    
     server_data_addr.sin_family = AF_INET;
     server_data_addr.sin_port = htons(serverDataPort);
-    server_data_addr.sin_addr.s_addr = htonl(serverIp);
+    server_data_addr.sin_addr.s_addr = serverIp;
 	if(connect(dataSock ,(struct sockaddr *) &server_data_addr, sizeof(server_data_addr)) < 0){
 		 printf("client: connect  error :%d\n", errno);
 		 return -1;
@@ -115,6 +132,37 @@ int main(int argc, char *argv[]){
 	
     close(cmdSock);
     return 0;
+}
+
+void login(struct _info *LoginData){
+	char tmpU[128] = {0};
+	char tmpP[256] = {0};
+
+	printf("Username: ");
+	fgets(tmpU, sizeof(tmpU)-2, stdin);
+	tmpU[strlen(tmpU)-1] = '\0';
+	
+	LoginData->username = malloc(sizeof(tmpU)+5);
+	if(LoginData->username == NULL){
+		fprintf(stderr, "Error on memory allocation (void login: username)\n");
+		return;
+	}
+	
+	printf("Password: ");
+	fgets(tmpP, sizeof(tmpP)-2, stdin);
+	tmpP[strlen(tmpP)-1] = '\0';
+	
+	LoginData->password = malloc(sizeof(tmpP)+5);
+	if(LoginData->password == NULL){
+		fprintf(stderr, "Error on memory allocation (void login: password)\n");
+		return;
+	}
+	
+	snprintf(LoginData->username, sizeof(tmpU)+5, "USER %s\r\n", tmpU);
+	snprintf(LoginData->password, sizeof(tmpP)+5, "PASS %s\r\n", tmpP);
+				
+	memset(tmpU, 0, sizeof(tmpU));
+	memset(tmpP, 0, sizeof(tmpP));
 }
 
 void send_info(int sockfd, const char *data, const char *cmd){
@@ -136,13 +184,13 @@ void recv_info(int sockfd){
 	printf("%s", buffer);
 }
 
-void recv_pasv(int sockfd, char *pasvBuf){
+void recv_pasv(int sockfd, char *buffer){
 	int r;
-    if((r = recv(sockfd, pasvBuf, 128, 0)) < 0){
+    if((r = recv(sockfd, buffer, 128, 0)) < 0){
 		printf("client: read  error :%d\n", errno);
 		return;
 	}
-	pasvBuf[r] = '\0';
+	buffer[r] = '\0';
 }
 
 int get_data_port(char *toCut){
