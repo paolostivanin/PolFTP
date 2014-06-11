@@ -2,6 +2,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <termios.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -135,8 +136,13 @@ int main(int argc, char *argv[]){
 }
 
 void login(struct _info *LoginData){
+	struct termios Term, TermOrig;
 	char tmpU[128] = {0};
 	char tmpP[256] = {0};
+	
+	tcgetattr(STDIN_FILENO, &TermOrig);
+	Term = TermOrig;
+	Term.c_lflag &= ~(ECHO);
 
 	printf("Username: ");
 	fgets(tmpU, sizeof(tmpU)-2, stdin);
@@ -149,8 +155,10 @@ void login(struct _info *LoginData){
 	}
 	
 	printf("Password: ");
+	tcsetattr(STDIN_FILENO, TCSANOW, &Term);
 	fgets(tmpP, sizeof(tmpP)-2, stdin);
 	tmpP[strlen(tmpP)-1] = '\0';
+	tcsetattr(STDIN_FILENO, TCSANOW, &TermOrig);
 	
 	LoginData->password = malloc(sizeof(tmpP)+5);
 	if(LoginData->password == NULL){
