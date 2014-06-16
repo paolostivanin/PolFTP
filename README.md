@@ -1,6 +1,6 @@
 FTPUtils
 ========
-FTPUtils is an implementation of a FTP client and a FTP server.<br>
+FTPUtils is an implementation of a FTP client.<br>
 It is developed by:
 
 * Paolo Stivanin a.k.a. Polslinux
@@ -21,7 +21,6 @@ Requirements
 * GCC (>=4.6.0) or Clang (>= 3.2)
 * Make
 * GNU/Linux
-* Gcrypt (>=1.5.0)
 
 
 Compiling
@@ -29,11 +28,11 @@ Compiling
 `git clone https://github.com/polslinux/FTPUtils.git`<br>
 `cd /path/to/FTPUtils`<br>
 `make`<br>
-When the compilation phase finished, you will find the binaries `ftpclient` and `ftpserver` inside the project root directory.
+When the compilation phase finished, you will find the `ftpclient` binary inside the project root directory.
 
 
-How to use ftpclient and ftpserver
-----------------------------------
+How to use ftpclient
+--------------------
 ToDo
 
 
