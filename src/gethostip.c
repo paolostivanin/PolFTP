@@ -7,7 +7,7 @@
 #include <arpa/inet.h>
 
 
-long int get_host_ip(const char *name){
+unsigned long get_host_ip(const char *name){
 	struct addrinfo hints, *res;
 	struct in_addr addr;
 	int err;

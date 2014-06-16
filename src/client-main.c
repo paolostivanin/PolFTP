@@ -10,20 +10,23 @@
 #include <netdb.h>
 #include <fcntl.h>
 #include <errno.h>
-#include "../ftputils.h"
+#include "ftputils.h"
 
 struct _info{
 	char *username;
 	char *password;
 };
 
-long int get_host_ip(const char *);
-void login(struct _info *);
-void pasv_and_list(int, int, long int);
+unsigned long get_host_ip(const char *);
+int login(struct _info *);
+void ftp_list(int, int, long int);
+void ftp_cwd(int, char *);
+void ftp_quit(int);
 void send_info(int, const char *, const char *);
 void recv_info(int);
 void recv_pasv(int, char *);
 int get_data_port(char *);
+int parse_input(char *);
 
 
 int main(int argc, char *argv[]){
@@ -32,17 +35,21 @@ int main(int argc, char *argv[]){
 		return -1;
 	}
 	if(strlen(argv[1]) > 256){
-		printf("WTF?!? A hostname bigger than 256 chars? What are you trying to do? ;)\nIt's better to stop the client...\n");
+		printf("WTF?!? A hostname longer than 256 chars? What are you trying to do? ;)\nIt's better to stop the client...\n");
 		return -1;
 	}
+	
 	int cmdSock, retVal;
 	int serverCmdPort = 21;
-	int clientCmdPort = 10102, clientDataPort = 10103;
-	struct sockaddr_in client_cmd_addr, server_cmd_addr;
+	int clientCmdPort = 10111, clientDataPort = 10112;
+	int cmdNumber = -1, exit = FALSE;
+	unsigned long serverIp;
 	
+	struct sockaddr_in client_cmd_addr, server_cmd_addr;
 	struct _info LoginInfo;
-	long int serverIp;
+		
 	char buffer[BUFSIZE];
+    char *actBuf;
 	
 	serverIp = get_host_ip(argv[1]);
 	memset(&server_cmd_addr, 0, sizeof(server_cmd_addr));
@@ -79,7 +86,10 @@ int main(int argc, char *argv[]){
 	buffer[retVal] = '\0';
 	printf("%s", buffer);
 	
-	login(&LoginInfo);
+	if(login(&LoginInfo) == -1){
+		close(cmdSock);
+		return -1;
+	}
 
     send_info(cmdSock, LoginInfo.username, "USER");
     recv_info(cmdSock);
@@ -90,25 +100,37 @@ int main(int argc, char *argv[]){
     free(LoginInfo.username);
     free(LoginInfo.password);
     
-    int exit = FALSE;
-    char actBuf[256];
-    while(exit == FALSE){
-		memset(actBuf, 0, sizeof(actBuf));
-		printf("ftp:$> ");
-		fgets(actBuf, sizeof(actBuf), stdin);
-		if(strcmp(actBuf, "LIST\n") == 0) pasv_and_list(cmdSock, clientDataPort, serverIp);
-		else if(strcmp(actBuf, "QUIT\n") == 0) exit = TRUE;
-	} 
-    
-    send_info(cmdSock, "QUIT\r\n", "QUIT");
-    recv_info(cmdSock);
+    actBuf = malloc(ACTBUFSIZE);
+    if(actBuf == NULL){
+		fprintf(stderr, "Error during memory allocation (main_actbuf_malloc)\n");
+		return -1;
+	}
 	
-    close(cmdSock);
+    while(exit == FALSE){
+		memset(actBuf, 0, ACTBUFSIZE);
+		printf("ftp:$> ");
+		if(fgets(actBuf, ACTBUFSIZE, stdin) == NULL){
+			fprintf(stderr, "Error while reading action from stdin (fgets_main_while)\n");
+			close(cmdSock);
+			exit = TRUE;
+		}
+		
+		cmdNumber = parse_input(actBuf);
+		
+		if(cmdNumber == LIST) ftp_list(cmdSock, clientDataPort, serverIp);
+		else if(cmdNumber == CWD) ftp_cwd(cmdSock, actBuf);
+		else if(cmdNumber == QUIT){
+			ftp_quit(cmdSock);
+			exit = TRUE;
+		}
+	} 
+	free(actBuf);
     return 0;
 }
 
-void login(struct _info *LoginData){
+int login(struct _info *LoginData){
 	struct termios Term, TermOrig;
+	int counter = 0;
 	char tmpU[128] = {0};
 	char tmpP[256] = {0};
 	
@@ -116,26 +138,48 @@ void login(struct _info *LoginData){
 	Term = TermOrig;
 	Term.c_lflag &= ~(ECHO);
 
+	again_user:
 	printf("Username: ");
-	fgets(tmpU, sizeof(tmpU)-2, stdin);
+	if(fgets(tmpU, sizeof(tmpU)-2, stdin) == NULL){
+		if(counter < 3) fprintf(stderr, "Error while reading USER, try again.\n");
+		else{
+			fprintf(stderr, "Error while reading from stdin (fgets_login)\n");
+			return -1;
+		}
+		memset(tmpU, 0, sizeof(tmpU));
+		counter++;
+		goto again_user;
+	}
 	tmpU[strlen(tmpU)-1] = '\0';
 	
 	LoginData->username = malloc(sizeof(tmpU)+5);
 	if(LoginData->username == NULL){
 		fprintf(stderr, "Error on memory allocation (void login: username)\n");
-		return;
+		return -1;
 	}
 	
+	counter = 0;
+	again_pwd:
 	printf("Password: ");
 	tcsetattr(STDIN_FILENO, TCSANOW, &Term);
-	fgets(tmpP, sizeof(tmpP)-2, stdin);
+	if(fgets(tmpP, sizeof(tmpP)-2, stdin) == NULL){
+		tcsetattr(STDIN_FILENO, TCSANOW, &TermOrig);
+		if(counter < 3) fprintf(stderr, "Error while reading USER, try again.\n");
+		else{
+			fprintf(stderr, "Error while reading from stdin (fgets_login)\n");
+			return -1;
+		}
+		memset(tmpP, 0, sizeof(tmpP));
+		counter++;
+		goto again_pwd;
+	}
 	tmpP[strlen(tmpP)-1] = '\0';
 	tcsetattr(STDIN_FILENO, TCSANOW, &TermOrig);
 	
 	LoginData->password = malloc(sizeof(tmpP)+5);
 	if(LoginData->password == NULL){
 		fprintf(stderr, "Error on memory allocation (void login: password)\n");
-		return;
+		return -1;
 	}
 	
 	snprintf(LoginData->username, sizeof(tmpU)+5, "USER %s\r\n", tmpU);
@@ -143,9 +187,11 @@ void login(struct _info *LoginData){
 				
 	memset(tmpU, 0, sizeof(tmpU));
 	memset(tmpP, 0, sizeof(tmpP));
+	
+	return 0;
 }
 
-void pasv_and_list(int cmdSock, int clientDataPort, long int serverIp){
+void ftp_list(int cmdSock, int clientDataPort, long int serverIp){
 	struct sockaddr_in client_data_addr, server_data_addr;
 	char *pasvBuf;
 	int dataSock, serverDataPort;
@@ -186,6 +232,19 @@ void pasv_and_list(int cmdSock, int clientDataPort, long int serverIp){
     recv_info(dataSock);
     close(dataSock);
     recv_info(cmdSock);
+}
+
+void ftp_cwd(int cmdSock, char *actBuf){
+	char buf[ACTBUFSIZE];
+	
+    send_info(cmdSock, buf, "CWD");
+    recv_info(cmdSock);
+}
+
+void ftp_quit(int cmdSock){
+    send_info(cmdSock, "QUIT\r\n", "QUIT");
+    recv_info(cmdSock);
+    close(cmdSock);
 }
 
 void send_info(int sockfd, const char *data, const char *cmd){
@@ -239,4 +298,21 @@ int get_data_port(char *toCut){
 	sscanf(p2, "%d", &np2);
 	
 	return np1*256+np2;
+}
+
+int parse_input(char *src){
+	int cmd = -1;
+	char dest[ACTBUFSIZE];
+	memcpy(dest, src, strlen(src)-1);
+	if(strcmp(dest, "LIST") == 0){
+		cmd = LIST;
+	}
+	else if(strcmp(dest, "CWD") == 0){
+		cmd = CWD;
+	}
+	else if(strcmp(dest, "QUIT") == 0){
+		cmd = QUIT;
+	}
+	
+	return cmd;
 }
