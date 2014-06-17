@@ -7,9 +7,7 @@
 
 #define LIST 30
 #define CWD 31
-#define QUIT 32
-
-#define FALSE 0
-#define TRUE 1
+#define CDUP 32
+#define QUIT 33
 
 #endif

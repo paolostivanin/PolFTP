@@ -20,13 +20,14 @@ struct _info{
 unsigned long get_host_ip(const char *);
 int login(struct _info *);
 void ftp_list(int, int, long int);
-void ftp_cwd(int, char *);
+void ftp_cwd(int, const char *);
+void ftp_cdup(int);
 void ftp_quit(int);
 void send_info(int, const char *, const char *);
 void recv_info(int);
 void recv_pasv(int, char *);
 int get_data_port(char *);
-int parse_input(char *);
+int parse_input(const char *);
 
 
 int main(int argc, char *argv[]){
@@ -41,8 +42,8 @@ int main(int argc, char *argv[]){
 	
 	int cmdSock, retVal;
 	int serverCmdPort = 21;
-	int clientCmdPort = 10111, clientDataPort = 10112;
-	int cmdNumber = -1, exit = FALSE;
+	int clientCmdPort = 1677, clientDataPort = 1766;
+	int cmdNumber = -1;
 	unsigned long serverIp;
 	
 	struct sockaddr_in client_cmd_addr, server_cmd_addr;
@@ -106,25 +107,27 @@ int main(int argc, char *argv[]){
 		return -1;
 	}
 	
-    while(exit == FALSE){
+    while(1){
+		cmdNumber = -1;
 		memset(actBuf, 0, ACTBUFSIZE);
 		printf("ftp:$> ");
 		if(fgets(actBuf, ACTBUFSIZE, stdin) == NULL){
 			fprintf(stderr, "Error while reading action from stdin (fgets_main_while)\n");
 			close(cmdSock);
-			exit = TRUE;
+			break;
 		}
 		
 		cmdNumber = parse_input(actBuf);
-		
+
 		if(cmdNumber == LIST) ftp_list(cmdSock, clientDataPort, serverIp);
 		else if(cmdNumber == CWD) ftp_cwd(cmdSock, actBuf);
+		else if(cmdNumber == CDUP) ftp_cdup(cmdSock);
 		else if(cmdNumber == QUIT){
 			ftp_quit(cmdSock);
-			exit = TRUE;
+			break;
 		}
-	} 
-	free(actBuf);
+	}
+
     return 0;
 }
 
@@ -218,26 +221,28 @@ void ftp_list(int cmdSock, int clientDataPort, long int serverIp){
 		printf("%s\n", strerror(errno));
 		return;
     }
-   
+
     server_data_addr.sin_family = AF_INET;
     server_data_addr.sin_port = htons(serverDataPort);
     server_data_addr.sin_addr.s_addr = serverIp;
 	if(connect(dataSock ,(struct sockaddr *) &server_data_addr, sizeof(server_data_addr)) < 0){
-		 printf("client: connect  error :%d\n", errno);
+		 fprintf(stderr, "client: connect  error :%s\n", strerror(errno));
 		 return;
 	}
 	
-	send_info(cmdSock, "LIST\r\n", "LIST"); //per ogni list devo rifare pasv, connect, etc
+	send_info(cmdSock, "LIST\r\n", "LIST");
     recv_info(cmdSock);
     recv_info(dataSock);
     close(dataSock);
     recv_info(cmdSock);
 }
 
-void ftp_cwd(int cmdSock, char *actBuf){
-	char buf[ACTBUFSIZE];
-	
-    send_info(cmdSock, buf, "CWD");
+void ftp_cwd(int cmdSock, const char *src){
+	//rifare
+}
+
+void ftp_cdup(int cmdSock){
+    send_info(cmdSock, "CDUP\r\n", "CDUP");
     recv_info(cmdSock);
 }
 
@@ -300,19 +305,33 @@ int get_data_port(char *toCut){
 	return np1*256+np2;
 }
 
-int parse_input(char *src){
+int parse_input(const char *src){ //da ripensare perchè il controllo > 5 fa pietà
 	int cmd = -1;
-	char dest[ACTBUFSIZE];
-	memcpy(dest, src, strlen(src)-1);
-	if(strcmp(dest, "LIST") == 0){
-		cmd = LIST;
+	char *cmdString;
+	char *cpString = strdup(src);
+	if(strlen(src) > 5){
+		cmdString = strtok(cpString, " ");
+		cmdString[3] = '\0';
 	}
-	else if(strcmp(dest, "CWD") == 0){
+	else{
+		cmdString = malloc(5);
+		memcpy(cmdString, src, strlen(src)-1);
+		cmdString[strlen(src)-1] = '\0';
+	}
+	if(strcmp(cmdString, "LIST") == 0){
+		cmd = LIST;
+		free(cmdString);
+	}
+	else if(strcmp(cmdString, "CWD") == 0){
 		cmd = CWD;
 	}
-	else if(strcmp(dest, "QUIT") == 0){
-		cmd = QUIT;
+	else if(strcmp(cmdString, "CDUP") == 0){
+		cmd = CDUP;
 	}
-	
+	else if(strcmp(cmdString, "QUIT") == 0){
+		cmd = QUIT;
+		free(cmdString);
+	}
+	free(cpString);
 	return cmd;
 }
