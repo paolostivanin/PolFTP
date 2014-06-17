@@ -22,6 +22,7 @@ int login(struct _info *);
 void ftp_list(int, int, long int);
 void ftp_cwd(int, const char *);
 void ftp_cdup(int);
+void ftp_mkd(int, const char *);
 void ftp_quit(int);
 void send_info(int, const char *, const char *);
 void recv_info(int);
@@ -122,6 +123,7 @@ int main(int argc, char *argv[]){
 		if(cmdNumber == LIST) ftp_list(cmdSock, clientDataPort, serverIp);
 		else if(cmdNumber == CWD) ftp_cwd(cmdSock, actBuf);
 		else if(cmdNumber == CDUP) ftp_cdup(cmdSock);
+		else if(cmdNumber == MKD) ftp_mkd(cmdSock, actBuf);
 		else if(cmdNumber == QUIT){
 			ftp_quit(cmdSock);
 			break;
@@ -248,6 +250,17 @@ void ftp_cwd(int cmdSock, const char *src){
 	free(dest);
 }
 
+void ftp_mkd(int cmdSock, const char *src){
+	char *dest = malloc(ACTBUFSIZE);
+	strncpy(dest, src, ACTBUFSIZE);
+	dest[strlen(src)-1] = '\r';
+	dest[strlen(src)] = '\n';
+	dest[strlen(src)+1] = '\0';
+	send_info(cmdSock, dest, "MKD");
+	recv_info(cmdSock);
+	free(dest);
+}
+
 void ftp_cdup(int cmdSock){
     send_info(cmdSock, "CDUP\r\n", "CDUP");
     recv_info(cmdSock);
@@ -331,6 +344,9 @@ int parse_input(const char *src){ //da ripensare perchè il controllo > 5 fa pie
 	}
 	else if(strcmp(cmdString, "CWD") == 0){
 		cmd = CWD;
+	}
+	else if(strcmp(cmdString, "MKD") == 0){
+		cmd = MKD;
 	}
 	else if(strcmp(cmdString, "CDUP") == 0){
 		cmd = CDUP;
