@@ -238,7 +238,14 @@ void ftp_list(int cmdSock, int clientDataPort, long int serverIp){
 }
 
 void ftp_cwd(int cmdSock, const char *src){
-	//rifare
+	char *dest = malloc(ACTBUFSIZE);
+	strncpy(dest, src, ACTBUFSIZE);
+	dest[strlen(src)-1] = '\r';
+	dest[strlen(src)] = '\n';
+	dest[strlen(src)+1] = '\0';
+	send_info(cmdSock, dest, "CWD");
+	recv_info(cmdSock);
+	free(dest);
 }
 
 void ftp_cdup(int cmdSock){
