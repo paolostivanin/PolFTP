@@ -17,13 +17,16 @@ struct _info{
 	char *password;
 };
 
-unsigned long get_host_ip(const char *);
-int login(struct _info *);
+
 void ftp_list(int, int, long int);
 void ftp_cwd(int, const char *);
 void ftp_cdup(int);
 void ftp_mkd(int, const char *);
+void ftp_size(int, const char *);
 void ftp_quit(int);
+
+unsigned long get_host_ip(const char *);
+int login(struct _info *);
 void send_info(int, const char *, const char *);
 void recv_info(int);
 void recv_pasv(int, char *);
@@ -124,6 +127,7 @@ int main(int argc, char *argv[]){
 		else if(cmdNumber == CWD) ftp_cwd(cmdSock, actBuf);
 		else if(cmdNumber == CDUP) ftp_cdup(cmdSock);
 		else if(cmdNumber == MKD) ftp_mkd(cmdSock, actBuf);
+		else if(cmdNumber == SIZE) ftp_size(cmdSock, actBuf);
 		else if(cmdNumber == QUIT){
 			ftp_quit(cmdSock);
 			break;
@@ -261,6 +265,19 @@ void ftp_mkd(int cmdSock, const char *src){
 	free(dest);
 }
 
+void ftp_size(int cmdSock, const char *src){
+	send_info(cmdSock, "TYPE I\r\n", "TYPE");
+	recv_info(cmdSock);
+	char *dest = malloc(ACTBUFSIZE);
+	strncpy(dest, src, ACTBUFSIZE);
+	dest[strlen(src)-1] = '\r';
+	dest[strlen(src)] = '\n';
+	dest[strlen(src)+1] = '\0';
+	send_info(cmdSock, dest, "SIZE");
+	recv_info(cmdSock);
+	free(dest);
+}
+
 void ftp_cdup(int cmdSock){
     send_info(cmdSock, "CDUP\r\n", "CDUP");
     recv_info(cmdSock);
@@ -331,7 +348,8 @@ int parse_input(const char *src){ //da ripensare perchè il controllo > 5 fa pie
 	char *cpString = strdup(src);
 	if(strlen(src) > 5){
 		cmdString = strtok(cpString, " ");
-		cmdString[3] = '\0';
+		if(*cmdString == 'C') cmdString[3] = '\0';
+		else cmdString[4] = '\0';
 	}
 	else{
 		cmdString = malloc(5);
@@ -347,6 +365,9 @@ int parse_input(const char *src){ //da ripensare perchè il controllo > 5 fa pie
 	}
 	else if(strcmp(cmdString, "MKD") == 0){
 		cmd = MKD;
+	}
+	else if(strcmp(cmdString, "SIZE") == 0){
+		cmd = SIZE;
 	}
 	else if(strcmp(cmdString, "CDUP") == 0){
 		cmd = CDUP;
