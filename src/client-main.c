@@ -19,9 +19,9 @@ struct _info{
 
 
 void ftp_list(int, int, long int);
-void ftp_cwd(int, const char *);
+void ftp_actions(int, const char *, const char *);
+void ftp_small_actions(int, const char *);
 void ftp_cdup(int);
-void ftp_mkd(int, const char *);
 void ftp_size(int, const char *);
 void ftp_quit(int);
 
@@ -124,9 +124,12 @@ int main(int argc, char *argv[]){
 		cmdNumber = parse_input(actBuf);
 
 		if(cmdNumber == LIST) ftp_list(cmdSock, clientDataPort, serverIp);
-		else if(cmdNumber == CWD) ftp_cwd(cmdSock, actBuf);
-		else if(cmdNumber == CDUP) ftp_cdup(cmdSock);
-		else if(cmdNumber == MKD) ftp_mkd(cmdSock, actBuf);
+		else if(cmdNumber == CWD) ftp_actions(cmdSock, actBuf, "CWD");
+		else if(cmdNumber == PWD) ftp_small_actions(cmdSock, "PWD");
+		else if(cmdNumber == CDUP) ftp_small_actions(cmdSock, "CDUP");
+		else if(cmdNumber == SYST) ftp_small_actions(cmdSock, "SYST");
+		else if(cmdNumber == MKD) ftp_actions(cmdSock, actBuf, "MKD");
+		else if(cmdNumber == RMD) ftp_actions(cmdSock, actBuf, "RMD");
 		else if(cmdNumber == SIZE) ftp_size(cmdSock, actBuf);
 		else if(cmdNumber == QUIT){
 			ftp_quit(cmdSock);
@@ -243,24 +246,13 @@ void ftp_list(int cmdSock, int clientDataPort, long int serverIp){
     recv_info(cmdSock);
 }
 
-void ftp_cwd(int cmdSock, const char *src){
+void ftp_actions(int cmdSock, const char *src, const char *action){
 	char *dest = malloc(ACTBUFSIZE);
 	strncpy(dest, src, ACTBUFSIZE);
 	dest[strlen(src)-1] = '\r';
 	dest[strlen(src)] = '\n';
 	dest[strlen(src)+1] = '\0';
-	send_info(cmdSock, dest, "CWD");
-	recv_info(cmdSock);
-	free(dest);
-}
-
-void ftp_mkd(int cmdSock, const char *src){
-	char *dest = malloc(ACTBUFSIZE);
-	strncpy(dest, src, ACTBUFSIZE);
-	dest[strlen(src)-1] = '\r';
-	dest[strlen(src)] = '\n';
-	dest[strlen(src)+1] = '\0';
-	send_info(cmdSock, dest, "MKD");
+	send_info(cmdSock, dest, action);
 	recv_info(cmdSock);
 	free(dest);
 }
@@ -278,9 +270,12 @@ void ftp_size(int cmdSock, const char *src){
 	free(dest);
 }
 
-void ftp_cdup(int cmdSock){
-    send_info(cmdSock, "CDUP\r\n", "CDUP");
+void ftp_small_actions(int cmdSock, const char *action){
+	char *buffer = malloc(10);
+	snprintf(buffer, 7, "%s\r\n", action);
+    send_info(cmdSock, buffer, action);
     recv_info(cmdSock);
+    free(buffer);
 }
 
 void ftp_quit(int cmdSock){
@@ -348,7 +343,7 @@ int parse_input(const char *src){ //da ripensare perchè il controllo > 5 fa pie
 	char *cpString = strdup(src);
 	if(strlen(src) > 5){
 		cmdString = strtok(cpString, " ");
-		if(*cmdString == 'C') cmdString[3] = '\0';
+		if(*cmdString == 'C' || *cmdString == 'R') cmdString[3] = '\0';
 		else cmdString[4] = '\0';
 	}
 	else{
@@ -360,11 +355,21 @@ int parse_input(const char *src){ //da ripensare perchè il controllo > 5 fa pie
 		cmd = LIST;
 		free(cmdString);
 	}
+	else if(strcmp(cmdString, "SYST") == 0){
+		cmd = SYST;
+		free(cmdString);
+	}
 	else if(strcmp(cmdString, "CWD") == 0){
 		cmd = CWD;
 	}
+	else if(strcmp(cmdString, "PWD") == 0){
+		cmd = PWD;
+	}
 	else if(strcmp(cmdString, "MKD") == 0){
 		cmd = MKD;
+	}
+	else if(strcmp(cmdString, "RMD") == 0){
+		cmd = RMD;
 	}
 	else if(strcmp(cmdString, "SIZE") == 0){
 		cmd = SIZE;
