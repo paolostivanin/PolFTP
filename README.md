@@ -1,19 +1,19 @@
 FTPUtils
 ========
-FTPUtils is an implementation of a FTP client.<br>
+FTPUtils is a simple C implementation of a FTP client.<br>
 It is developed by:
 
-* Paolo Stivanin a.k.a. Polslinux
+* Paolo "Polslinux" Stivanin
 
 
 Version
 -------
-The software is in **pre-alpha** stage.
+The software is in **alpha** stage.
 
 
 RoadMap
 -------
-See the ChangeLog file
+Read the ChangeLog file
 
 
 Requirements

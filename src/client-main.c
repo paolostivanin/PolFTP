@@ -32,6 +32,12 @@ void recv_pasv(int, char *);
 int get_data_port(char *);
 int parse_input(const char *);
 
+/* ToDo:
+ * - client port generated randomly;
+ * - check all the parameters (TYPE A or I, STOR must be a valid file, etc)
+ * - check for input on parse_input (and, please, remove the > 5 control!!)
+ */
+
 
 int main(int argc, char *argv[]){
 	if(argc != 2){
@@ -131,6 +137,7 @@ int main(int argc, char *argv[]){
 		else if(cmdNumber == MKD) ftp_actions(cmdSock, actBuf, "MKD");
 		else if(cmdNumber == RMD) ftp_actions(cmdSock, actBuf, "RMD");
 		else if(cmdNumber == DELE) ftp_actions(cmdSock, actBuf, "DELE");
+		else if(cmdNumber == TYPE) ftp_actions(cmdSock, actBuf, "TYPE");
 		else if(cmdNumber == SIZE) ftp_size(cmdSock, actBuf);
 		else if(cmdNumber == QUIT){
 			ftp_quit(cmdSock);

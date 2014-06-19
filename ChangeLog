@@ -49,16 +49,16 @@
 25/09/2012 - v1.0.3
 	* FIXED: percentage on transfer
 
-??/sep/2014 - v1.99.1 (v2.0-alpha1)
+??/07/2014 - v1.99.1 (v2.0-alpha1)
 	* NEW: client code completely rewritten
-	* DLT: server deleted
-
-??/sep/2014 - v2.0-beta
+	* DELE: server code
+	
+??/07/2014 - v2.0-beta
 	* ADDED: i18n
 	* IMPROVED: docs
 	
-??/sep/2014 - v2.0
+??/08/2014 - v2.0
 	* Newstable release
 	
-??/dec/2014 - v2.0.991 (v2.1.0-alpha1)
+??/11/2014 - v2.0.991 (v2.1.0-alpha1)
 	* ADDED: SFTP
