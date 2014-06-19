@@ -14,10 +14,10 @@
 #define RETR 36*/	//200 (type I/A), 227 (pasv), 150 (open data conn), 226 (close data conn)
 #define SIZE 37		//200 (type I), 213 <size-in-byte>
 #define SYST 38		//215 <system-type>
-/*#define DELE 39		//250 <message>
-#define FEAT 40		 211-Features:
-					 list-of-features
- 					 211 End*/
+#define DELE 39		//250 <message>
+#define FEAT 40		//211-Features:
+					//list-of-features
+ 					//211 End
 #define PWD 41		//257 "<directory-name>"
 #define QUIT 50		//221 <message>
 
