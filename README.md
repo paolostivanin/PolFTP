@@ -28,10 +28,10 @@ Compiling
 `git clone https://github.com/polslinux/PolFTP.git`<br>
 `cd /path/to/PolFTP`<br>
 `make`<br>
-When the compilation phase finished, you will find the `ftpclient` binary inside the project root directory.
+When the compilation phase finished, you will find the `poftp` binary inside the project root directory.
 
 
-How to use ftpclient
+How to use poftp
 --------------------
 ToDo
 
