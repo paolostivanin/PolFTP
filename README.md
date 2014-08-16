@@ -1,6 +1,6 @@
-FTPUtils
+PolFTP
 ========
-FTPUtils is a simple C implementation of a FTP client.<br>
+PolFTP is a simple C implementation of a FTP client.<br>
 It is developed by:
 
 * Paolo "Polslinux" Stivanin
@@ -25,8 +25,8 @@ Requirements
 
 Compiling
 ---------
-`git clone https://github.com/polslinux/FTPUtils.git`<br>
-`cd /path/to/FTPUtils`<br>
+`git clone https://github.com/polslinux/PolFTP.git`<br>
+`cd /path/to/PolFTP`<br>
 `make`<br>
 When the compilation phase finished, you will find the `ftpclient` binary inside the project root directory.
 
@@ -45,4 +45,4 @@ All the code is released under the license GNU AGPL v3 and above.<br>
 Web Site
 --------
 Developer web site:	<https://www.paolostivanin.com><br>
-Project web site:	<https://github.com/polslinux/FTPUtils>
+Project web site:	<https://github.com/polslinux/PolFTP>

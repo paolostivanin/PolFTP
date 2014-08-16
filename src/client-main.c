@@ -10,7 +10,7 @@
 #include <netdb.h>
 #include <fcntl.h>
 #include <errno.h>
-#include "ftputils.h"
+#include "polftp.h"
 
 struct _info{
 	char *username;
@@ -51,11 +51,11 @@ int main(int argc, char *argv[]){
 	
 	int cmdSock, retVal;
 	int serverCmdPort = 21;
-	int clientCmdPort = 10905, clientDataPort = 10906;
+	int clientCmdPort = 0, clientDataPort = 0; //bind() con 0 assegna un numero arbitrario. Usare getsockname() per ottenere la porta
 	int cmdNumber = -1;
 	unsigned long serverIp;
 	
-	struct sockaddr_in client_cmd_addr, server_cmd_addr;
+	struct sockaddr_in client_cmd_addr, server_cmd_addr, client_tmp;
 	struct _info LoginInfo;
 		
 	char buffer[BUFSIZE];
@@ -79,7 +79,14 @@ int main(int argc, char *argv[]){
 		printf("client: bind  error :%d\n", errno);
 		return -1;
     }
-                                             
+    
+	int rt = getsockname(cmdSock, (struct sockaddr *) &client_tmp, (socklen_t *)sizeof(client_tmp));
+	if(rt == -1){
+		fprintf(stderr, "Error on getsockname (ftp_list): %s\n", strerror(errno));
+		return -1;
+	}
+	printf("%d\n", client_tmp.sin_port);
+    
     printf("[+] Starting connect\n");
     memset(&server_cmd_addr, 0, sizeof(server_cmd_addr));
     server_cmd_addr.sin_family = AF_INET;
@@ -212,7 +219,7 @@ int login(struct _info *LoginData){
 }
 
 void ftp_list(int cmdSock, int clientDataPort, long int serverIp){
-	struct sockaddr_in client_data_addr, server_data_addr;
+	struct sockaddr_in client_data_addr, server_data_addr, client_tmp;
 	char *pasvBuf;
 	int dataSock, serverDataPort;
     pasvBuf = malloc(128);
@@ -238,6 +245,13 @@ void ftp_list(int cmdSock, int clientDataPort, long int serverIp){
 		printf("%s\n", strerror(errno));
 		return;
     }
+
+	int rt = getsockname(dataSock, (struct sockaddr *) &client_tmp, (socklen_t *)sizeof(client_tmp));
+	if(rt == -1){
+		fprintf(stderr, "Error on getsockname (ftp_list): %s\n", strerror(errno));
+		return;
+	}
+	printf("%d\n", client_tmp.sin_port);
 
     server_data_addr.sin_family = AF_INET;
     server_data_addr.sin_port = htons(serverDataPort);
