@@ -1,7 +1,7 @@
 #ifndef FTPUTILS_H_INCLUDED
 #define FTPUTILS_H_INCLUDED
 
-#define VERSION "v1.99.1 (2.0-alpha1)"
+#define VERSION "v0.99.1 (1.0-alpha1)"
 #define BUFSIZE 4096
 #define ACTBUFSIZE 384
 
